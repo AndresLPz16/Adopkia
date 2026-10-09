@@ -1,0 +1,817 @@
+#
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "English"
+msgstr "English"
+
+msgid "Español"
+msgstr "Español"
+
+msgid "Identificador"
+msgstr "Identificador"
+
+msgid "Nombre"
+msgstr "Nombre"
+
+msgid "Descripción"
+msgstr "Descripción"
+
+msgid "Contraseña"
+msgstr "Contraseña"
+
+msgid "Rol"
+msgstr "Rol"
+
+msgid "Roles"
+msgstr "Roles"
+
+msgid "Correo electrónico"
+msgstr "Correo electrónico"
+
+msgid "Teléfono"
+msgstr "Teléfono"
+
+msgid "Activo"
+msgstr "Activo"
+
+msgid "Fecha de registro"
+msgstr "Fecha de registro"
+
+msgid "Refugio"
+msgstr "Refugio"
+
+msgid "Refugios"
+msgstr "Refugios"
+
+msgid "Dirección"
+msgstr "Dirección"
+
+msgid "Ciudad"
+msgstr "Ciudad"
+
+msgid "Teléfono de contacto"
+msgstr "Teléfono de contacto"
+
+msgid "Correo de contacto"
+msgstr "Correo de contacto"
+
+msgid "Estado de verificación"
+msgstr "Estado de verificación"
+
+msgid "Fecha de verificación"
+msgstr "Fecha de verificación"
+
+msgid "Verificado por"
+msgstr "Verificado por"
+
+msgid "Integrante de refugio"
+msgstr "Integrante de refugio"
+
+msgid "Integrantes de refugio"
+msgstr "Integrantes de refugio"
+
+msgid "Cargo"
+msgstr "Cargo"
+
+msgid "Especie"
+msgstr "Especie"
+
+msgid "Especies"
+msgstr "Especies"
+
+msgid "Raza"
+msgstr "Raza"
+
+msgid "Razas"
+msgstr "Razas"
+
+msgid "Mascota"
+msgstr "Mascota"
+
+msgid "Mascotas"
+msgstr "Mascotas"
+
+msgid "Fecha de nacimiento aproximada"
+msgstr "Fecha de nacimiento aproximada"
+
+msgid "Tamaño"
+msgstr "Tamaño"
+
+msgid "Salud"
+msgstr "Salud"
+
+msgid "Temperamento"
+msgstr "Temperamento"
+
+msgid "Estado"
+msgstr "Estado"
+
+msgid "Fecha de publicación"
+msgstr "Fecha de publicación"
+
+msgid "Foto de mascota"
+msgstr "Foto de mascota"
+
+msgid "Fotos de mascotas"
+msgstr "Fotos de mascotas"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "Principal"
+msgstr "Principal"
+
+msgid "Fecha de carga"
+msgstr "Fecha de carga"
+
+msgid "Pregunta del formulario"
+msgstr "Pregunta del formulario"
+
+msgid "Preguntas del formulario"
+msgstr "Preguntas del formulario"
+
+msgid "Enunciado"
+msgstr "Enunciado"
+
+msgid "Tipo de respuesta"
+msgstr "Tipo de respuesta"
+
+msgid "Obligatoria"
+msgstr "Obligatoria"
+
+msgid "Orden"
+msgstr "Orden"
+
+msgid "Activa"
+msgstr "Activa"
+
+msgid "Solicitud de adopción"
+msgstr "Solicitud de adopción"
+
+msgid "Solicitudes de adopción"
+msgstr "Solicitudes de adopción"
+
+msgid "Adoptante"
+msgstr "Adoptante"
+
+msgid "Fecha de solicitud"
+msgstr "Fecha de solicitud"
+
+msgid "Fecha de respuesta"
+msgstr "Fecha de respuesta"
+
+msgid "Observaciones del refugio"
+msgstr "Observaciones del refugio"
+
+msgid "Solicitud pendiente única"
+msgstr "Solicitud pendiente única"
+
+msgid "Respuesta del formulario"
+msgstr "Respuesta del formulario"
+
+msgid "Respuestas del formulario"
+msgstr "Respuestas del formulario"
+
+msgid "Solicitud"
+msgstr "Solicitud"
+
+msgid "Pregunta"
+msgstr "Pregunta"
+
+msgid "Respuesta"
+msgstr "Respuesta"
+
+msgid "Adopción"
+msgstr "Adopción"
+
+msgid "Adopciones"
+msgstr "Adopciones"
+
+msgid "Fecha de adopción"
+msgstr "Fecha de adopción"
+
+msgid "Fecha de devolución"
+msgstr "Fecha de devolución"
+
+msgid "Motivo de devolución"
+msgstr "Motivo de devolución"
+
+msgid "Seguimiento"
+msgstr "Seguimiento"
+
+msgid "Seguimientos"
+msgstr "Seguimientos"
+
+msgid "Registrado por"
+msgstr "Registrado por"
+
+msgid "Fecha"
+msgstr "Fecha"
+
+msgid "Bienestar"
+msgstr "Bienestar"
+
+msgid "Observaciones"
+msgstr "Observaciones"
+
+msgid "Veterinario"
+msgstr "Veterinario"
+
+msgid "Veterinarios"
+msgstr "Veterinarios"
+
+msgid "Tarjeta profesional"
+msgstr "Tarjeta profesional"
+
+msgid "Clínica"
+msgstr "Clínica"
+
+msgid "Especialidad"
+msgstr "Especialidad"
+
+msgid "Vacuna"
+msgstr "Vacuna"
+
+msgid "Vacunas"
+msgstr "Vacunas"
+
+msgid "Intervalo de refuerzo (días)"
+msgstr "Intervalo de refuerzo (días)"
+
+msgid "Historial médico"
+msgstr "Historial médico"
+
+msgid "Historiales médicos"
+msgstr "Historiales médicos"
+
+msgid "Tipo de registro"
+msgstr "Tipo de registro"
+
+msgid "Recordatorio"
+msgstr "Recordatorio"
+
+msgid "Recordatorios"
+msgstr "Recordatorios"
+
+msgid "Tipo de recordatorio"
+msgstr "Tipo de recordatorio"
+
+msgid "Fecha programada"
+msgstr "Fecha programada"
+
+msgid "Conversación"
+msgstr "Conversación"
+
+msgid "Conversaciones"
+msgstr "Conversaciones"
+
+msgid "Fecha de inicio"
+msgstr "Fecha de inicio"
+
+msgid "Mensaje"
+msgstr "Mensaje"
+
+msgid "Mensajes"
+msgstr "Mensajes"
+
+msgid "Remitente"
+msgstr "Remitente"
+
+msgid "Contenido"
+msgstr "Contenido"
+
+msgid "Fecha de envío"
+msgstr "Fecha de envío"
+
+msgid "Leído"
+msgstr "Leído"
+
+msgid "Notificación"
+msgstr "Notificación"
+
+msgid "Notificaciones"
+msgstr "Notificaciones"
+
+msgid "Usuario"
+msgstr "Usuario"
+
+msgid "Usuarios"
+msgstr "Usuarios"
+
+msgid "Tipo de notificación"
+msgstr "Tipo de notificación"
+
+msgid "Leída"
+msgstr "Leída"
+
+msgid "Administrador"
+msgstr "Administrador"
+
+msgid "Pendiente"
+msgstr "Pendiente"
+
+msgid "Verificado"
+msgstr "Verificado"
+
+msgid "Rechazado"
+msgstr "Rechazado"
+
+msgid "Responsable"
+msgstr "Responsable"
+
+msgid "Colaborador"
+msgstr "Colaborador"
+
+msgid "Pequeño"
+msgstr "Pequeño"
+
+msgid "Mediano"
+msgstr "Mediano"
+
+msgid "Grande"
+msgstr "Grande"
+
+msgid "Disponible"
+msgstr "Disponible"
+
+msgid "En proceso"
+msgstr "En proceso"
+
+msgid "Adoptada"
+msgstr "Adoptada"
+
+msgid "Devuelta"
+msgstr "Devuelta"
+
+msgid "Texto"
+msgstr "Texto"
+
+msgid "Número"
+msgstr "Número"
+
+msgid "Sí/No"
+msgstr "Sí/No"
+
+msgid "Opción"
+msgstr "Opción"
+
+msgid "Aprobada"
+msgstr "Aprobada"
+
+msgid "Rechazada"
+msgstr "Rechazada"
+
+msgid "Cancelada"
+msgstr "Cancelada"
+
+msgid "Finalizada"
+msgstr "Finalizada"
+
+msgid "Excelente"
+msgstr "Excelente"
+
+msgid "Bueno"
+msgstr "Bueno"
+
+msgid "Regular"
+msgstr "Regular"
+
+msgid "Preocupante"
+msgstr "Preocupante"
+
+msgid "Consulta"
+msgstr "Consulta"
+
+msgid "Vacunación"
+msgstr "Vacunación"
+
+msgid "Desparasitación"
+msgstr "Desparasitación"
+
+msgid "Cirugía"
+msgstr "Cirugía"
+
+msgid "Control"
+msgstr "Control"
+
+msgid "Otro"
+msgstr "Otro"
+
+msgid "Control veterinario"
+msgstr "Control veterinario"
+
+msgid "Notificado"
+msgstr "Notificado"
+
+msgid "Cumplido"
+msgstr "Cumplido"
+
+msgid "Vencido"
+msgstr "Vencido"
+
+msgid "Nueva solicitud"
+msgstr "Nueva solicitud"
+
+msgid "Aprobación"
+msgstr "Aprobación"
+
+msgid "Rechazo"
+msgstr "Rechazo"
+
+msgid "Sistema"
+msgstr "Sistema"
+
+msgid "Perro"
+msgstr "Perro"
+
+msgid "Gato"
+msgstr "Gato"
+
+msgid "Mestizo"
+msgstr "Mestizo"
+
+msgid "Pastor Alemán"
+msgstr "Pastor Alemán"
+
+msgid "Pitbull"
+msgstr "Pitbull"
+
+msgid "Siamés"
+msgstr "Siamés"
+
+msgid "Persa"
+msgstr "Persa"
+
+msgid "Antirrábica"
+msgstr "Antirrábica"
+
+msgid "Protege contra la rabia"
+msgstr "Protege contra la rabia"
+
+msgid "Polivalente canina"
+msgstr "Polivalente canina"
+
+msgid "Moquillo, parvovirus, hepatitis y leptospirosis"
+msgstr "Moquillo, parvovirus, hepatitis y leptospirosis"
+
+msgid "Tos de las perreras"
+msgstr "Tos de las perreras"
+
+msgid "Triple felina"
+msgstr "Triple felina"
+
+msgid "Panleucopenia, calicivirus y rinotraqueítis"
+msgstr "Panleucopenia, calicivirus y rinotraqueítis"
+
+msgid "Leucemia felina"
+msgstr "Leucemia felina"
+
+msgid "Protege contra el virus de la leucemia felina"
+msgstr "Protege contra el virus de la leucemia felina"
+
+msgid "¿Por qué quieres adoptar una mascota?"
+msgstr "¿Por qué quieres adoptar una mascota?"
+
+msgid "¿Has tenido mascotas antes?"
+msgstr "¿Has tenido mascotas antes?"
+
+msgid "¿Cuántas personas viven en tu hogar?"
+msgstr "¿Cuántas personas viven en tu hogar?"
+
+msgid "¿Tu vivienda es casa o apartamento, y es propia o arrendada?"
+msgstr "¿Tu vivienda es casa o apartamento, y es propia o arrendada?"
+
+msgid "¿Tienes patio o un espacio cerrado para la mascota?"
+msgstr "¿Tienes patio o un espacio cerrado para la mascota?"
+
+msgid "¿Todas las personas de tu hogar están de acuerdo con la adopción?"
+msgstr "¿Todas las personas de tu hogar están de acuerdo con la adopción?"
+
+msgid "¿Cuántas horas al día estaría sola la mascota?"
+msgstr "¿Cuántas horas al día estaría sola la mascota?"
+
+msgid "¿Tienes otras mascotas actualmente? Si es así, ¿cuáles?"
+msgstr "¿Tienes otras mascotas actualmente? Si es así, ¿cuáles?"
+
+msgid "¿Quién se haría cargo de los gastos veterinarios?"
+msgstr "¿Quién se haría cargo de los gastos veterinarios?"
+
+msgid ""
+"¿Aceptas recibir visitas o llamadas de seguimiento después de la adopción?"
+msgstr ""
+"¿Aceptas recibir visitas o llamadas de seguimiento después de la adopción?"
+
+msgid "Ya existe una cuenta registrada con este correo."
+msgstr "Ya existe una cuenta registrada con este correo."
+
+msgid "Este campo no se puede modificar desde el perfil."
+msgstr "Este campo no se puede modificar desde el perfil."
+
+msgid "Este campo no se puede modificar directamente."
+msgstr "Este campo no se puede modificar directamente."
+
+msgid "No se puede trasladar una mascota a otro refugio."
+msgstr "No se puede trasladar una mascota a otro refugio."
+
+msgid "La fecha de nacimiento aproximada no puede estar en el futuro."
+msgstr "La fecha de nacimiento aproximada no puede estar en el futuro."
+
+msgid "No se pueden publicar mascotas en un refugio rechazado."
+msgstr "No se pueden publicar mascotas en un refugio rechazado."
+
+msgid "No puedes responder dos veces la misma pregunta."
+msgstr "No puedes responder dos veces la misma pregunta."
+
+msgid "Debes responder todas las preguntas obligatorias del formulario."
+msgstr "Debes responder todas las preguntas obligatorias del formulario."
+
+msgid "El integrante debe tener rol de refugio."
+msgstr "El integrante debe tener rol de refugio."
+
+msgid "Solo se puede asociar una vacuna a un registro de tipo vacunación."
+msgstr "Solo se puede asociar una vacuna a un registro de tipo vacunación."
+
+msgid "Solo los recordatorios de vacuna pueden tener una vacuna asociada."
+msgstr "Solo los recordatorios de vacuna pueden tener una vacuna asociada."
+
+msgid "La mascota seleccionada no pertenece al refugio indicado."
+msgstr "La mascota seleccionada no pertenece al refugio indicado."
+
+msgid "Solo se puede iniciar una conversación con un refugio verificado."
+msgstr "Solo se puede iniciar una conversación con un refugio verificado."
+
+msgid "El refugio debe tener un integrante para recibir mensajes."
+msgstr "El refugio debe tener un integrante para recibir mensajes."
+
+msgid "El refugio debe tener un integrante para recibir notificaciones."
+msgstr "El refugio debe tener un integrante para recibir notificaciones."
+
+msgid "Solo un adoptante puede enviar solicitudes."
+msgstr "Solo un adoptante puede enviar solicitudes."
+
+msgid "Solo puedes editar tus propias solicitudes."
+msgstr "Solo puedes editar tus propias solicitudes."
+
+msgid "Solo puedes editar solicitudes pendientes."
+msgstr "Solo puedes editar solicitudes pendientes."
+
+msgid "Solo el refugio responsable puede registrar seguimientos."
+msgstr "Solo el refugio responsable puede registrar seguimientos."
+
+msgid "No se puede registrar seguimiento a una adopción devuelta."
+msgstr "No se puede registrar seguimiento a una adopción devuelta."
+
+msgid "Solo el refugio responsable puede editar seguimientos."
+msgstr "Solo el refugio responsable puede editar seguimientos."
+
+msgid "Solo una cuenta veterinaria puede crear este perfil."
+msgstr "Solo una cuenta veterinaria puede crear este perfil."
+
+msgid "Solo puedes editar tu propio perfil veterinario."
+msgstr "Solo puedes editar tu propio perfil veterinario."
+
+msgid "El perfil veterinario no se puede eliminar desde la API."
+msgstr "El perfil veterinario no se puede eliminar desde la API."
+
+msgid "No tienes permisos para gestionar el historial de esta mascota."
+msgstr "No tienes permisos para gestionar el historial de esta mascota."
+
+msgid "Registra primero tu perfil veterinario aliado."
+msgstr "Registra primero tu perfil veterinario aliado."
+
+msgid "No tienes permisos para gestionar este recordatorio."
+msgstr "No tienes permisos para gestionar este recordatorio."
+
+msgid "Los recordatorios requieren una adopción activa."
+msgstr "Los recordatorios requieren una adopción activa."
+
+msgid "No se puede cambiar la adopción del recordatorio."
+msgstr "No se puede cambiar la adopción del recordatorio."
+
+msgid "Solo un adoptante puede iniciar una conversación."
+msgstr "Solo un adoptante puede iniciar una conversación."
+
+msgid "Los participantes de una conversación no se pueden cambiar."
+msgstr "Los participantes de una conversación no se pueden cambiar."
+
+msgid "No puedes eliminar esta conversación."
+msgstr "No puedes eliminar esta conversación."
+
+msgid "No puedes enviar mensajes en esta conversación."
+msgstr "No puedes enviar mensajes en esta conversación."
+
+msgid "Solo quien envió el mensaje puede editarlo."
+msgstr "Solo quien envió el mensaje puede editarlo."
+
+msgid "No puedes editar un mensaje que ya fue leído."
+msgstr "No puedes editar un mensaje que ya fue leído."
+
+msgid "Solo quien envió el mensaje puede eliminarlo."
+msgstr "Solo quien envió el mensaje puede eliminarlo."
+
+msgid "No puedes marcar como leído tu propio mensaje."
+msgstr "No puedes marcar como leído tu propio mensaje."
+
+msgid "Solo puedes marcar una notificación como leída o no leída."
+msgstr "Solo puedes marcar una notificación como leída o no leída."
+
+msgid "Solo integrantes del refugio pueden publicar mascotas."
+msgstr "Solo integrantes del refugio pueden publicar mascotas."
+
+msgid "Solo integrantes del refugio pueden editar esta mascota."
+msgstr "Solo integrantes del refugio pueden editar esta mascota."
+
+msgid "No puedes trasladar la mascota a un refugio ajeno."
+msgstr "No puedes trasladar la mascota a un refugio ajeno."
+
+msgid "Solo integrantes del refugio pueden eliminar esta mascota."
+msgstr "Solo integrantes del refugio pueden eliminar esta mascota."
+
+msgid "Solo integrantes del refugio pueden volver a publicar la mascota."
+msgstr "Solo integrantes del refugio pueden volver a publicar la mascota."
+
+msgid "Solo se puede volver a publicar una mascota devuelta."
+msgstr "Solo se puede volver a publicar una mascota devuelta."
+
+msgid "Solo integrantes del refugio pueden subir fotos."
+msgstr "Solo integrantes del refugio pueden subir fotos."
+
+msgid "Solo integrantes del refugio pueden eliminar fotos."
+msgstr "Solo integrantes del refugio pueden eliminar fotos."
+
+msgid "Solo un usuario de refugio puede registrar un refugio."
+msgstr "Solo un usuario de refugio puede registrar un refugio."
+
+msgid "No tienes permisos para editar este refugio."
+msgstr "No tienes permisos para editar este refugio."
+
+msgid "No tienes permisos para eliminar este refugio."
+msgstr "No tienes permisos para eliminar este refugio."
+
+msgid "Solo un administrador puede verificar refugios."
+msgstr "Solo un administrador puede verificar refugios."
+
+msgid "Este campo debe ser verdadero o falso."
+msgstr "Este campo debe ser verdadero o falso."
+
+msgid "Solo el responsable puede agregar integrantes."
+msgstr "Solo el responsable puede agregar integrantes."
+
+msgid "No tienes permisos para ver los integrantes."
+msgstr "No tienes permisos para ver los integrantes."
+
+msgid "Solo el responsable puede actualizar integrantes."
+msgstr "Solo el responsable puede actualizar integrantes."
+
+msgid "Solo el responsable puede eliminar integrantes."
+msgstr "Solo el responsable puede eliminar integrantes."
+
+msgid "Solo puedes responder a la notificación como leída o no leída."
+msgstr "Solo puedes responder a la notificación como leída o no leída."
+
+msgid "Solo un adoptante puede realizar esta acción."
+msgstr "Solo un adoptante puede realizar esta acción."
+
+msgid "Solo un administrador puede realizar esta acción."
+msgstr "Solo un administrador puede realizar esta acción."
+
+msgid "No tienes permisos para gestionar este refugio."
+msgstr "No tienes permisos para gestionar este refugio."
+
+msgid "No tienes permisos para gestionar esta mascota."
+msgstr "No tienes permisos para gestionar esta mascota."
+
+msgid "Solo el refugio responsable puede decidir esta solicitud."
+msgstr "Solo el refugio responsable puede decidir esta solicitud."
+
+msgid "Esta mascota no está disponible para nuevas solicitudes."
+msgstr "Esta mascota no está disponible para nuevas solicitudes."
+
+msgid "Ya tienes una solicitud pendiente para esta mascota."
+msgstr "Ya tienes una solicitud pendiente para esta mascota."
+
+msgid "Solo se pueden decidir solicitudes pendientes."
+msgstr "Solo se pueden decidir solicitudes pendientes."
+
+msgid "La mascota ya no está disponible para adopción."
+msgstr "La mascota ya no está disponible para adopción."
+
+msgid "La mascota fue asignada a otra solicitud."
+msgstr "La mascota fue asignada a otra solicitud."
+
+msgid "Solo puedes cancelar tus propias solicitudes."
+msgstr "Solo puedes cancelar tus propias solicitudes."
+
+msgid "Solo puedes cancelar solicitudes pendientes."
+msgstr "Solo puedes cancelar solicitudes pendientes."
+
+msgid "Solo el refugio responsable puede registrar la devolución."
+msgstr "Solo el refugio responsable puede registrar la devolución."
+
+msgid "Esta adopción ya no está activa."
+msgstr "Esta adopción ya no está activa."
+
+msgid "Debes indicar el motivo de la devolución."
+msgstr "Debes indicar el motivo de la devolución."
+
+msgid "La fecha de devolución no puede ser anterior a la adopción."
+msgstr "La fecha de devolución no puede ser anterior a la adopción."
+
+msgid "%(label)s debe ser un número entero no negativo."
+msgstr "%(label)s debe ser un número entero no negativo."
+
+msgid "La edad mínima"
+msgstr "La edad mínima"
+
+msgid "La edad máxima"
+msgstr "La edad máxima"
+
+msgid "El correo electrónico es obligatorio."
+msgstr "El correo electrónico es obligatorio."
+
+msgid "Un superusuario debe tener el rol administrador."
+msgstr "Un superusuario debe tener el rol administrador."
+
+msgid "Regla de integridad incumplida."
+msgstr "Regla de integridad incumplida."
+
+msgid "La operación fue rechazada por una regla de integridad: %(detail)s"
+msgstr "La operación fue rechazada por una regla de integridad: %(detail)s"
+
+msgid "El verificador del refugio debe tener rol administrador"
+msgstr "El verificador del refugio debe tener rol administrador"
+
+msgid "El miembro del refugio debe tener rol refugio"
+msgstr "El miembro del refugio debe tener rol refugio"
+
+msgid "El veterinario debe tener rol veterinario"
+msgstr "El veterinario debe tener rol veterinario"
+
+msgid "Quien solicita una adopción debe tener rol adoptante"
+msgstr "Quien solicita una adopción debe tener rol adoptante"
+
+msgid "La solicitud ya tiene una adopción y debe permanecer aprobada"
+msgstr "La solicitud ya tiene una adopción y debe permanecer aprobada"
+
+msgid "El adoptante de la conversación debe tener rol adoptante"
+msgstr "El adoptante de la conversación debe tener rol adoptante"
+
+msgid "Solo se puede crear una adopción desde una solicitud aprobada"
+msgstr "Solo se puede crear una adopción desde una solicitud aprobada"
+
+msgid "No se puede cambiar la solicitud de una adopción existente"
+msgstr "No se puede cambiar la solicitud de una adopción existente"
+
+msgid "No se puede cambiar el rol: el usuario es miembro de un refugio"
+msgstr "No se puede cambiar el rol: el usuario es miembro de un refugio"
+
+msgid "No se puede cambiar el rol: el usuario tiene perfil de veterinario"
+msgstr "No se puede cambiar el rol: el usuario tiene perfil de veterinario"
+
+msgid "No se puede cambiar el rol: el usuario verificó refugios"
+msgstr "No se puede cambiar el rol: el usuario verificó refugios"
+
+msgid ""
+"No se puede cambiar el rol: el usuario tiene solicitudes o conversaciones "
+"como adoptante"
+msgstr ""
+"No se puede cambiar el rol: el usuario tiene solicitudes o conversaciones "
+"como adoptante"
+
+msgid "Nueva solicitud de adopción para %(pet)s."
+msgstr "Nueva solicitud de adopción para %(pet)s."
+
+msgid "Nueva solicitud de adopción."
+msgstr "Nueva solicitud de adopción."
+
+msgid "Tu solicitud de adopción fue aprobada."
+msgstr "Tu solicitud de adopción fue aprobada."
+
+msgid "Tu solicitud de adopción fue rechazada."
+msgstr "Tu solicitud de adopción fue rechazada."
+
+msgid "Recordatorio: %(type)s para %(pet)s el %(date)s."
+msgstr "Recordatorio: %(type)s para %(pet)s el %(date)s."
+
+msgid "Tienes un recordatorio pendiente."
+msgstr "Tienes un recordatorio pendiente."
+
+msgid "Nuevo mensaje en una conversación sobre %(shelter)s."
+msgstr "Nuevo mensaje en una conversación sobre %(shelter)s."
+
+msgid "Tienes un mensaje nuevo."
+msgstr "Tienes un mensaje nuevo."
+
+msgid "Tu solicitud cambió de estado."
+msgstr "Tu solicitud cambió de estado."
+
+msgid "Una solicitud de adopción fue cancelada."
+msgstr "Una solicitud de adopción fue cancelada."
+
+msgid "Texto aún no traducido"
+msgstr "Texto aún no traducido"
