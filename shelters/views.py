@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions, status, viewsets
@@ -35,6 +35,11 @@ class ShelterViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not user.is_authenticated:
             return queryset.filter(verification_status=Shelter.VerificationStatus.VERIFIED)
+        memberships = ShelterMember.objects.filter(
+            shelter_id=OuterRef("pk"),
+            user_id=user.pk,
+        )
+        queryset = queryset.annotate(_user_is_member=Exists(memberships))
         if user.role.name == Role.Name.ADMIN:
             return queryset
         return queryset.filter(
@@ -55,7 +60,7 @@ class ShelterViewSet(viewsets.ModelViewSet):
         for shelter in shelters:
             serializer_class = (
                 ShelterSerializer
-                if user_can_manage_shelter(request.user, shelter)
+                if self._can_manage_shelter(request.user, shelter)
                 else PublicShelterSerializer
             )
             data.append(
@@ -67,11 +72,21 @@ class ShelterViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(data)
         return Response(data)
 
+    @staticmethod
+    def _can_manage_shelter(user, shelter):
+        return bool(
+            user.is_authenticated
+            and (
+                user.role.name == Role.Name.ADMIN
+                or getattr(shelter, "_user_is_member", False)
+            )
+        )
+
     def retrieve(self, request, *args, **kwargs):
         shelter = self.get_object()
         serializer_class = (
             ShelterSerializer
-            if user_can_manage_shelter(request.user, shelter)
+            if self._can_manage_shelter(request.user, shelter)
             else PublicShelterSerializer
         )
         serializer = serializer_class(

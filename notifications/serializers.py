@@ -1,6 +1,4 @@
 from django.utils.translation import gettext as _
-from rest_framework import serializers
-
 from myproject.i18n import LocalizedModelSerializer
 from .models import Notification
 

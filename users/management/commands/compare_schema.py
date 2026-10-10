@@ -27,6 +27,13 @@ class Command(BaseCommand):
         "usando una base temporal aislada."
     )
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Reemplaza la base temporal adopkia_cmp si ya existe.",
+        )
+
     def handle(self, *args, **options):
         database = settings.DATABASES["default"]
         if database["ENGINE"] != "django.db.backends.mysql":
@@ -39,11 +46,25 @@ class Command(BaseCommand):
                 "adopkia, test_adopkia y adopkia_cmp."
             )
         connection = self._connect(database)
+        schema_created = False
         try:
+            if self._database_exists(connection, schema_name):
+                if not options.get("force"):
+                    raise CommandError(
+                        "La base temporal adopkia_cmp ya existe. Revísala y elimínala "
+                        "manualmente, o vuelve a ejecutar con --force para reemplazarla."
+                    )
+                self._drop_schema(connection, schema_name)
+
             statements = self._read_script(schema_name)
             with connection.cursor() as cursor:
                 for statement in statements:
                     cursor.execute(statement)
+                    if re.match(
+                        r"(?i)^CREATE\s+DATABASE\s+IF\s+NOT\s+EXISTS\s+`?adopkia_cmp`?\s*$",
+                        statement,
+                    ):
+                        schema_created = True
 
             expected = self._inspect_schema(connection, schema_name)
             actual = self._inspect_schema(connection, database["NAME"])
@@ -63,10 +84,23 @@ class Command(BaseCommand):
             )
         finally:
             try:
-                with connection.cursor() as cursor:
-                    cursor.execute(f"DROP DATABASE IF EXISTS `{schema_name}`")
+                if schema_created:
+                    self._drop_schema(connection, schema_name)
             finally:
                 connection.close()
+
+    def _database_exists(self, connection, schema_name):
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA "
+                "WHERE SCHEMA_NAME=%s",
+                (schema_name,),
+            )
+            return cursor.fetchone() is not None
+
+    def _drop_schema(self, connection, schema_name):
+        with connection.cursor() as cursor:
+            cursor.execute(f"DROP DATABASE `{schema_name}`")
 
     def _connect(self, database):
         return pymysql.connect(
@@ -84,13 +118,8 @@ class Command(BaseCommand):
             raise CommandError(f"No se encontró el SQL de referencia: {script_path}")
         source = script_path.read_text(encoding="utf-8")
         source = re.sub(
-            r"(?im)^DROP\s+DATABASE\s+IF\s+EXISTS\s+adopkia\s*;",
-            f"DROP DATABASE IF EXISTS `{temporary_schema}`;",
-            source,
-        )
-        source = re.sub(
-            r"(?im)^CREATE\s+DATABASE\s+adopkia\b",
-            f"CREATE DATABASE `{temporary_schema}`",
+            r"(?im)^CREATE\s+DATABASE(?:\s+IF\s+NOT\s+EXISTS)?\s+adopkia\b",
+            f"CREATE DATABASE IF NOT EXISTS `{temporary_schema}`",
             source,
         )
         source = re.sub(
@@ -107,7 +136,8 @@ class Command(BaseCommand):
         if any(
             re.match(
                 r"(?i)^(?:DROP\s+DATABASE\s+(?:IF\s+EXISTS\s+)?|"
-                r"CREATE\s+DATABASE\s+|USE\s+)`?adopkia`?(?:\s|;|$)",
+                r"CREATE\s+DATABASE\s+(?:IF\s+NOT\s+EXISTS\s+)?|USE\s+)"
+                r"`?adopkia`?(?:\s|;|$)",
                 statement,
             )
             for statement in statements

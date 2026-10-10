@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -11,9 +12,12 @@ load_dotenv(BASE_DIR / ".env")
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in {"1", "true", "yes"}
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if not DEBUG:
-        raise ImproperlyConfigured("Define DJANGO_SECRET_KEY en el entorno o en el archivo .env.")
-    SECRET_KEY = "django-insecure-solo-desarrollo-local"
+    if "test" in sys.argv[1:] or "pytest" in sys.modules:
+        SECRET_KEY = "test-only-insecure-secret-key"
+    else:
+        raise ImproperlyConfigured(
+            "Falta DJANGO_SECRET_KEY. Copia .env.example a .env y define una clave local."
+        )
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -79,6 +83,11 @@ if DB_ENGINE == "mysql":
     import pymysql
 
     pymysql.install_as_MySQLdb()
+    mysql_password = os.getenv("DB_PASSWORD", "")
+    if not mysql_password:
+        raise ImproperlyConfigured(
+            "Falta DB_PASSWORD para DB_ENGINE=mysql. Define la contraseña de MySQL en .env."
+        )
     mysql_database_name = os.getenv("DB_NAME", "adopkia")
     if mysql_database_name != "adopkia":
         raise ImproperlyConfigured(
@@ -90,7 +99,7 @@ if DB_ENGINE == "mysql":
             "ENGINE": "django.db.backends.mysql",
             "NAME": mysql_database_name,
             "USER": os.getenv("DB_USER", "adopkia"),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "PASSWORD": mysql_password,
             "HOST": os.getenv("DB_HOST", "127.0.0.1"),
             "PORT": os.getenv("DB_PORT", "3306"),
             "OPTIONS": {"charset": "utf8mb4"},

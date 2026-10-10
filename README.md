@@ -1,99 +1,120 @@
 # Adopkia — Backend
 
-API REST de adopción responsable y seguimiento post-adopción. El DDL de [database/adopkia_v3.sql](./database/adopkia_v3.sql) es la única fuente del esquema físico: las tablas y columnas se guardan con los nombres españoles definidos allí; nombres de modelos, atributos Python y rutas API se mantienen en inglés. Mensajes y documentación visibles para el usuario están en español.
+API REST de adopción responsable y seguimiento post-adopción. Las migraciones de Django son el camino oficial para crear y actualizar el esquema; [database/adopkia_v3.sql](./database/adopkia_v3.sql) es la referencia del modelo físico para el DER, MySQL Workbench y `compare_schema`. Las tablas y columnas usan los nombres españoles del SQL; los modelos, atributos Python y rutas API se mantienen en inglés.
 
 ## Estructura del proyecto
 
-- `manage.py`, `requirements.txt`, `README.md`, `.env.example` y `pytest.ini` están en la raíz.
-- `myproject/` contiene la configuración, URLs, middleware y las plantillas Django en `myproject/templates/`.
+- `manage.py`, `requirements.txt`, `requirements-dev.txt`, `requirements.lock.txt`, `.env.example` y `pytest.ini` están en la raíz.
+- `myproject/` contiene la configuración, URLs, middleware, autenticación y renderers.
 - `users/`, `shelters/`, `pets/`, `adoptions/`, `medical/`, `messaging/` y `notifications/` contienen las apps y sus migraciones.
 - `locale/` contiene los catálogos español e inglés (`.po` y `.mo`).
 - `database/` contiene el DDL de referencia y sus casos SQL de prueba.
 - `docs/` contiene los informes y documentos del proyecto.
 - `_no_subir/` se reserva para datos locales y artefactos excluidos de Git.
 
-Las plantillas se conservan en `myproject/templates/`: `settings.py` ya apunta a esa ubicación y moverlas requeriría cambiar configuración, fuera del alcance de la reorganización.
-
 ## Requisitos e instalación
 
-- Python 3.12 o una versión soportada por Django 5.2.
+- Python 3.12.10 fue la versión usada para la prueba de instalación limpia.
+- Django 5.2 y sus dependencias requieren una versión de Python compatible; se recomienda usar Python 3.12.
 - MySQL 8.0.16+ para validar el esquema completo, incluidos `CHECK`, columnas generadas, rutinas, triggers y vistas.
-- SQLite se usa para desarrollo y pruebas que no dependen de objetos específicos de MySQL.
 
-En PowerShell, desde esta carpeta:
+El proyecto y los valores de `.env.example` son para desarrollo local, no una configuración lista para producción. En producción usa `DJANGO_DEBUG=false`, una `DJANGO_SECRET_KEY` aleatoria y secreta, `DJANGO_ALLOWED_HOSTS` limitado a los dominios reales, `DJANGO_CORS_ALLOWED_ORIGINS` limitado a los orígenes autorizados y credenciales de base de datos protegidas. Configura HTTPS, HSTS y cookies seguras en el despliegue/servidor; esos ajustes no se habilitan en este proyecto.
+
+Para el desarrollo se recomienda instalar el conjunto de dependencias de desarrollo con el lock probado:
+
+```powershell
+python -m pip install -r requirements-dev.txt -c requirements.lock.txt
+```
+
+`requirements.txt` contiene solo dependencias de ejecución. Para instalar únicamente la aplicación:
+
+```powershell
+python -m pip install -r requirements.txt -c requirements.lock.txt
+```
+
+### Cliente MySQL
+
+- **Windows:** instala MySQL Server o MySQL Shell desde MySQL Installer oficial; incluye `mysql.exe` con MySQL Server. Añade la carpeta `bin` de MySQL al `PATH` si PowerShell no encuentra `mysql`.
+- **Ubuntu/Debian:** `sudo apt update && sudo apt install mysql-client`.
+- **Fedora/RHEL:** `sudo dnf install mysql`.
+- **macOS con Homebrew:** `brew install mysql-client`; añade `$(brew --prefix mysql-client)/bin` al `PATH`.
+
+PyMySQL es el driver Python y no necesita compilar `mysqlclient`. El cliente `mysql` solo es necesario para ejecutar comandos SQL desde la terminal.
+
+### Instalación limpia oficial
+
+El único flujo oficial de instalación del esquema es **migraciones Django**, seguido de los datos base. No ejecutes `database/adopkia_v3.sql` sobre esa misma base: es un DDL de referencia y contiene comentarios/definiciones del esquema que pueden no ser idempotentes frente a las migraciones. No uses `migrate --fake-initial` para combinar los dos caminos.
+
+#### PowerShell (Windows)
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt -c requirements.lock.txt
 Copy-Item .env.example .env
 ```
 
-Para MySQL configura en `.env` `DB_ENGINE=mysql`, `DB_NAME=adopkia`, `DB_USER=adopkia_dev`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`. La configuración restringe los nombres a `adopkia` para la app, `test_adopkia` para tests y `adopkia_cmp` para `compare_schema`. El usuario de aplicación necesita los permisos de DDL/DML sobre `adopkia`; para pruebas necesita crear y eliminar solo `test_adopkia`; para comparar necesita crear/eliminar `adopkia_cmp` y crear tablas, rutinas, triggers y vistas dentro de esa base. No se usa otro usuario para elevar permisos: si un permiso falta, el comando debe reportar el error MySQL de esa operación. No apuntes una migración inicial a una base cuyos datos quieras conservar. No almacenes credenciales reales en `.env.example`.
-
-Para que `runserver` sirva los estáticos del admin durante el desarrollo, define `DJANGO_DEBUG=true` en `.env` y reinicia el servidor. En producción, mantén `DEBUG` desactivado y sirve los estáticos mediante el servidor/CDN configurado para ese entorno.
+Edita `.env` localmente, sin compartirlo: define `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=true`, `DJANGO_ALLOWED_HOSTS`, `DB_ENGINE=mysql`, `DB_NAME=adopkia`, `DB_USER=adopkia_dev`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`. La aplicación falla explícitamente si falta `DJANGO_SECRET_KEY` o, para MySQL, `DB_PASSWORD`.
 
 ```powershell
+mysql -u adopkia_dev -p -e "CREATE DATABASE IF NOT EXISTS adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 python manage.py migrate
 python manage.py seed_data
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### Ejecutar desde cero
+#### Linux/macOS (Bash)
 
-1. Instala Python 3.12 o una versión compatible con Django 5.2 y MySQL 8.0.16+.
-2. Desde la raíz del proyecto, crea y activa el entorno e instala las dependencias:
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt -c requirements.lock.txt
+cp .env.example .env
+```
 
-   ```powershell
-   py -3.12 -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   python -m pip install -r requirements.txt
-   ```
+Edita `.env` localmente con las mismas variables que se indican arriba. Continúa con los mismos comandos de base y Django:
 
-3. Copia `.env.example` a `.env` y configura las variables para el entorno local; no compartas el archivo `.env`.
-4. Crea la base `adopkia` y carga el SQL de referencia con el usuario local autorizado:
+```bash
+mysql -u adopkia_dev -p -e "CREATE DATABASE IF NOT EXISTS adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+python manage.py migrate
+python manage.py seed_data
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-   ```powershell
-   mysql -u adopkia_dev -p -e "CREATE DATABASE adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-   cmd /c "mysql -u adopkia_dev -p adopkia < database\adopkia_v3.sql"
-   ```
+`createsuperuser` solicita de forma interactiva el correo, nombre y contraseña; el manager asigna el rol administrador. `seed_data` carga idempotentemente los cuatro roles y catálogos base (2 especies, 13 razas, 6 vacunas y 10 preguntas).
 
-5. Aplica migraciones y ejecuta las pruebas:
+Para ejecutar pruebas, activa el entorno virtual y usa:
 
-   ```powershell
-   python manage.py migrate --fake-initial
-   python manage.py test --noinput
-   python -m pytest --create-db
-   python manage.py compare_schema
-   ```
+```powershell
+python -W error::DeprecationWarning manage.py test --noinput
+python -m pytest --create-db -W error::DeprecationWarning
+```
 
-6. Inicia el servidor local:
+En Linux/macOS los mismos comandos se ejecutan en la terminal. Los tests MySQL pueden crear y eliminar únicamente la base de pruebas `test_adopkia`; asegúrate de no guardar datos importantes en ella.
 
-   ```powershell
-   python manage.py runserver
-   ```
+`compare_schema` lee el DDL de referencia, lo ejecuta sobre una base temporal `adopkia_cmp`, compara tablas, columnas, tipos, nulabilidad, claves, checks, funciones, triggers y vistas con `adopkia`, y elimina solo la base temporal que creó. Si `adopkia_cmp` ya existe, el comando se detiene; `--force` la reemplaza de forma explícita. El usuario MySQL debe poder crear/eliminar `adopkia_cmp` y definir tablas, funciones, triggers y vistas.
 
-`seed_data` inserta de forma idempotente los cuatro roles SQL y los catálogos exactos: 2 especies, 13 razas, 6 vacunas y 10 preguntas. No crea cuentas de demostración ni perfiles que no existan en el SQL.
+**Advertencias de SQL:** `database/adopkia_v3.sql` contiene una sentencia `DROP DATABASE adopkia` comentada; ejecutarla manualmente borra todos los datos y solo debe hacerse para reinstalar deliberadamente desde cero. `database/adopkia_v3_pruebas.sql` inserta datos de prueba: úsalo solo en una base nueva o temporal, nunca en `adopkia` con datos reales.
 
 ## Migraciones y verificación
 
 Se regeneraron las migraciones de las apps `users`, `shelters`, `pets`, `adoptions`, `medical`, `messaging` y `notifications`; se conservaron los `migrations/__init__.py`. `makemigrations --check --dry-run` confirmó que no hay cambios de modelos pendientes.
 
-La migración `adoptions.0002_mysql_objects` instala en MySQL únicamente las dos funciones (`fn_usuario_tiene_rol`, `fn_solicitud_aprobada`), los trece triggers y las dos vistas del SQL. Incluye SQL reverso; con SQLite es una operación vacía.
+La migración `adoptions.0002_mysql_objects` instala en MySQL las dos funciones (`fn_usuario_tiene_rol`, `fn_solicitud_aprobada`), los trece triggers y las dos vistas. Incluye SQL reverso; con SQLite es una operación vacía.
 
 ```powershell
-python manage.py makemigrations --check --dry-run
+python manage.py makemigrations --check
 python manage.py migrate
 python manage.py compare_schema
-python manage.py test
-python -m pytest
+python manage.py test --noinput
+python -m pytest --create-db
 ```
 
-`compare_schema` crea una copia temporal del script con `DROP/CREATE/USE adopkia` reescrito a `adopkia_cmp`, nunca ejecuta ese DDL contra `adopkia`, compara el esquema temporal con la base Django y elimina `adopkia_cmp` al terminar. Compara tablas, columnas, tipos, nulabilidad, PK, UNIQUE, FK/acciones ON DELETE, CHECK, funciones, triggers y vistas. Un resultado con diferencias lista cada discrepancia y sale con error.
+`compare_schema` reescribe el DDL de referencia para crear una base temporal `adopkia_cmp`, nunca ejecuta una operación de borrado sobre `adopkia`, compara el esquema temporal con la base Django y elimina únicamente `adopkia_cmp` si lo creó en esa ejecución. Si `adopkia_cmp` existe, aborta; `--force` reemplaza explícitamente esa base temporal. Compara tablas, columnas, tipos, nulabilidad, PK, UNIQUE, FK/acciones ON DELETE, CHECK, funciones, triggers y vistas. Un resultado con diferencias lista cada discrepancia y termina con error.
 
-Los tests `adoptions.test_mysql_v3_cases` reproducen los casos T01–T25 de `database/adopkia_v3_pruebas.sql`; se omiten deliberadamente en SQLite. Para ejecutar los tests MySQL, configura `DB_ENGINE=mysql` y una base limpia con permiso para crear/eliminar la base de test.
-
-**Validación actual (2026-10-09):** `manage.py check`, `makemigrations --check --dry-run` y `manage.py spectacular --validate` terminaron sin errores; Django y pytest aprobaron 53 tests cada uno (pytest: 226 subtests). `compare_schema` terminó sin diferencias. En HTTP, `/` y `/api/v1/` devolvieron el mismo índice JSON con HTTP 200; la raíz también presentó la Api Root estándar de DRF con `Log in`. `/api/docs/`, `/api/schema/` y `/api-auth/login/` devolvieron 200; `/admin/` y `/en/admin/` redirigieron a sus rutas de login; registro e inicio JWT mostraron formularios HTML con GET (405, método no permitido); `/api/v1/species/?lang=en` incluyó `Dog`. Las comprobaciones usaron MySQL `adopkia`, `test_adopkia` y `adopkia_cmp` con `adopkia_dev`.
+Los tests `adoptions.test_mysql_v3_cases` ejercitan casos de integridad MySQL; se omiten en SQLite. Para ejecutar esas pruebas, configura `DB_ENGINE=mysql` y concede al usuario de desarrollo permiso de crear/eliminar la base de pruebas `test_adopkia`.
 
 **Índice de la API por rol:** `/` y `/api/v1/` sirven el índice de DRF directamente. El índice mantiene sus recursos y permisos existentes; el anónimo ve solo recursos públicos y recibe un enlace al login de sesión de DRF, mientras que una sesión autenticada ve los recursos de su rol.
 
@@ -137,7 +158,7 @@ Las rutas siguientes se encuentran bajo `/api/v1/`, salvo `/api/schema/` y `/api
 
 | Ruta | Métodos | Vista | Permiso / alcance |
 |---|---|---|---|
-| `/` | `GET` | `TemplateView` | Público; página de login y navegación interna |
+| `/` | `GET` | `ApiIndexView` | Público (`AllowAny`); Api Root estándar de DRF, sin redirección |
 | `/api/v1/` | `GET` | `ApiIndexView` | Público (`AllowAny`); índice de rutas por rol y mensaje de acceso para anónimos |
 | `/auth/register/` | `POST` | `RegisterView` | Público; el serializer no permite asignar roles privilegiados |
 | `/auth/login/` | `POST` | `TokenObtainPairView` | Público; autentica cuentas activas |

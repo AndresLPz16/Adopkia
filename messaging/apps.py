@@ -5,4 +5,4 @@ class MessagingConfig(AppConfig):
     name = 'messaging'
 
     def ready(self):
-        from . import signals
+        from . import signals  # noqa: F401  # Register model signal receivers.

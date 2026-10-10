@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from adoptions.models import Adoption
 from myproject.permissions import user_can_manage_shelter
-from users.models import Role, User
+from users.models import Role
 
 from .models import MedicalRecord, Reminder, Vaccine, Veterinarian
 from .serializers import (

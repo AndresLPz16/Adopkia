@@ -1,3 +1,5 @@
+-- ADVERTENCIA: este script inserta datos de prueba y puede modificar datos existentes.
+-- Ejecutarlo solo en una base nueva o temporal; nunca en adopkia con datos reales.
 USE adopkia;
 SET @adop=(SELECT id_rol FROM rol WHERE nombre='adoptante'), @ref=(SELECT id_rol FROM rol WHERE nombre='refugio'),
     @adm=(SELECT id_rol FROM rol WHERE nombre='administrador'), @vet=(SELECT id_rol FROM rol WHERE nombre='veterinario');

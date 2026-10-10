@@ -1,5 +1,3 @@
-from django.db.models import Q
-
 from adoptions.models import Adoption
 from users.models import Role
 

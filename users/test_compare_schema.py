@@ -1,3 +1,7 @@
+from contextlib import nullcontext
+from unittest.mock import Mock, call, patch
+
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
 from users.management.commands.compare_schema import (
@@ -24,18 +28,22 @@ class CompareSchemaParserTests(SimpleTestCase):
     def test_sql_script_uses_only_a_temporary_database(self):
         statements = Command()._read_script("adopkia_cmp")
         self.assertTrue(
-            statements[0].startswith("DROP DATABASE IF EXISTS `adopkia_cmp`")
-        )
-        self.assertTrue(
             any(
-                statement.startswith("CREATE DATABASE `adopkia_cmp`")
+                statement.startswith(
+                    "CREATE DATABASE IF NOT EXISTS `adopkia_cmp`"
+                )
                 for statement in statements
             )
         )
         self.assertFalse(
             any(
                 statement.startswith(
-                    ("DROP DATABASE IF EXISTS adopkia", "CREATE DATABASE adopkia", "USE adopkia")
+                    (
+                        "DROP DATABASE adopkia",
+                        "CREATE DATABASE adopkia",
+                        "CREATE DATABASE IF NOT EXISTS adopkia",
+                        "USE adopkia",
+                    )
                 )
                 for statement in statements
             )
@@ -65,3 +73,51 @@ class CompareSchemaParserTests(SimpleTestCase):
         self.assertEqual(len(statements), 2)
         self.assertIn("RETURN 'a;b'; END", statements[0])
         self.assertEqual(statements[1], "SELECT 'x;y'")
+
+    def test_existing_temporary_database_requires_force(self):
+        connection = Mock()
+        command = Command()
+        database = {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": "adopkia",
+        }
+        with (
+            patch("users.management.commands.compare_schema.settings.DATABASES", {"default": database}),
+            patch.object(command, "_connect", return_value=connection),
+            patch.object(command, "_database_exists", return_value=True),
+            patch.object(command, "_drop_schema") as drop_schema,
+        ):
+            with self.assertRaisesMessage(CommandError, "ya existe"):
+                command.handle(force=False)
+
+        drop_schema.assert_not_called()
+        connection.close.assert_called_once()
+
+    def test_force_replaces_existing_schema_and_cleans_only_its_schema(self):
+        connection = Mock()
+        cursor = Mock()
+        connection.cursor.return_value = nullcontext(cursor)
+        command = Command()
+        database = {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": "adopkia",
+        }
+        with (
+            patch("users.management.commands.compare_schema.settings.DATABASES", {"default": database}),
+            patch.object(command, "_connect", return_value=connection),
+            patch.object(command, "_database_exists", return_value=True),
+            patch.object(command, "_read_script", return_value=[
+                "CREATE DATABASE IF NOT EXISTS `adopkia_cmp`",
+                "USE `adopkia_cmp`",
+            ]),
+            patch.object(command, "_inspect_schema", return_value={"schema": "same"}),
+            patch.object(command, "_compare", return_value=[]),
+            patch.object(command, "_drop_schema") as drop_schema,
+        ):
+            command.handle(force=True)
+
+        self.assertEqual(
+            drop_schema.call_args_list,
+            [call(connection, "adopkia_cmp"), call(connection, "adopkia_cmp")],
+        )
+        connection.close.assert_called_once()
