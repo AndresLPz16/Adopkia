@@ -42,8 +42,10 @@
 --  14. Datos base: especies, razas, vacunas y preguntas del formulario.
 -- =====================================================================
 
-DROP DATABASE IF EXISTS adopkia;
-CREATE DATABASE adopkia
+-- DROP DATABASE IF EXISTS adopkia;
+-- Advertencia: borrar esta base elimina todos sus datos. Ejecuta esta sentencia
+-- manualmente solo si deseas reinstalar desde cero.
+CREATE DATABASE IF NOT EXISTS adopkia
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 USE adopkia;

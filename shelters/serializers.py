@@ -3,7 +3,6 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from myproject.i18n import LocalizedModelSerializer
-from myproject.permissions import user_can_manage_shelter
 from .models import Shelter, ShelterMember
 from users.models import Role, User
 

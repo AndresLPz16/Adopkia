@@ -22,8 +22,6 @@ class E2EAuthorizationHttpFlowTests(unittest.TestCase):
         shelter = STATE["accounts"]["shelter"]
         other_shelter = STATE["accounts"]["other_shelter"]
         admin = STATE["accounts"]["admin"]
-        vet = STATE["accounts"]["veterinarian"]
-
         anonymous_profile = request("GET", "auth/me/")
         assert_response(self, "perfil-sin-token", anonymous_profile, 401)
         invalid_token = request("GET", "auth/me/", token="invalid.token.value")

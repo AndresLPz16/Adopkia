@@ -1,4 +1,5 @@
-from django.test import TestCase
+import secrets
+
 from django.utils import translation
 from django.utils.translation import gettext
 from django.urls import reverse
@@ -20,7 +21,7 @@ class LanguagePreferenceTests(APITestCase):
     def test_duplicate_registration_error_is_translated(self):
         User.objects.create_user(
             email="duplicate@example.com",
-            password="SafePass!2026",
+            password=secrets.token_urlsafe(24),
             name="Existing adopter",
         )
         body = {

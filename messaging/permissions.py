@@ -1,8 +1,5 @@
 from django.db.models import Q
 
-from rest_framework.permissions import BasePermission
-
-
 def user_can_access_conversation(user, conversation):
     return bool(
         user

@@ -5,4 +5,4 @@ class AdoptionsConfig(AppConfig):
     name = 'adoptions'
 
     def ready(self):
-        from . import signals
+        from . import signals  # noqa: F401  # Register model signal receivers.
