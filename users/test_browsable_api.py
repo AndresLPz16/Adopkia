@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from myproject.api_index import RESOURCE_DEFINITIONS
+from myproject.api_index import RESOURCE_DEFINITIONS, ROLE_RESOURCES
 from pets.models import Breed, Pet, Species
 from shelters.models import Shelter, ShelterMember
 from users.models import Role, User
@@ -257,28 +257,68 @@ class BrowsableApiAuthenticationTests(TestCase):
                             jwt_response.status_code,
                         )
 
-    def test_home_explains_browsable_login_and_links_each_resource(self):
-        administrator = self.users[Role.Name.ADMIN]
-        self.client.force_login(administrator)
-        response = self.client.get("/?lang=en")
+    def test_root_uses_the_standard_browsable_api_root(self):
+        english = self.client.get("/?lang=en", HTTP_ACCEPT="text/html")
+        spanish = self.client.get("/?lang=es", HTTP_ACCEPT="text/html")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Open in the browsable API")
-        self.assertContains(response, "Log in")
-        self.assertContains(response, "To use the interactive forms")
-        self.assertContains(response, 'target="_blank"')
-        self.assertContains(response, 'rel="noopener"')
-        self.assertContains(response, 'browsableLink.target = "_blank"')
-        self.assertContains(response, 'browsableLink.rel = "noopener"')
+        self.assertEqual(english.status_code, 200)
+        self.assertEqual(spanish.status_code, 200)
+        self.assertContains(english, "Log in")
+        self.assertContains(english, "Api Root")
+        self.assertContains(english, "Root endpoint for the Adopkia API.")
+        self.assertContains(spanish, "Raíz de la API")
+        self.assertContains(spanish, "Raíz de la API de Adopkia.")
+        self.assertNotContains(english, "← Volver a Adopkia")
 
-    def test_api_auth_urls_are_available_and_the_home_resource_links_are_localized(self):
-        login_page = self.client.get("/api-auth/login/", HTTP_ACCEPT="text/html")
+    def test_login_form_is_localized_in_spanish_and_english(self):
+        spanish = self.client.get(
+            "/api-auth/login/?lang=es", HTTP_ACCEPT="text/html"
+        )
+        english = self.client.get(
+            "/api-auth/login/?lang=en", HTTP_ACCEPT="text/html"
+        )
+        english_header = self.client.get(
+            "/api-auth/login/",
+            HTTP_ACCEPT="text/html",
+            HTTP_ACCEPT_LANGUAGE="en",
+        )
 
-        self.assertEqual(login_page.status_code, 200)
+        self.assertEqual(spanish.status_code, 200)
+        self.assertEqual(english.status_code, 200)
+        self.assertEqual(english_header.status_code, 200)
+        self.assertContains(spanish, "Correo")
+        self.assertContains(english, "Email")
+        self.assertContains(english_header, "Email")
         self.assertEqual(reverse("rest_framework:login"), "/api-auth/login/")
         self.assertEqual(reverse("rest_framework:logout"), "/api-auth/logout/")
-        english_home = self.client.get("/?lang=en")
-        self.assertContains(english_home, "Open in the browsable API")
+
+    def test_session_login_and_logout_redirect_to_root_by_default(self):
+        administrator = self.users[Role.Name.ADMIN]
+        login = self.client.post(
+            "/api-auth/login/",
+            {"username": administrator.email, "password": self.password},
+        )
+
+        self.assertEqual(login.status_code, 302)
+        self.assertEqual(login["Location"], "/")
+
+        logout = self.client.post("/api-auth/logout/")
+
+        self.assertEqual(logout.status_code, 302)
+        self.assertEqual(logout["Location"], "/")
+
+    def test_authenticated_root_shows_role_and_its_resources(self):
+        adopter = self.users[Role.Name.ADOPTER]
+        self.client.force_login(adopter)
+
+        response = self.client.get("/", HTTP_ACCEPT="application/json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["role_code"], Role.Name.ADOPTER)
+        self.assertEqual(
+            {resource["key"] for resource in response.json()["resources"]},
+            set(ROLE_RESOURCES[Role.Name.ADOPTER]),
+        )
 
     def test_jwt_still_authenticates_api_clients_without_a_session(self):
         adopter = self.users[Role.Name.ADOPTER]

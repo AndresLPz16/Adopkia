@@ -2,14 +2,13 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf.urls.i18n import i18n_patterns
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from django.views.generic import TemplateView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from myproject.api_index import ApiIndexView
 from myproject.authentication import LocalizedTokenObtainPairView
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="myproject/home.html"), name="home"),
+    path("", ApiIndexView.as_view(), name="root"),
     path("api-auth/", include("rest_framework.urls")),
     path("api/v1/", ApiIndexView.as_view(), name="api-root"),
     path("api/v1/auth/", include("users.urls")),

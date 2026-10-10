@@ -90,38 +90,23 @@ msgstr "Invalid credentials or inactive account."
 msgid "Refugios verificados"
 msgstr "Verified shelters"
 
-msgid "Solo se muestran los recursos públicos. Inicia sesión en la página de inicio para ver los recursos de tu rol."
-msgstr "Only public resources are shown. Sign in on the home page to see the resources for your role."
-
-msgid "Adopkia — inicio"
-msgstr "Adopkia — home"
-
-msgid "Idioma"
-msgstr "Language"
-
-msgid "Para usar los formularios interactivos, abre un recurso en la API navegable e inicia sesión con el botón «Log in» de la esquina superior derecha."
-msgstr "To use the interactive forms, open a resource in the browsable API and sign in with the “Log in” button in the upper-right corner."
-
-msgid "Enlaces de servicio"
-msgstr "Service links"
-
-msgid "Administración"
-msgstr "Administration"
-
 msgid "Índice de la API"
 msgstr "API index"
 
 msgid "Correo electrónico"
 msgstr "Email"
 
-msgid "Entrar"
-msgstr "Log in"
-
-msgid "Cerrar sesión"
-msgstr "Log out"
-
 msgid "English"
 msgstr "English"
+
+msgid "Api Root"
+msgstr "Api Root"
+
+msgid "Root endpoint for the Adopkia API."
+msgstr "Root endpoint for the Adopkia API."
+
+msgid "Only public resources are shown. Sign in with the Log in link in the upper-right corner to see the resources for your role."
+msgstr "Only public resources are shown. Sign in with the Log in link in the upper-right corner to see the resources for your role."
 
 msgid "Español"
 msgstr "Spanish"

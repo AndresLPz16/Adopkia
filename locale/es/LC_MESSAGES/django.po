@@ -9,6 +9,15 @@ msgstr ""
 msgid "English"
 msgstr "English"
 
+msgid "Api Root"
+msgstr "Raíz de la API"
+
+msgid "Root endpoint for the Adopkia API."
+msgstr "Raíz de la API de Adopkia."
+
+msgid "Only public resources are shown. Sign in with the Log in link in the upper-right corner to see the resources for your role."
+msgstr "Solo se muestran los recursos públicos. Inicia sesión con el enlace Log in de la esquina superior derecha para ver los recursos de tu rol."
+
 msgid "Español"
 msgstr "Español"
 
