@@ -38,9 +38,24 @@ class ApiIndexPermissionAlignmentTests(TestCase):
             {resource["key"] for resource in response.json()["resources"]},
             expected_resources,
         )
-        self.assertEqual(response.json()["login_url"], "/")
+        self.assertEqual(response.json()["login_url"], "/api-auth/login/")
         self.assertIn("recursos públicos", response.json()["message"])
+        self.assertIn("Log in", response.json()["message"])
+        self.assertTrue(
+            all(
+                resource["url"].startswith("http://testserver/")
+                for resource in response.json()["resources"]
+            )
+        )
         self.assert_resources_match_statuses(response.json()["resources"], None)
+
+    def test_root_is_the_same_direct_api_index_as_api_v1(self):
+        root = self.client.get("/", HTTP_ACCEPT="application/json")
+        api_root = self.client.get("/api/v1/", HTTP_ACCEPT="application/json")
+
+        self.assertEqual(root.status_code, 200)
+        self.assertNotIn("Location", root.headers)
+        self.assertEqual(root.json(), api_root.json())
 
     def test_anonymous_index_message_is_translated_without_changing_resources(self):
         spanish = self.client.get(reverse("api-root") + "?lang=es")
@@ -57,11 +72,13 @@ class ApiIndexPermissionAlignmentTests(TestCase):
             {resource["key"] for resource in english.json()["resources"]},
             expected_resources,
         )
-        self.assertEqual(spanish.json()["login_url"], "/")
-        self.assertEqual(english.json()["login_url"], "/")
+        self.assertEqual(spanish.json()["login_url"], "/api-auth/login/")
+        self.assertEqual(english.json()["login_url"], "/api-auth/login/")
         self.assertIn("recursos públicos", spanish.json()["message"])
+        self.assertIn("Log in", spanish.json()["message"])
         self.assertIn("public resources", english.json()["message"])
-        self.assertIn("home page", english.json()["message"])
+        self.assertIn("Log in", english.json()["message"])
+        self.assertIn("upper-right corner", english.json()["message"])
         self.assertIn("public resources", english_header.json()["message"])
 
     def test_login_errors_are_localized_and_inactive_accounts_are_rejected(self):

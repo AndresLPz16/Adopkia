@@ -8,13 +8,14 @@ from users.models import User
 
 
 class LanguagePreferenceTests(APITestCase):
-    def test_root_serves_the_landing_page_and_api_index_remains_available(self):
-        response = self.client.get("/")
+    def test_root_returns_api_index_and_api_v1_remains_available(self):
+        response = self.client.get("/", HTTP_ACCEPT="application/json")
+        index = self.client.get("/api/v1/", HTTP_ACCEPT="application/json")
+
         self.assertEqual(response.status_code, 200)
-        self.assertIn("text/html", response.headers["Content-Type"])
-        index = self.client.get("/api/v1/")
         self.assertEqual(index.status_code, 200)
-        self.assertIn("pets", {item["key"] for item in index.json()["resources"]})
+        self.assertEqual(response.json(), index.json())
+        self.assertIn("pets", {item["key"] for item in response.json()["resources"]})
 
     def test_duplicate_registration_error_is_translated(self):
         User.objects.create_user(

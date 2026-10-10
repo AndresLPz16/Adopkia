@@ -1,4 +1,5 @@
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -76,6 +77,8 @@ ROLE_RESOURCES = {
 
 
 class ApiIndexView(APIView):
+    name = _lazy("Api Root")
+    description = _lazy("Root endpoint for the Adopkia API.")
     permission_classes = (AllowAny,)
 
     @extend_schema(
@@ -95,7 +98,7 @@ class ApiIndexView(APIView):
             {
                 "key": key,
                 "name": str(_(RESOURCE_DEFINITIONS[key][0])),
-                "url": RESOURCE_DEFINITIONS[key][1],
+                "url": request.build_absolute_uri(RESOURCE_DEFINITIONS[key][1]),
             }
             for key in RESOURCE_DEFINITIONS
             if key in resource_keys
@@ -109,11 +112,12 @@ class ApiIndexView(APIView):
                     {
                         "message": str(
                             _(
-                                "Solo se muestran los recursos públicos. Inicia sesión "
-                                "en la página de inicio para ver los recursos de tu rol."
+                                "Only public resources are shown. Sign in with the "
+                                "Log in link in the upper-right corner to see the "
+                                "resources for your role."
                             )
                         ),
-                        "login_url": "/",
+                        "login_url": "/api-auth/login/",
                     }
                     if not request.user.is_authenticated
                     else {}

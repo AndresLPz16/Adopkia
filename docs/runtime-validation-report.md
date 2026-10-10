@@ -1,7 +1,7 @@
 # Runtime Validation Report
 
-**Generated**: 2026-10-08T20:03:51.4554943-05:00  
-**Target**: `C:\Users\yoide\OneDrive\Desktop\myproject`  
+**Updated**: 2026-10-09
+**Target**: `C:\Users\yoide\OneDrive\Desktop\Adopkia`
 **Database scope**: MySQL `adopkia`, `test_adopkia` and temporary `adopkia_cmp`, user `adopkia_dev`
 
 ## Summary
@@ -10,13 +10,13 @@
 |---|---|---:|---|
 | Django system check | PASS | 0 | `manage.py check`; no issues |
 | Migration check | PASS | 0 | `manage.py makemigrations --check --dry-run`; no changes |
-| Django tests | PASS | 0 | Latest `manage.py test --noinput`; 37 tests |
-| pytest | PASS | 0 | Latest `python -m pytest --create-db -q`; 37 passed |
+| Django tests | PASS | 0 | `manage.py test --noinput`; 53 tests |
+| pytest | PASS | 0 | `python -m pytest --create-db -q`; 53 passed and 226 subtests |
 | HTTP E2E/startup | PASS | 0 | `run_tests_e2e.py`; `runserver` readiness returned HTTP 200; 6 tests |
 | Schema comparison | PASS | 0 | `manage.py compare_schema`; no differences in the compared categories |
 | OpenAPI | PASS | 0 | `/api/docs/` returned HTML 200; `/api/schema/` returned parseable OpenAPI 3 JSON; `spectacular --validate` |
 | Comparison DB cleanup | PASS | 0 | `SHOW DATABASES LIKE 'adopkia_cmp'` returned no row |
-| Root URL redirect | PASS | 0 | `GET /` → HTTP 302, `Location: /api/v1/`; public API index → HTTP 200; root route is outside `i18n_patterns` |
+| Root API index | PASS | 0 | `/` returned HTTP 200 directly as standard DRF Api Root (JSON and HTML); it matched `/api/v1/`, including absolute resource URLs. |
 
 **Overall**: PASS for the executed suites, HTTP scenarios, schema categories and documentation checks. The role matrix is evidence-based for the scenarios listed below; it is not a claim that every actor/verb/object permutation was individually enumerated.
 
@@ -24,23 +24,27 @@
 
 | Check | Result |
 |---|---|
-| Django suite | PASS, exit 0; 37 tests. |
-| pytest suite | PASS, exit 0; 37 tests. |
+| Django suite | PASS, exit 0; 53 tests. |
+| pytest suite | PASS, exit 0; 53 tests and 226 subtests. |
 | Django system and migration checks | PASS; no system issues and no model changes detected. |
 | Bilingual tests | PASS; validation language, `Accept-Language`, catalog, notification, both admin prefixes, model/field labels and fallback covered. |
-| Live API/admin/docs/static probes | PASS; all probed routes returned 200. English species were `Dog`/`Cat`, with `Content-Language: en`; Spanish default/admin used `es`. |
+| Live API/admin/docs probes | PASS; root, `/api/v1/`, `/api/docs/`, `/api/schema/` and `/api-auth/login/` returned 200; admin paths redirected to login; browsable auth routes rendered HTML; English species included `Dog`. |
 | OpenAPI | PASS; `spectacular --validate` exit 0 with no warnings/errors; JSON endpoint declared OpenAPI 3.0.3. |
 | Schema | PASS; no differences; `adopkia_cmp` was confirmed absent afterward. |
-| Translation catalog audit | PASS; 99 model/field labels and 88 static gettext messages exist in both catalogs; one intentionally empty English entry tests Spanish fallback. |
+| Translation catalog audit | PASS; Api Root title, description and anonymous guidance are translated for Spanish and English. `.mo` catalogs regenerated with polib because GNU `msgfmt` is unavailable. |
 
-The current server on port 8000 was already running from this project and was verified responsive; it was not stopped. Chromium was installed with Playwright tooling and the Spanish and English admin login pages were rendered in the browser. No standalone `npx playwright test` suite was added; browser validation here was a page-rendering check, while runnable bilingual regression tests are split across `users/test_i18n.py`, `pets/test_i18n.py` and `notifications/test_i18n.py`.
+The local server on port 8000 was started temporarily for HTTP probes and stopped after verification. No credentials, password hashes, or tokens were displayed.
 
 The first checks exposed an invalid `SAFE_METHODS` import and a language-negotiation issue where `LocaleMiddleware` forced Spanish on unprefixed API routes. Both were corrected. A test URL initially depended on the previous request's active translation; its language context was isolated, and the final complete suites pass.
 
 ## Test Evidence
 
-- Latest Django and pytest runs each passed 37 tests, with zero failures or skips.
-- `GET /` returned HTTP 302 with `Location: /api/v1/`; the anonymous API index returned HTTP 200.
+- Latest Django and pytest runs each passed 53 tests; pytest also passed 226 subtests.
+- `GET /` returned HTTP 200 directly: JSON responses matched `/api/v1/`, and the browsable HTML showed the standard `Log in` link and Api Root title.
+- `/api-auth/login/` returned HTTP 200 in Spanish and English (`?lang=` and `Accept-Language`); the form accepts the email address as the username and a password.
+- `/admin/` and `/en/admin/` returned HTTP 302 to their localized login routes.
+- The JWT registration and login URLs rendered HTML forms for GET with HTTP 405, as those API endpoints do not support GET.
+- `/api/v1/species/?lang=en` returned HTTP 200 and included `Dog`.
 - HTTP runner ran 6 test cases and reported 375 `[PASS]` checks, including HTTP status and Content-Type assertions.
 - Readiness: `GET /api/v1/species/` → 200.
 - Docs: `GET /api/docs/` → 200, `text/html`.
@@ -103,7 +107,7 @@ environment:
   infra-tier: PRIMARY(MySQL) — real authorized MySQL databases used
   browser-tier: PRIMARY(Playwright browser rendering) — bilingual admin login pages; no standalone Playwright test runner
 startup: PASS — existing runserver from this project; HTTP species/admin/docs/static probes returned 200; startup time not measured
-integration: PASS — exit_code: 0, passed: 37, failed: 0, skipped: 0 (Django); 37 passed (pytest); MySQL
+integration: PASS — exit_code: 0, passed: 53, failed: 0, skipped: 0 (Django); 53 passed (pytest), 226 subtests; MySQL
 e2e: PASS — exit_code: 0, passed: 6, failed: 0 in the existing HTTP runner; additional live HTTP probes and bilingual admin browser checks passed
 overall: PASS — all final test commands exited 0; browser-test and exhaustive-matrix limits remain explicit
 ```
