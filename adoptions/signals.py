@@ -27,7 +27,9 @@ def _shelter_notification_recipient(adoption_request):
 
 
 @receiver(pre_save, sender=AdoptionRequest, dispatch_uid="adoptions.remember_request_status")
-def remember_previous_status(sender, instance, **kwargs):
+def remember_previous_status(sender, instance, raw=False, **kwargs):
+    if raw:
+        return
     if not instance.pk:
         instance._previous_status = None
         return
@@ -37,7 +39,9 @@ def remember_previous_status(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=AdoptionRequest, dispatch_uid="adoptions.notify_request_changes")
-def notify_request_changes(sender, instance, created, **kwargs):
+def notify_request_changes(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     if created and instance.status == AdoptionRequest.Status.PENDING:
         Notification.objects.create(
             user_id=_shelter_notification_recipient(instance),

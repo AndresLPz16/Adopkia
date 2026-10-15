@@ -10,8 +10,8 @@ from .models import Message
 
 
 @receiver(post_save, sender=Message, dispatch_uid="messaging.notify_new_message")
-def notify_new_message(sender, instance, created, **kwargs):
-    if not created:
+def notify_new_message(sender, instance, created, raw=False, **kwargs):
+    if raw or not created:
         return
     conversation = instance.conversation
     if instance.sender_id == conversation.adopter_id:
