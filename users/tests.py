@@ -129,3 +129,18 @@ class SeedDataCommandTests(APITestCase):
         self.assertEqual(Breed.objects.count(), 13)
         self.assertEqual(Vaccine.objects.count(), 6)
         self.assertEqual(FormQuestion.objects.count(), 10)
+
+
+class LoadDemoDataCommandTests(APITestCase):
+    def test_loads_demo_data_only_when_database_has_no_users(self):
+        call_command("seed_data", stdout=StringIO())
+
+        call_command("load_demo_data", stdout=StringIO())
+        self.assertEqual(User.objects.count(), 42)
+        self.assertEqual(
+            User.objects.filter(active=True, role__name=Role.Name.ADMIN).count(),
+            8,
+        )
+
+        call_command("load_demo_data", stdout=StringIO())
+        self.assertEqual(User.objects.count(), 42)
