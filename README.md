@@ -47,6 +47,24 @@ El único flujo oficial de instalación del esquema es **migraciones Django**, s
 
 #### PowerShell (Windows)
 
+**Inicio rápido recomendado (MySQL con Docker Compose):** instala y abre Docker Desktop. Desde la raíz del repositorio ejecuta:
+
+```powershell
+docker compose up --build
+```
+
+Compose inicia MySQL 8, espera a que la comprobación de salud confirme que acepta conexiones, y después construye e inicia Django. El contenedor de Django aplica las migraciones y carga los catálogos antes de servir la aplicación en <http://127.0.0.1:8000/>. No hace falta copiar `.env.example` ni instalar MySQL en Windows para este flujo.
+
+En otra ventana de PowerShell, crea tu propio administrador:
+
+```powershell
+docker compose exec web python manage.py createsuperuser
+```
+
+Detén los servicios con `Ctrl+C`; `docker compose down` conserva los datos de MySQL. **No ejecutes `docker compose down --volumes` si quieres conservarlos:** elimina el volumen de la base. Las credenciales predeterminadas de Compose son solo para desarrollo local y no deben usarse en producción.
+
+**Alternativa: Python y MySQL instalados localmente.** Este modo requiere MySQL en ejecución, la base y el usuario creados con permisos, y credenciales válidas en `.env`:
+
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -65,8 +83,16 @@ python manage.py shell -c "from django.db import connection; print(connection.ve
 
 El resultado esperado es `mysql adopkia`. Usa el mismo entorno y la misma carpeta del proyecto para `migrate`, `createsuperuser` y `runserver`; cambiar de motor conecta a otra base y sus usuarios no se comparten.
 
+En la alternativa local, crea la base y el usuario MySQL con una cuenta administradora. Sustituye `elige-una-clave-local` y configura exactamente la misma contraseña como `DB_PASSWORD` en `.env`:
+
+```sql
+CREATE DATABASE IF NOT EXISTS adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'adopkia_dev'@'127.0.0.1' IDENTIFIED BY 'elige-una-clave-local';
+ALTER USER 'adopkia_dev'@'127.0.0.1' IDENTIFIED BY 'elige-una-clave-local';
+GRANT ALL PRIVILEGES ON adopkia.* TO 'adopkia_dev'@'127.0.0.1';
+```
+
 ```powershell
-mysql -u adopkia_dev -p -e "CREATE DATABASE IF NOT EXISTS adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 python manage.py migrate
 python manage.py seed_data
 python manage.py createsuperuser
@@ -74,6 +100,16 @@ python manage.py runserver
 ```
 
 #### Linux/macOS (Bash)
+
+Con Docker instalado y ejecutándose, el inicio rápido es igual:
+
+```bash
+docker compose up --build
+```
+
+En otra terminal, crea tu administrador con `docker compose exec web python manage.py createsuperuser`. Para detenerlo, pulsa `Ctrl+C` y ejecuta `docker compose down`; no añadas `--volumes` salvo que quieras borrar los datos locales de MySQL.
+
+**Alternativa: Python y MySQL instalados localmente:**
 
 ```bash
 python3.12 -m venv .venv
@@ -85,7 +121,6 @@ cp .env.example .env
 Edita `.env` localmente con las mismas variables que se indican arriba. Continúa con los mismos comandos de base y Django:
 
 ```bash
-mysql -u adopkia_dev -p -e "CREATE DATABASE IF NOT EXISTS adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 python manage.py migrate
 python manage.py seed_data
 python manage.py createsuperuser
