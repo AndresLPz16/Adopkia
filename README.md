@@ -61,6 +61,14 @@ Con una base nueva, inicia sesión con una de las cuentas administradoras del co
 docker compose exec web python manage.py createsuperuser
 ```
 
+Las contraseñas demo se comparten como hashes y no se pueden recuperar en texto claro. Para definir una contraseña propia para `yoiderbrito@gmail.com` en tu instalación, ejecuta:
+
+```powershell
+docker compose exec web python manage.py changepassword yoiderbrito@gmail.com
+```
+
+Cada instalación tiene su propia base de datos; cambiar esta contraseña no la cambia en las instalaciones de otras personas.
+
 Detén los servicios con `Ctrl+C`; `docker compose down` conserva los datos de MySQL. **No ejecutes `docker compose down --volumes` si quieres conservarlos:** elimina el volumen de la base. El conjunto de demostración se importa solo en una base sin usuarios; un volumen existente no se reemplaza ni se actualiza automáticamente.
 
 **Alternativa: Python y MySQL instalados localmente.** Este modo requiere MySQL en ejecución, la base y el usuario creados con permisos, y credenciales válidas en `.env`:

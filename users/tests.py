@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 from adoptions.models import FormQuestion
 from myproject.admin import ReadOnlyModelAdmin
 from medical.models import Vaccine
+from notifications.models import Notification
 from pets.models import Breed, Species
 from users.models import Role, User
 
@@ -137,6 +138,7 @@ class LoadDemoDataCommandTests(APITestCase):
 
         call_command("load_demo_data", stdout=StringIO())
         self.assertEqual(User.objects.count(), 42)
+        self.assertEqual(Notification.objects.count(), 39)
         self.assertEqual(
             User.objects.filter(active=True, role__name=Role.Name.ADMIN).count(),
             8,
