@@ -53,15 +53,15 @@ El único flujo oficial de instalación del esquema es **migraciones Django**, s
 docker compose up --build
 ```
 
-Compose inicia MySQL 8, espera a que la comprobación de salud confirme que acepta conexiones, y después construye e inicia Django. El contenedor de Django aplica las migraciones y carga los catálogos antes de servir la aplicación en <http://127.0.0.1:8000/>. No hace falta copiar `.env.example` ni instalar MySQL en Windows para este flujo.
+Compose inicia MySQL 8, espera a que la comprobación de salud confirme que acepta conexiones, y después construye e inicia Django. El contenedor de Django aplica las migraciones, carga los catálogos y, si la base todavía no tiene usuarios, importa el conjunto de demostración compartido antes de servir la aplicación en <http://127.0.0.1:8000/>. El fixture contiene 42 usuarios de demostración y sus registros relacionados; por eso se puede usar en instalaciones nuevas el mismo correo y la contraseña correspondiente. Las contraseñas están almacenadas únicamente como hashes. Estos datos son solo para desarrollo y evaluación académica; no los uses en producción. No hace falta copiar `.env.example` ni instalar MySQL en Windows para este flujo.
 
-En otra ventana de PowerShell, crea tu propio administrador:
+Con una base nueva, inicia sesión con una de las cuentas administradoras del conjunto de demostración. Si prefieres crear otro administrador:
 
 ```powershell
 docker compose exec web python manage.py createsuperuser
 ```
 
-Detén los servicios con `Ctrl+C`; `docker compose down` conserva los datos de MySQL. **No ejecutes `docker compose down --volumes` si quieres conservarlos:** elimina el volumen de la base. Las credenciales predeterminadas de Compose son solo para desarrollo local y no deben usarse en producción.
+Detén los servicios con `Ctrl+C`; `docker compose down` conserva los datos de MySQL. **No ejecutes `docker compose down --volumes` si quieres conservarlos:** elimina el volumen de la base. El conjunto de demostración se importa solo en una base sin usuarios; un volumen existente no se reemplaza ni se actualiza automáticamente.
 
 **Alternativa: Python y MySQL instalados localmente.** Este modo requiere MySQL en ejecución, la base y el usuario creados con permisos, y credenciales válidas en `.env`:
 
@@ -95,6 +95,7 @@ GRANT ALL PRIVILEGES ON adopkia.* TO 'adopkia_dev'@'127.0.0.1';
 ```powershell
 python manage.py migrate
 python manage.py seed_data
+python manage.py load_demo_data
 python manage.py createsuperuser
 python manage.py runserver
 ```
@@ -123,6 +124,7 @@ Edita `.env` localmente con las mismas variables que se indican arriba. Continú
 ```bash
 python manage.py migrate
 python manage.py seed_data
+python manage.py load_demo_data
 python manage.py createsuperuser
 python manage.py runserver
 ```
