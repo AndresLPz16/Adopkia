@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mysql:8.0
+    command: --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_DATABASE: adopkia
+      MYSQL_USER: adopkia_dev
+      MYSQL_PASSWORD: ${DB_PASSWORD:-adopkia_local_dev_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-adopkia_local_root_password}
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping --host=127.0.0.1 --user=root --password="$${MYSQL_ROOT_PASSWORD}" --silent
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-development-only-key}
+      DJANGO_DEBUG: "true"
+      DB_ENGINE: mysql
+      DB_NAME: adopkia
+      DB_USER: adopkia_dev
+      DB_PASSWORD: ${DB_PASSWORD:-adopkia_local_dev_password}
+      DB_HOST: db
+      DB_PORT: "3306"
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  mysql_data:
