@@ -56,6 +56,15 @@ Copy-Item .env.example .env
 
 Edita `.env` localmente, sin compartirlo: define `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=true`, `DJANGO_ALLOWED_HOSTS`, `DB_ENGINE=mysql`, `DB_NAME=adopkia`, `DB_USER=adopkia_dev`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`. La aplicación falla explícitamente si falta `DJANGO_SECRET_KEY` o, para MySQL, `DB_PASSWORD`.
 
+Las variables de entorno ya definidas en PowerShell prevalecen sobre `.env`. Si `DB_ENGINE` se estableció previamente como `sqlite`, elimina ese valor antes de iniciar el servidor, o establécelo explícitamente como `mysql`. Verifica el motor y la base efectivos antes de iniciar sesión:
+
+```powershell
+$env:DB_ENGINE = "mysql"
+python manage.py shell -c "from django.db import connection; print(connection.vendor, connection.settings_dict['NAME'])"
+```
+
+El resultado esperado es `mysql adopkia`. Usa el mismo entorno y la misma carpeta del proyecto para `migrate`, `createsuperuser` y `runserver`; cambiar de motor conecta a otra base y sus usuarios no se comparten.
+
 ```powershell
 mysql -u adopkia_dev -p -e "CREATE DATABASE IF NOT EXISTS adopkia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 python manage.py migrate
