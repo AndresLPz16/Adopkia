@@ -24,6 +24,7 @@ PUBLIC_RESOURCES = (
 
 AUTHENTICATED_RESOURCES = (
     "profile",
+    "role_permissions",
     "shelter_members",
     "pet_photos",
     "adoption_requests",
@@ -42,6 +43,7 @@ RESOURCE_DEFINITIONS = {
     "login": ("Iniciar sesión", "/api/v1/auth/login/"),
     "refresh": ("Renovar token", "/api/v1/auth/refresh/"),
     "profile": ("Mi perfil", "/api/v1/auth/me/"),
+    "role_permissions": ("Permisos por rol", "/api/v1/auth/permissions/"),
     "verified_shelters": ("Refugios verificados", "/api/v1/shelters/"),
     "shelter_members": ("Integrantes de refugios", "/api/v1/shelter-members/"),
     "species": ("Especies", "/api/v1/species/"),

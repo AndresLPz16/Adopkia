@@ -68,6 +68,20 @@ INSERT INTO rol (nombre, descripcion) VALUES
   ('veterinario',   'Veterinario aliado que registra atenciones médicas');
 
 -- ---------------------------------------------------------------------
+-- 0.1 PERMISO_ROL (permisos de interfaz configurables por rol)
+-- ---------------------------------------------------------------------
+CREATE TABLE permiso_rol (
+  id_permiso BIGINT NOT NULL AUTO_INCREMENT,
+  id_rol TINYINT UNSIGNED NOT NULL,
+  recurso VARCHAR(40) NOT NULL,
+  accion VARCHAR(20) NOT NULL,
+  PRIMARY KEY (id_permiso),
+  CONSTRAINT uq_permiso_rol_recurso_accion UNIQUE (id_rol, recurso, accion),
+  CONSTRAINT fk_permiso_rol_rol FOREIGN KEY (id_rol)
+    REFERENCES rol (id_rol) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- 1. USUARIO
 -- ---------------------------------------------------------------------
 CREATE TABLE usuario (

@@ -27,6 +27,31 @@ class Role(models.Model):
         return self.name
 
 
+class RolePermission(models.Model):
+    id = models.BigAutoField(primary_key=True, db_column="id_permiso")
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name="permissions",
+        db_column="id_rol",
+    )
+    resource = models.CharField(max_length=40, db_column="recurso")
+    action = models.CharField(max_length=20, db_column="accion")
+
+    class Meta:
+        db_table = "permiso_rol"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("role", "resource", "action"),
+                name="uq_permiso_rol_recurso_accion",
+            )
+        ]
+        ordering = ("resource", "action")
+
+    def __str__(self):
+        return f"{self.role.name}:{self.resource}:{self.action}"
+
+
 class UserManager(BaseUserManager):
     use_in_migrations = True
 

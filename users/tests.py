@@ -12,7 +12,7 @@ from myproject.admin import ReadOnlyModelAdmin
 from medical.models import Vaccine
 from notifications.models import Notification
 from pets.models import Breed, Species
-from users.models import Role, User
+from users.models import Role, RolePermission, User
 
 
 class DjangoAdminLoginTests(TestCase):
@@ -119,6 +119,137 @@ class AuthenticationTests(APITestCase):
         profile = self.client.get(reverse("profile"))
         self.assertEqual(profile.status_code, 200)
         self.assertEqual(profile.data["email"], "adopter@example.com")
+
+
+class RolePermissionApiTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            email="permission-admin@example.com",
+            password="SafePass!2026",
+            name="Permission Admin",
+        )
+        self.adopter_role = Role.objects.get(name=Role.Name.ADOPTER)
+
+    def test_authenticated_user_can_read_role_permission_catalog(self):
+        adopter = User.objects.create_user(
+            email="permission-adopter@example.com",
+            password="SafePass!2026",
+            name="Permission Adopter",
+        )
+        self.client.force_authenticate(adopter)
+
+        response = self.client.get(reverse("role-permissions"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            {resource["key"] for resource in response.data["resources"]},
+            {
+                "dashboard",
+                "pets",
+                "shelters",
+                "adoptionRequests",
+                "adoptions",
+                "medicalRecords",
+                "conversations",
+                "notifications",
+                "users",
+                "statistics",
+            },
+        )
+        adopter_data = next(
+            role for role in response.data["roles"] if role["name"] == "adoptante"
+        )
+        self.assertIn(
+            {"resource": "pets", "action": "read"},
+            adopter_data["permissions"],
+        )
+
+    def test_only_administrator_can_replace_role_permissions(self):
+        self.client.force_authenticate(self.admin)
+        payload = [
+            {"resource": "pets", "action": "read"},
+            {"resource": "pets", "action": "create"},
+        ]
+
+        response = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADOPTER},
+            ),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            set(
+                RolePermission.objects.filter(role=self.adopter_role).values_list(
+                    "resource", "action"
+                )
+            ),
+            {("pets", "read"), ("pets", "create")},
+        )
+
+        adopter = User.objects.create_user(
+            email="non-admin-editor@example.com",
+            password="SafePass!2026",
+            name="Non Admin",
+        )
+        self.client.force_authenticate(adopter)
+        response = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADOPTER},
+            ),
+            payload,
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_role_permission_update_rejects_invalid_and_duplicate_entries(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse(
+            "role-permissions-update",
+            kwargs={"role_name": Role.Name.ADOPTER},
+        )
+
+        invalid = self.client.put(
+            url,
+            [{"resource": "secret-data", "action": "read"}],
+            format="json",
+        )
+        duplicate = self.client.put(
+            url,
+            [
+                {"resource": "pets", "action": "read"},
+                {"resource": "pets", "action": "read"},
+            ],
+            format="json",
+        )
+
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(duplicate.status_code, 400)
+
+    def test_administrator_cannot_remove_its_role_management_permission(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADMIN},
+            ),
+            [{"resource": "dashboard", "action": "read"}],
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(
+            RolePermission.objects.filter(
+                role=self.admin.role,
+                resource="users",
+                action="manage",
+            ).exists()
+        )
 
 
 class SeedDataCommandTests(APITestCase):

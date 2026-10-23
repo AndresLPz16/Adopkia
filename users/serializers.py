@@ -2,7 +2,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import Role, User
+from .models import Role, RolePermission, User
+from .rbac import ACTIONS, RESOURCES
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -50,3 +51,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "email", "name", "phone", "role", "active", "registered_at")
         read_only_fields = ("id", "email", "role", "active", "registered_at")
+
+
+class RolePermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RolePermission
+        fields = ("resource", "action")
+
+    def validate_resource(self, resource):
+        if resource not in {key for key, _label in RESOURCES}:
+            raise serializers.ValidationError("Recurso desconocido.")
+        return resource
+
+    def validate_action(self, action):
+        if action not in {key for key, _label in ACTIONS}:
+            raise serializers.ValidationError("Acción desconocida.")
+        return action
