@@ -6,10 +6,14 @@ from .models import Notification
 from .serializers import NotificationSerializer
 
 
+from myproject.permissions import RolePermissionRequired
+
+
 class NotificationViewSet(viewsets.ModelViewSet):
+    rbac_resource = "notifications"
     queryset = Notification.objects.none()
     serializer_class = NotificationSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     filterset_fields = ("is_read", "notification_type")
     ordering_fields = ("sent_at",)
     http_method_names = ("get", "patch", "delete", "head", "options")

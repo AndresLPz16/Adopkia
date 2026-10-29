@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -33,6 +34,8 @@ interface AuthProviderProps {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const ACCESS_TOKEN_KEY = "adopkia_access";
+const REFRESH_TOKEN_KEY = "adopkia_refresh";
 
 function toAuthUser(profile: BackendUserProfile): AuthUser {
   return {
@@ -41,6 +44,7 @@ function toAuthUser(profile: BackendUserProfile): AuthUser {
     email: profile.email,
     roles: [profile.role],
     active: profile.active,
+    isPlatformSuperadmin: profile.is_platform_superadmin,
   };
 }
 
@@ -54,14 +58,55 @@ export function AuthProvider({
   const [error, setError] = useState<Error | null>(null);
   const [permissions, setPermissions] = useState<PermissionMap | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshPromise = useRef<Promise<string | null> | null>(null);
 
   const request = useCallback(
     async (input: RequestInfo | URL, init: RequestInit = {}) => {
+      const makeRequest = (token: string | null) => {
+        if (!token) throw new Error("No hay una sesión autenticada.");
+        const headers = new Headers(init.headers);
+        headers.set("Authorization", `Bearer ${token}`);
+        return fetch(input, { ...init, headers });
+      };
+
       const token = getAccessToken();
       if (!token) throw new Error("No hay una sesión autenticada.");
-      const headers = new Headers(init.headers);
-      headers.set("Authorization", `Bearer ${token}`);
-      return fetch(input, { ...init, headers });
+
+      const response = await makeRequest(token);
+      if (response.status !== 401 || String(input).includes("/auth/refresh/")) {
+        return response;
+      }
+
+      if (!refreshPromise.current) {
+        refreshPromise.current = (async () => {
+          const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_KEY);
+          if (!refreshToken) return null;
+
+          const refreshResponse = await fetch("/api/v1/auth/refresh/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh: refreshToken }),
+          });
+          if (!refreshResponse.ok) {
+            window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+            window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+            return null;
+          }
+          const refreshed = (await refreshResponse.json()) as { access?: unknown };
+          if (typeof refreshed.access !== "string") {
+            window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+            window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+            throw new Error("La respuesta de renovación no contiene un token válido.");
+          }
+          window.localStorage.setItem(ACCESS_TOKEN_KEY, refreshed.access);
+          return refreshed.access;
+        })().finally(() => {
+          refreshPromise.current = null;
+        });
+      }
+
+      const refreshedToken = await refreshPromise.current;
+      return refreshedToken ? makeRequest(refreshedToken) : response;
     },
     [getAccessToken],
   );
@@ -106,6 +151,8 @@ export function AuthProvider({
           typeof profile.name !== "string" ||
           typeof profile.email !== "string" ||
           typeof profile.role !== "string" ||
+          (profile.is_platform_superadmin !== undefined &&
+            typeof profile.is_platform_superadmin !== "boolean") ||
           (profile.active !== undefined && typeof profile.active !== "boolean")
         ) {
           throw new Error("La respuesta del perfil tiene un formato inválido.");

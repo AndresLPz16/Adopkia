@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from myproject.permissions import user_can_manage_shelter
+from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
 from users.models import Role
 
 from .models import Conversation, Message
@@ -20,6 +20,8 @@ from .serializers import (
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
+    rbac_resource = "conversations"
+    permission_classes = (RolePermissionRequired,)
     filterset_fields = ("shelter", "pet")
     search_fields = ("shelter__name", "pet__name", "adopter__name")
     ordering_fields = ("started_at",)
@@ -34,8 +36,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
         return ConversationReadSerializer
 
     def perform_create(self, serializer):
-        if self.request.user.role.name != Role.Name.ADOPTER:
-            raise PermissionDenied(_("Solo un adoptante puede iniciar una conversación."))
         serializer.save(adopter=self.request.user)
 
     def perform_update(self, serializer):
@@ -51,6 +51,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 
 class MessageViewSet(viewsets.ModelViewSet):
+    rbac_resource = "messages"
+    permission_classes = (RolePermissionRequired,)
     filterset_fields = ("conversation", "is_read")
     search_fields = ("content", "sender__name")
     ordering_fields = ("sent_at",)

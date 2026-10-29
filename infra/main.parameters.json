@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "adopkia-prod-0b3d"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "sessionId": {
+      "value": "0b3d9996-5886-4eb8-9d75-afe74490a798"
+    },
+    "deployedBy": {
+      "value": "yoider brito"
+    },
+    "createdAt": {
+      "value": "2026-10-28T21:50:41.4062611-05:00"
+    },
+    "deployerObjectId": {
+      "value": "92f59555-9763-4ad6-a743-cb310a0d655d"
+    }
+  }
+}

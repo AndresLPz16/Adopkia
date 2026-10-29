@@ -1,12 +1,18 @@
 from datetime import date
+from io import BytesIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
+from PIL import Image
 from rest_framework.test import APITestCase
 
 from shelters.models import Shelter, ShelterMember
 from users.models import Role, User
 
-from .models import Breed, Pet, Species
+from .models import Breed, Pet, PetPhoto, Species
 
 
 class PetApiTests(APITestCase):
@@ -96,6 +102,45 @@ class PetApiTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Pet.objects.get(name="Milo").status, Pet.Status.AVAILABLE)
 
+    def test_shelter_can_add_photo_url_to_pet(self):
+        self.client.force_authenticate(self.owner)
+        response = self.client.post(
+            reverse("pet-photo-list"),
+            {
+                "pet": self.pet.pk,
+                "url": "https://example.com/luna.jpg",
+            },
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            PetPhoto.objects.get(pk=response.data["id"]).url,
+            "https://example.com/luna.jpg",
+        )
+
+    def test_shelter_can_upload_photo_file_to_pet(self):
+        self.client.force_authenticate(self.owner)
+        image_buffer = BytesIO()
+        Image.new("RGB", (1, 1), color="red").save(image_buffer, format="PNG")
+        image = SimpleUploadedFile(
+            "luna.png",
+            image_buffer.getvalue(),
+            content_type="image/png",
+        )
+
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                reverse("pet-photo-list"),
+                {"pet": self.pet.pk, "image": image},
+                format="multipart",
+            )
+
+            self.assertEqual(response.status_code, 201)
+            photo = PetPhoto.objects.get(pk=response.data["id"])
+            self.assertTrue(photo.url.startswith("/media/pets/"))
+            self.assertTrue(
+                Path(media_root, photo.url.removeprefix("/media/")).is_file()
+            )
     def test_future_birth_date_is_rejected(self):
         self.client.force_authenticate(self.owner)
         response = self.client.post(

@@ -56,6 +56,7 @@ USE adopkia;
 CREATE TABLE rol (
   id_rol      TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
   nombre      VARCHAR(30)      NOT NULL,
+  etiqueta    VARCHAR(60)      NULL,
   descripcion VARCHAR(150)     NULL,
   PRIMARY KEY (id_rol),
   CONSTRAINT uq_rol_nombre UNIQUE (nombre)
@@ -93,6 +94,7 @@ CREATE TABLE usuario (
   telefono        VARCHAR(20)      NULL,
   activo          BOOLEAN          NOT NULL DEFAULT TRUE,
   fecha_registro  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  es_superadministrador BOOLEAN   NOT NULL DEFAULT FALSE,
   PRIMARY KEY (id_usuario),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
   CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol)

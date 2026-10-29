@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.serializers import CharField, DateField, Serializer
 
-from myproject.permissions import user_can_manage_shelter
+from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
 from users.models import Role
 
 from .models import Adoption, AdoptionRequest, FormQuestion, FollowUp
@@ -37,6 +37,8 @@ class FormQuestionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class AdoptionRequestViewSet(viewsets.ModelViewSet):
+    rbac_resource = "adoptionRequests"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     http_method_names = ("get", "post", "patch", "head", "options")
     filterset_fields = ("status", "pet")
     search_fields = ("pet__name", "applicant__name", "applicant__email")
@@ -61,8 +63,6 @@ class AdoptionRequestViewSet(viewsets.ModelViewSet):
         return AdoptionRequestReadSerializer
 
     def perform_create(self, serializer):
-        if self.request.user.role.name != Role.Name.ADOPTER:
-            raise PermissionDenied(_("Solo un adoptante puede enviar solicitudes."))
         serializer.save()
 
     def perform_update(self, serializer):
@@ -107,6 +107,8 @@ class AdoptionRequestViewSet(viewsets.ModelViewSet):
 
 
 class AdoptionViewSet(viewsets.ReadOnlyModelViewSet):
+    rbac_resource = "adoptions"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     serializer_class = AdoptionSerializer
     filterset_fields = ("status",)
     ordering_fields = ("adoption_date", "return_date")
@@ -138,6 +140,8 @@ class AdoptionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class FollowUpViewSet(viewsets.ModelViewSet):
+    rbac_resource = "followUps"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     serializer_class = FollowUpSerializer
     filterset_fields = ("adoption",)
     ordering_fields = ("date",)

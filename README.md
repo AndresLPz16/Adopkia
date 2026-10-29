@@ -18,7 +18,9 @@ API REST de adopción responsable y seguimiento post-adopción. Las migraciones 
 - Django 5.2 y sus dependencias requieren una versión de Python compatible; se recomienda usar Python 3.12.
 - MySQL 8.0.16+ para validar el esquema completo, incluidos `CHECK`, columnas generadas, rutinas, triggers y vistas.
 
-El proyecto y los valores de `.env.example` son para desarrollo local, no una configuración lista para producción. En producción usa `DJANGO_DEBUG=false`, una `DJANGO_SECRET_KEY` aleatoria y secreta, `DJANGO_ALLOWED_HOSTS` limitado a los dominios reales, `DJANGO_CORS_ALLOWED_ORIGINS` limitado a los orígenes autorizados y credenciales de base de datos protegidas. Configura HTTPS, HSTS y cookies seguras en el despliegue/servidor; esos ajustes no se habilitan en este proyecto.
+El proyecto y los valores de `.env.example` son para desarrollo local, no una configuración lista para producción. En producción usa `DJANGO_DEBUG=false`, una `DJANGO_SECRET_KEY` aleatoria y secreta, `DJANGO_ALLOWED_HOSTS` limitado a los dominios reales, `DJANGO_CORS_ALLOWED_ORIGINS` limitado a los orígenes autorizados y credenciales de base de datos protegidas. Para MySQL, con `DJANGO_DEBUG=false` el cliente verifica TLS y el nombre del servidor por defecto (`DB_SSL_MODE=verify_identity`); puedes definir `DB_SSL_CA` si necesitas una CA específica. El modo `DB_SSL_MODE=disabled` solo se permite con debug para la base local de desarrollo. Configura HTTPS, HSTS y cookies seguras en el despliegue/servidor; esos ajustes no se habilitan en este proyecto.
+
+Para una imagen de producción en Azure, usa `Dockerfile.azure` en lugar de `Dockerfile`. Esta variante aplica migraciones y catálogos base y sirve Django con Gunicorn; no importa las cuentas demo. Inyecta en el entorno de Azure `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS` y las credenciales/endpoints MySQL reales. El `Dockerfile` y Compose existentes siguen siendo el flujo local de desarrollo.
 
 Para el desarrollo se recomienda instalar el conjunto de dependencias de desarrollo con el lock probado:
 
@@ -60,14 +62,6 @@ Con una base nueva, inicia sesión con una de las cuentas administradoras del co
 ```powershell
 docker compose exec web python manage.py createsuperuser
 ```
-
-Las contraseñas demo se comparten como hashes y no se pueden recuperar en texto claro. Para definir una contraseña propia para `yoiderbrito@gmail.com` en tu instalación, ejecuta:
-
-```powershell
-docker compose exec web python manage.py changepassword yoiderbrito@gmail.com
-```
-
-Cada instalación tiene su propia base de datos; cambiar esta contraseña no la cambia en las instalaciones de otras personas.
 
 Detén los servicios con `Ctrl+C`; `docker compose down` conserva los datos de MySQL. **No ejecutes `docker compose down --volumes` si quieres conservarlos:** elimina el volumen de la base. El conjunto de demostración se importa solo en una base sin usuarios; un volumen existente no se reemplaza ni se actualiza automáticamente.
 

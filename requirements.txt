@@ -6,3 +6,5 @@ django-filter>=25.1,<26
 django-cors-headers>=4.7,<5
 python-dotenv>=1.1,<2
 PyMySQL>=1.1,<2
+Pillow>=11,<13
+gunicorn>=23,<24

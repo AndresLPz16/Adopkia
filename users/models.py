@@ -17,6 +17,7 @@ class Role(models.Model):
 
     id = TinyAutoField(primary_key=True, db_column="id_rol")
     name = models.CharField(max_length=30, unique=True, db_column="nombre")
+    label = models.CharField(max_length=60, null=True, blank=True, db_column="etiqueta")
     description = models.CharField(max_length=150, null=True, db_column="descripcion")
 
     class Meta:
@@ -103,6 +104,10 @@ class User(AbstractBaseUser):
     email = models.EmailField(max_length=150, unique=True, db_column="correo")
     phone = models.CharField(max_length=20, null=True, db_column="telefono")
     active = models.BooleanField(default=True, db_column="activo")
+    is_platform_superadmin = models.BooleanField(
+        default=False,
+        db_column="es_superadministrador",
+    )
     registered_at = SQLDateTimeField(auto_now_add=True, db_column="fecha_registro")
 
     USERNAME_FIELD = "email"

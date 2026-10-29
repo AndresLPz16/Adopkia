@@ -1,4 +1,5 @@
 import os
+import ssl
 import sys
 from pathlib import Path
 
@@ -94,6 +95,24 @@ if DB_ENGINE == "mysql":
             "DB_NAME debe ser exactamente 'adopkia'; las pruebas usan 'test_adopkia' "
             "y compare_schema usa 'adopkia_cmp'."
         )
+    mysql_ssl_mode = os.getenv(
+        "DB_SSL_MODE", "disabled" if DEBUG else "verify_identity"
+    ).strip().lower()
+    if mysql_ssl_mode not in {"disabled", "verify_identity"}:
+        raise ImproperlyConfigured(
+            "DB_SSL_MODE debe ser 'disabled' o 'verify_identity'."
+        )
+    if mysql_ssl_mode == "disabled" and not DEBUG:
+        raise ImproperlyConfigured(
+            "DB_SSL_MODE=disabled solo se permite cuando DJANGO_DEBUG=true."
+        )
+    mysql_options = {"charset": "utf8mb4"}
+    if mysql_ssl_mode == "verify_identity":
+        mysql_ssl_ca = os.getenv("DB_SSL_CA", "").strip() or None
+        mysql_ssl_context = ssl.create_default_context(cafile=mysql_ssl_ca)
+        mysql_ssl_context.check_hostname = True
+        mysql_ssl_context.verify_mode = ssl.CERT_REQUIRED
+        mysql_options["ssl"] = mysql_ssl_context
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -102,7 +121,7 @@ if DB_ENGINE == "mysql":
             "PASSWORD": mysql_password,
             "HOST": os.getenv("DB_HOST", "127.0.0.1"),
             "PORT": os.getenv("DB_PORT", "3306"),
-            "OPTIONS": {"charset": "utf8mb4"},
+            "OPTIONS": mysql_options,
             "TEST": {"NAME": "test_adopkia"},
         }
     }
@@ -136,7 +155,7 @@ USE_I18N = True
 TIME_ZONE = "America/Bogota"
 USE_TZ = True
 STATIC_URL = "static/"
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

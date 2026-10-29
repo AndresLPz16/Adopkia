@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.parsers import FormParser, MultiPartParser
 
-from myproject.permissions import user_can_manage_shelter
+from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
 from shelters.models import Shelter
 from users.models import Role
 
@@ -16,6 +16,7 @@ from .permissions import PetAccessPermission
 from .serializers import (
     BreedSerializer,
     PetPhotoSerializer,
+    PetPhotoWriteSerializer,
     PetReadSerializer,
     PetWriteSerializer,
     SpeciesSerializer,
@@ -37,11 +38,17 @@ class BreedViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PetViewSet(viewsets.ModelViewSet):
+    rbac_resource = "pets"
+    rbac_allow_anonymous_read = True
     filterset_class = PetFilter
     search_fields = ("name", "health", "temperament", "breed__name", "breed__species__name")
     ordering_fields = ("published_at", "name", "approximate_birth_date")
     ordering = ("-published_at", "-id")
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, PetAccessPermission)
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        PetAccessPermission,
+        RolePermissionRequired,
+    )
 
     def get_queryset(self):
         queryset = Pet.objects.select_related(
@@ -95,10 +102,20 @@ class PetViewSet(viewsets.ModelViewSet):
 
 
 class PetPhotoViewSet(viewsets.ModelViewSet):
+    rbac_resource = "petPhotos"
     serializer_class = PetPhotoSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = (permissions.IsAuthenticated, PetAccessPermission)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        PetAccessPermission,
+        RolePermissionRequired,
+    )
     http_method_names = ("get", "post", "delete", "head", "options")
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return PetPhotoWriteSerializer
+        return PetPhotoSerializer
 
     def get_queryset(self):
         queryset = PetPhoto.objects.select_related("pet", "pet__shelter")

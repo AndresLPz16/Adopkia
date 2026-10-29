@@ -10,6 +10,7 @@ node_modules/
 dist/
 media/
 staticfiles/
+.copilot-azure/
 venv/
 .vscode/
 _no_subir/
