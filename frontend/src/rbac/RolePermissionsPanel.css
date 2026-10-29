@@ -50,6 +50,54 @@
   font-weight: 700;
 }
 
+.rbac-panel__role-actions,
+.rbac-panel__role-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.6rem;
+}
+
+.rbac-panel__role-actions button,
+.rbac-panel__role-form button {
+  min-height: 2.5rem;
+  padding: 0 0.85rem;
+  color: #247554;
+  background: #f3f8f5;
+  border: 1px solid #cbdad2;
+  border-radius: 0.5rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rbac-panel__role-form {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  background: #f7faf8;
+  border: 1px solid #e0e9e4;
+  border-radius: 0.7rem;
+}
+
+.rbac-panel__role-form label {
+  display: grid;
+  min-width: 180px;
+  flex: 1;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.rbac-panel__role-form input {
+  min-height: 2.5rem;
+  padding: 0 0.65rem;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #cbdad2;
+  border-radius: 0.5rem;
+  font: inherit;
+}
+
 .rbac-panel select {
   min-height: 2.75rem;
   padding: 0 0.75rem;

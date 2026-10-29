@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework.views import APIView
 
-from myproject.permissions import IsAdminRole
+from myproject.permissions import RolePermissionRequired
 from pets.models import Pet
 
 from .models import Adoption
@@ -22,7 +22,8 @@ class AdoptionStatisticsSerializer(serializers.Serializer):
 
 
 class AdoptionStatisticsView(APIView):
-    permission_classes = (IsAuthenticated, IsAdminRole)
+    rbac_resource = "statistics"
+    permission_classes = (IsAuthenticated, RolePermissionRequired)
 
     @extend_schema(responses=AdoptionStatisticsSerializer)
     def get(self, request):

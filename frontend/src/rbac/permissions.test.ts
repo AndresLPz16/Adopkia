@@ -54,4 +54,32 @@ describe("can", () => {
       ),
     ).toBe(true);
   });
+
+  it("usa la matriz recibida del backend como autoridad sobre los defaults", () => {
+    const user = { roles: [ROLES.ADOPTER] };
+    expect(
+      can(user, RESOURCES.PETS, ACTIONS.CREATE, {
+        [ROLES.ADOPTER]: { [RESOURCES.PETS]: [ACTIONS.READ] },
+      }),
+    ).toBe(false);
+    expect(
+      can(user, RESOURCES.PETS, ACTIONS.CREATE, {
+        [ROLES.ADOPTER]: { [RESOURCES.PETS]: [ACTIONS.CREATE] },
+      }),
+    ).toBe(true);
+  });
+
+  it("allows the platform superadministrator every action independent of role grants", () => {
+    expect(
+      can(
+        {
+          roles: [ROLES.ADMIN],
+          isPlatformSuperadmin: true,
+        },
+        RESOURCES.USERS,
+        ACTIONS.DELETE,
+        {},
+      ),
+    ).toBe(true);
+  });
 });

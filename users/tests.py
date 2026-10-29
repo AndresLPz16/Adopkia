@@ -119,6 +119,7 @@ class AuthenticationTests(APITestCase):
         profile = self.client.get(reverse("profile"))
         self.assertEqual(profile.status_code, 200)
         self.assertEqual(profile.data["email"], "adopter@example.com")
+        self.assertFalse(profile.data["is_platform_superadmin"])
 
 
 class RolePermissionApiTests(APITestCase):
@@ -145,12 +146,21 @@ class RolePermissionApiTests(APITestCase):
             {resource["key"] for resource in response.data["resources"]},
             {
                 "dashboard",
+                "profile",
                 "pets",
+                "petPhotos",
                 "shelters",
+                "shelterMembers",
+                "formQuestions",
                 "adoptionRequests",
                 "adoptions",
+                "followUps",
+                "veterinarians",
                 "medicalRecords",
+                "vaccines",
+                "reminders",
                 "conversations",
+                "messages",
                 "notifications",
                 "users",
                 "statistics",
@@ -242,7 +252,7 @@ class RolePermissionApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
         self.assertTrue(
             RolePermission.objects.filter(
                 role=self.admin.role,
@@ -250,6 +260,373 @@ class RolePermissionApiTests(APITestCase):
                 action="manage",
             ).exists()
         )
+
+    def test_role_matrix_management_requires_users_manage_grant(self):
+        RolePermission.objects.filter(
+            role=self.admin.role,
+            resource="users",
+            action="manage",
+        ).delete()
+        self.client.force_authenticate(self.admin)
+        response = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADOPTER},
+            ),
+            [{"resource": "pets", "action": "read"}],
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_role_permission_changes_take_effect_on_api_access(self):
+        adopter = User.objects.create_user(
+            email="dynamic-permission-adopter@example.com",
+            password="SafePass!2026",
+            name="Dynamic Permission Adopter",
+        )
+        self.client.force_authenticate(adopter)
+
+        allowed = self.client.get("/api/v1/messages/")
+        self.assertEqual(allowed.status_code, 200)
+
+        RolePermission.objects.filter(
+            role=adopter.role,
+            resource="messages",
+            action="read",
+        ).delete()
+        denied = self.client.get("/api/v1/messages/")
+        self.assertEqual(denied.status_code, 403)
+        index = self.client.get(reverse("api-root"))
+        self.assertNotIn(
+            "messages",
+            {resource["key"] for resource in index.data["resources"]},
+        )
+
+        RolePermission.objects.create(
+            role=adopter.role,
+            resource="messages",
+            action="read",
+        )
+        restored = self.client.get("/api/v1/messages/")
+        self.assertEqual(restored.status_code, 200)
+
+    def test_user_management_is_role_gated_and_never_returns_password(self):
+        adopter = User.objects.create_user(
+            email="user-management-adopter@example.com",
+            password="SafePass!2026",
+            name="User Management Adopter",
+        )
+        self.client.force_authenticate(adopter)
+        denied = self.client.get(reverse("user-list"))
+        self.assertEqual(denied.status_code, 403)
+
+        self.client.force_authenticate(self.admin)
+        allowed = self.client.get(reverse("user-list"))
+        self.assertEqual(allowed.status_code, 200)
+        self.assertTrue(allowed.data)
+        self.assertNotIn("password", allowed.data[0])
+        self.assertNotIn("is_platform_superadmin", allowed.data[0])
+
+        self.admin.is_platform_superadmin = True
+        self.admin.save(update_fields=("is_platform_superadmin",))
+        visible_to_superadmin = self.client.get(reverse("user-list"))
+        self.assertIn("is_platform_superadmin", visible_to_superadmin.data[0])
+
+    def test_users_with_manage_permission_can_create_and_update_accounts(self):
+        self.client.force_authenticate(self.admin)
+        created = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "managed-account@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "Managed Account",
+                "role": Role.Name.ADOPTER,
+            },
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        self.assertNotIn("password", created.data)
+
+        user = User.objects.get(email="managed-account@example.com")
+        self.assertTrue(user.check_password("Very-Safe-Unique-Password!2026"))
+        updated = self.client.patch(
+            reverse("user-detail", kwargs={"pk": user.pk}),
+            {"active": False},
+            format="json",
+        )
+        self.assertEqual(updated.status_code, 200)
+        user.refresh_from_db()
+        self.assertFalse(user.active)
+
+    def test_custom_role_permissions_control_api_access_and_can_be_assigned(self):
+        self.client.force_authenticate(self.admin)
+        created_role = self.client.post(
+            reverse("role-list"),
+            {
+                "name": "content_moderator",
+                "label": "Moderador de contenido",
+                "description": "Revisa contenido de la plataforma.",
+            },
+            format="json",
+        )
+        self.assertEqual(created_role.status_code, 201)
+        role = Role.objects.get(name="content_moderator")
+
+        updated_permissions = self.client.put(
+            reverse("role-permissions-update", kwargs={"role_name": role.name}),
+            [{"resource": "profile", "action": "read"}],
+            format="json",
+        )
+        self.assertEqual(updated_permissions.status_code, 200)
+
+        created_user = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "moderator@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "Content Moderator",
+                "role": role.name,
+            },
+            format="json",
+        )
+        self.assertEqual(created_user.status_code, 201)
+        self.assertNotIn("password", created_user.data)
+
+        moderator = User.objects.get(email="moderator@example.com")
+        self.client.force_authenticate(moderator)
+        self.assertEqual(self.client.get(reverse("profile")).status_code, 200)
+        RolePermission.objects.filter(role=role, resource="profile").delete()
+        self.assertEqual(self.client.get(reverse("profile")).status_code, 403)
+
+        self.client.force_authenticate(self.admin)
+        renamed = self.client.patch(
+            reverse("role-detail", kwargs={"pk": role.pk}),
+            {"label": "Moderación"},
+            format="json",
+        )
+        self.assertEqual(renamed.status_code, 200)
+        self.assertEqual(renamed.data["label"], "Moderación")
+        blocked_delete = self.client.delete(
+            reverse("role-detail", kwargs={"pk": role.pk})
+        )
+        self.assertEqual(blocked_delete.status_code, 400)
+
+    def test_system_roles_are_immutable_and_custom_role_assignment_is_admin_only(self):
+        self.client.force_authenticate(self.admin)
+        custom_role_response = self.client.post(
+            reverse("role-list"),
+            {"name": "support_agent", "label": "Agente de soporte"},
+            format="json",
+        )
+        self.assertEqual(custom_role_response.status_code, 201)
+        custom_role = Role.objects.get(name="support_agent")
+
+        system_role = Role.objects.get(name=Role.Name.ADOPTER)
+        self.assertEqual(
+            self.client.patch(
+                reverse("role-detail", kwargs={"pk": system_role.pk}),
+                {"label": "Nuevo nombre"},
+                format="json",
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.delete(reverse("role-detail", kwargs={"pk": system_role.pk})).status_code,
+            400,
+        )
+
+        manager = User.objects.create_user(
+            email="custom-role-manager@example.com",
+            password="Very-Safe-Unique-Password!2026",
+            name="Custom Role Manager",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="users",
+            action="manage",
+        )
+        self.client.force_authenticate(manager)
+        denied = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "unauthorized-custom@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "Unauthorized Custom",
+                "role": custom_role.name,
+            },
+            format="json",
+        )
+        self.assertEqual(denied.status_code, 403)
+
+    def test_only_platform_superadmin_can_manage_administrator_accounts(self):
+        ordinary_admin = User.objects.create_user(
+            email="ordinary-admin-target@example.com",
+            password="Very-Safe-Unique-Password!2026",
+            name="Ordinary Admin Target",
+            role=Role.Name.ADMIN,
+        )
+        self.client.force_authenticate(self.admin)
+
+        created = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "new-ordinary-admin@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "New Ordinary Admin",
+                "role": Role.Name.ADMIN,
+            },
+            format="json",
+        )
+        updated = self.client.patch(
+            reverse("user-detail", kwargs={"pk": ordinary_admin.pk}),
+            {"active": False},
+            format="json",
+        )
+        deleted = self.client.delete(
+            reverse("user-detail", kwargs={"pk": ordinary_admin.pk})
+        )
+        permission_update = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADMIN},
+            ),
+            [{"resource": "dashboard", "action": "read"}],
+            format="json",
+        )
+
+        self.assertEqual(created.status_code, 403)
+        self.assertEqual(updated.status_code, 403)
+        self.assertEqual(deleted.status_code, 403)
+        self.assertEqual(permission_update.status_code, 403)
+        ordinary_admin.refresh_from_db()
+        self.assertTrue(ordinary_admin.active)
+
+    def test_platform_superadmin_has_full_access_and_its_account_is_protected(self):
+        platform_superadmin = User.objects.create_superuser(
+            email="platform-superadmin@example.com",
+            password="Very-Safe-Unique-Password!2026",
+            name="Platform Superadmin",
+        )
+        platform_superadmin.is_platform_superadmin = True
+        platform_superadmin.save(update_fields=("is_platform_superadmin",))
+        RolePermission.objects.filter(role=platform_superadmin.role).delete()
+        self.client.force_authenticate(platform_superadmin)
+        profile = self.client.get(reverse("profile"))
+        self.assertEqual(profile.status_code, 200)
+        self.assertTrue(profile.data["is_platform_superadmin"])
+        self.assertEqual(profile.data["role"], Role.Name.ADMIN)
+
+        created_admin = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "created-by-superadmin@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "Managed Administrator",
+                "role": Role.Name.ADMIN,
+            },
+            format="json",
+        )
+        self.assertEqual(created_admin.status_code, 201)
+        self.assertFalse(created_admin.data["is_platform_superadmin"])
+        self.assertEqual(self.client.get("/api/v1/messages/").status_code, 200)
+        admin_permissions = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADMIN},
+            ),
+            [
+                {"resource": "users", "action": "manage"},
+                {"resource": "dashboard", "action": "read"},
+            ],
+            format="json",
+        )
+        self.assertEqual(admin_permissions.status_code, 200)
+
+        managed_admin = User.objects.get(email="created-by-superadmin@example.com")
+        demoted_admin = self.client.patch(
+            reverse("user-detail", kwargs={"pk": managed_admin.pk}),
+            {"role": Role.Name.ADOPTER},
+            format="json",
+        )
+        self.assertEqual(demoted_admin.status_code, 200)
+        self.assertEqual(demoted_admin.data["role"], Role.Name.ADOPTER)
+
+        demoted = self.client.patch(
+            reverse("user-detail", kwargs={"pk": platform_superadmin.pk}),
+            {"role": Role.Name.ADOPTER},
+            format="json",
+        )
+        deactivated = self.client.patch(
+            reverse("user-detail", kwargs={"pk": platform_superadmin.pk}),
+            {"active": False},
+            format="json",
+        )
+        deleted = self.client.delete(
+            reverse("user-detail", kwargs={"pk": platform_superadmin.pk})
+        )
+        self.assertEqual(demoted.status_code, 400)
+        self.assertEqual(deactivated.status_code, 400)
+        self.assertEqual(deleted.status_code, 400)
+        platform_superadmin.refresh_from_db()
+        self.assertTrue(platform_superadmin.active)
+        self.assertTrue(platform_superadmin.is_platform_superadmin)
+
+    def test_user_api_cannot_grant_platform_superadmin_flag(self):
+        self.client.force_authenticate(self.admin)
+        created = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "not-superadmin@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "Not Superadmin",
+                "role": Role.Name.ADOPTER,
+                "is_platform_superadmin": True,
+            },
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        self.assertNotIn("is_platform_superadmin", created.data)
+        account = User.objects.get(email="not-superadmin@example.com")
+        self.assertFalse(account.is_platform_superadmin)
+
+    def test_non_admin_cannot_assign_privileged_role_and_last_admin_is_protected(self):
+        manager = User.objects.create_user(
+            email="user-manager@example.com",
+            password="SafePass!2026",
+            name="User Manager",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="users",
+            action="manage",
+        )
+        veterinarian_role = Role.objects.get(name=Role.Name.VETERINARIAN)
+        self.client.force_authenticate(manager)
+        denied = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "unapproved-vet@example.com",
+                "password": "Very-Safe-Unique-Password!2026",
+                "name": "Unapproved Vet",
+                "role": veterinarian_role.name,
+            },
+            format="json",
+        )
+        self.assertEqual(denied.status_code, 403)
+
+        RolePermission.objects.filter(role=self.admin.role).delete()
+        RolePermission.objects.create(
+            role=self.admin.role,
+            resource="users",
+            action="manage",
+        )
+        self.client.force_authenticate(self.admin)
+        last_admin = self.client.patch(
+            reverse("user-detail", kwargs={"pk": self.admin.pk}),
+            {"active": False},
+            format="json",
+        )
+        self.assertEqual(last_admin.status_code, 400)
 
 
 class SeedDataCommandTests(APITestCase):

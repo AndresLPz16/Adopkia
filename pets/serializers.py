@@ -1,3 +1,6 @@
+from uuid import uuid4
+
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -114,7 +117,39 @@ class PetWriteSerializer(LocalizedModelSerializer):
 
 
 class PetPhotoWriteSerializer(LocalizedModelSerializer):
+    url = serializers.URLField(max_length=500, required=False)
+    image = serializers.ImageField(write_only=True, required=False)
+
     class Meta:
         model = PetPhoto
-        fields = ("id", "pet", "url", "is_primary")
+        fields = ("id", "pet", "url", "image", "is_primary")
         read_only_fields = ("id",)
+
+    def validate(self, attrs):
+        if bool(attrs.get("url")) == bool(attrs.get("image")):
+            raise serializers.ValidationError(
+                _("Proporciona un enlace o un archivo de imagen, pero no ambos.")
+            )
+        return attrs
+
+    def validate_image(self, image):
+        if image.size > 10 * 1024 * 1024:
+            raise serializers.ValidationError(_("La imagen no puede superar 10 MB."))
+        if image.image.format not in {"JPEG", "PNG", "WEBP", "GIF"}:
+            raise serializers.ValidationError(_("Usa una imagen JPG, PNG, WEBP o GIF."))
+        return image
+
+    def create(self, validated_data):
+        image = validated_data.pop("image", None)
+        if image is None:
+            return PetPhoto.objects.create(**validated_data)
+
+        extensions = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp", "GIF": "gif"}
+        extension = extensions[image.image.format]
+        path = default_storage.save(f"pets/{uuid4().hex}.{extension}", image)
+        validated_data["url"] = default_storage.url(path)
+        try:
+            return PetPhoto.objects.create(**validated_data)
+        except Exception:
+            default_storage.delete(path)
+            raise

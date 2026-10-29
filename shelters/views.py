@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from myproject.permissions import user_can_manage_shelter
+from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
 from users.models import Role
 
 from .models import Shelter, ShelterMember
@@ -24,6 +24,9 @@ from .serializers import (
     retrieve=extend_schema(responses=PublicShelterSerializer),
 )
 class ShelterViewSet(viewsets.ModelViewSet):
+    rbac_resource = "shelters"
+    rbac_action_resources = {"members": "shelterMembers"}
+    rbac_allow_anonymous_read = True
     serializer_class = ShelterSerializer
     filterset_fields = ("city", "verification_status")
     search_fields = ("name", "city", "address")
@@ -49,8 +52,8 @@ class ShelterViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+            return [RolePermissionRequired()]
+        return [permissions.IsAuthenticated(), RolePermissionRequired()]
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -96,10 +99,8 @@ class ShelterViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role.name not in (Role.Name.SHELTER, Role.Name.ADMIN):
-            raise PermissionDenied(_("Solo un usuario de refugio puede registrar un refugio."))
         shelter = serializer.save()
-        if user.role.name == Role.Name.SHELTER:
+        if user.role.name != Role.Name.ADMIN:
             ShelterMember.objects.create(
                 shelter=shelter,
                 user=user,
@@ -116,10 +117,12 @@ class ShelterViewSet(viewsets.ModelViewSet):
             raise PermissionDenied(_("No tienes permisos para eliminar este refugio."))
         instance.delete()
 
-    @action(detail=True, methods=("post",), permission_classes=(permissions.IsAuthenticated,))
+    @action(
+        detail=True,
+        methods=("post",),
+        permission_classes=(permissions.IsAuthenticated, RolePermissionRequired),
+    )
     def verify(self, request, pk=None):
-        if request.user.role.name != Role.Name.ADMIN:
-            raise PermissionDenied(_("Solo un administrador puede verificar refugios."))
         shelter = self.get_object()
         approved = request.data.get("approved")
         if not isinstance(approved, bool):
@@ -134,7 +137,11 @@ class ShelterViewSet(viewsets.ModelViewSet):
         shelter.save(update_fields=("verification_status", "verification_date", "verified_by"))
         return Response(self.get_serializer(shelter).data)
 
-    @action(detail=True, methods=("get", "post"), permission_classes=(permissions.IsAuthenticated,))
+    @action(
+        detail=True,
+        methods=("get", "post"),
+        permission_classes=(permissions.IsAuthenticated, RolePermissionRequired),
+    )
     def members(self, request, pk=None):
         shelter = self.get_object()
         if request.method == "POST":
@@ -157,6 +164,8 @@ class ShelterViewSet(viewsets.ModelViewSet):
 
 
 class ShelterMemberViewSet(viewsets.ModelViewSet):
+    rbac_resource = "shelterMembers"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     serializer_class = ShelterMemberSerializer
     ordering = ("id",)
     http_method_names = ("get", "patch", "delete", "head", "options")

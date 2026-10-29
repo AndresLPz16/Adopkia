@@ -16,6 +16,8 @@ export function RolePermissionsPanel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [roleFormMode, setRoleFormMode] = useState<"create" | "edit" | null>(null);
+  const [roleForm, setRoleForm] = useState({ name: "", label: "", description: "" });
 
   const loadCatalog = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -57,6 +59,8 @@ export function RolePermissionsPanel() {
     () => catalog?.roles.find((role) => role.name === selectedRole) ?? null,
     [catalog, selectedRole],
   );
+  const canEditCurrentRole =
+    currentRole?.name !== ROLES.ADMIN || user?.isPlatformSuperadmin === true;
 
   const togglePermission = (resource: string, action: string) => {
     if (!catalog || !currentRole) return;
@@ -114,7 +118,7 @@ export function RolePermissionsPanel() {
   };
 
   const save = async () => {
-    if (!currentRole) return;
+    if (!currentRole || !canEditCurrentRole) return;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -149,6 +153,77 @@ export function RolePermissionsPanel() {
     }
   };
 
+  const saveRole = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const editing = roleFormMode === "edit" && currentRole;
+      const response = await request(
+        editing
+          ? `/api/v1/auth/roles/${encodeURIComponent(editing.id)}/`
+          : "/api/v1/auth/roles/",
+        {
+          method: editing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(roleForm),
+        },
+      );
+      if (!response.ok) {
+        const details = await response.json().catch(() => null);
+        const message =
+          details && typeof details === "object"
+            ? Object.values(details).flat().find((item) => typeof item === "string")
+            : null;
+        throw new Error(
+          (typeof message === "string" && message) ||
+            `No se pudo guardar el rol (${response.status}).`,
+        );
+      }
+      const savedRole = (await response.json()) as {
+        id: string | number;
+        name: string;
+      };
+      setSelectedRole(savedRole.name);
+      setRoleFormMode(null);
+      await loadCatalog();
+      setNotice(editing ? "Rol actualizado." : "Rol creado. Ahora configura sus permisos.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "No se pudo guardar el rol.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteRole = async () => {
+    if (!currentRole || !window.confirm(`¿Eliminar el rol ${currentRole.label}?`)) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await request(
+        `/api/v1/auth/roles/${encodeURIComponent(currentRole.id)}/`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        const details = await response.json().catch(() => null);
+        throw new Error(
+          details?.role?.[0] ??
+            `No se pudo eliminar el rol (${response.status}).`,
+        );
+      }
+      setRoleFormMode(null);
+      setSelectedRole("");
+      await loadCatalog();
+      setNotice("Rol eliminado.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "No se pudo eliminar el rol.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!user?.roles.includes(ROLES.ADMIN)) {
     return (
       <section className="rbac-panel" aria-labelledby="rbac-title">
@@ -165,7 +240,8 @@ export function RolePermissionsPanel() {
           <p className="rbac-panel__eyebrow">Administración</p>
           <h1 id="rbac-title">Permisos por rol</h1>
           <p className="rbac-panel__description">
-            Consulta y ajusta qué puede hacer cada rol en la interfaz de Adopkia.
+            Define qué acciones permite la API para cada rol y controla también
+            las opciones que aparecen en la interfaz.
           </p>
         </div>
         <label className="rbac-panel__role">
@@ -182,10 +258,69 @@ export function RolePermissionsPanel() {
             ))}
           </select>
         </label>
+        <div className="rbac-panel__role-actions">
+          <button type="button" disabled={saving || loading} onClick={() => {
+            setRoleForm({ name: "", label: "", description: "" });
+            setRoleFormMode("create");
+          }}>Crear rol</button>
+          {currentRole && !Object.values(ROLES).includes(currentRole.name as typeof ROLES[keyof typeof ROLES]) && (
+            <>
+              <button type="button" disabled={saving} onClick={() => {
+                setRoleForm({
+                  name: currentRole.name,
+                  label: currentRole.label,
+                  description: currentRole.description ?? "",
+                });
+                setRoleFormMode("edit");
+              }}>Editar rol</button>
+              <button type="button" disabled={saving} onClick={() => void deleteRole()}>Eliminar rol</button>
+            </>
+          )}
+        </div>
       </header>
 
       {error && <p className="rbac-panel__error" role="alert">{error}</p>}
       {notice && <p className="rbac-panel__notice" role="status">{notice}</p>}
+      {!canEditCurrentRole && (
+        <p role="status">
+          No tienes autorización para modificar los permisos de este rol.
+        </p>
+      )}
+      {roleFormMode && (
+        <form className="rbac-panel__role-form" onSubmit={(event) => void saveRole(event)}>
+          <label>
+            Identificador
+            <input
+              value={roleForm.name}
+              onChange={(event) => setRoleForm({ ...roleForm, name: event.target.value })}
+              required
+              minLength={3}
+              maxLength={30}
+              pattern="[a-z][a-z0-9_]*"
+              disabled={roleFormMode === "edit"}
+            />
+          </label>
+          <label>
+            Nombre visible
+            <input
+              value={roleForm.label}
+              onChange={(event) => setRoleForm({ ...roleForm, label: event.target.value })}
+              required
+              maxLength={60}
+            />
+          </label>
+          <label>
+            Descripción
+            <input
+              value={roleForm.description}
+              onChange={(event) => setRoleForm({ ...roleForm, description: event.target.value })}
+              maxLength={150}
+            />
+          </label>
+          <button type="submit" disabled={saving}>{saving ? "Guardando…" : "Guardar rol"}</button>
+          <button type="button" disabled={saving} onClick={() => setRoleFormMode(null)}>Cancelar</button>
+        </form>
+      )}
       {loading ? (
         <p role="status">Cargando permisos…</p>
       ) : (
@@ -226,7 +361,11 @@ export function RolePermissionsPanel() {
                             type="checkbox"
                             aria-label={`${resource.label}: ${action.label}`}
                             checked={Boolean(checked)}
-                            disabled={saving || Boolean(isAdminRecoveryPermission)}
+                            disabled={
+                              saving ||
+                              !canEditCurrentRole ||
+                              Boolean(isAdminRecoveryPermission)
+                            }
                             onChange={() =>
                               togglePermission(resource.key, action.key)
                             }
@@ -241,13 +380,13 @@ export function RolePermissionsPanel() {
           </div>
           <footer className="rbac-panel__footer">
             <p>
-              Los cambios se guardan en el servidor. Las reglas y permisos
-              específicos del backend siguen siendo la autorización definitiva.
+              Los cambios se aplican de inmediato en las solicitudes protegidas
+              del backend. Los límites de propiedad y pertenencia siguen vigentes.
             </p>
             <button
               type="button"
               onClick={() => void save()}
-              disabled={saving || !currentRole}
+              disabled={saving || !currentRole || !canEditCurrentRole}
             >
               {saving ? "Guardando…" : "Guardar cambios"}
             </button>

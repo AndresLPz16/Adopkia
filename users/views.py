@@ -1,16 +1,18 @@
 from django.db import transaction
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 
-from myproject.permissions import IsAdminRole
+from myproject.permissions import IsAdminRole, RolePermissionRequired
 
-from .models import Role, RolePermission
+from .models import Role, RolePermission, User
 from .rbac import ACTIONS, RESOURCES, get_permission_catalog
 from .serializers import (
+    RoleDefinitionSerializer,
     RolePermissionSerializer,
+    UserAdminSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
 )
@@ -23,6 +25,8 @@ class RegisterView(generics.CreateAPIView):
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
+    rbac_resource = "profile"
 
     def get_object(self):
         return self.request.user
@@ -40,7 +44,9 @@ class RolePermissionsView(APIView):
 
 
 class RolePermissionUpdateView(APIView):
-    permission_classes = (IsAdminRole,)
+    permission_classes = (IsAdminRole, RolePermissionRequired)
+    rbac_resource = "users"
+    rbac_required_action = "manage"
 
     @extend_schema(
         request=RolePermissionSerializer(many=True),
@@ -52,6 +58,13 @@ class RolePermissionUpdateView(APIView):
             role = Role.objects.get(name=role_name)
         except Role.DoesNotExist as exc:
             raise ValidationError({"role": "El rol indicado no existe."}) from exc
+        if (
+            role.name == Role.Name.ADMIN
+            and not request.user.is_platform_superadmin
+        ):
+            raise PermissionDenied(
+                "No tienes autorización para modificar los permisos del rol administrador."
+            )
 
         serializer = RolePermissionSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
@@ -93,3 +106,195 @@ class RolePermissionUpdateView(APIView):
             )
 
         return Response(get_permission_catalog(), status=status.HTTP_200_OK)
+
+
+class RoleListCreateView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    rbac_resource = "users"
+    rbac_required_action = "manage"
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [permissions.IsAuthenticated()]
+        return [permission() for permission in (IsAdminRole, RolePermissionRequired)]
+
+    @extend_schema(responses=RoleDefinitionSerializer(many=True), operation_id="roles_list")
+    def get(self, request):
+        roles = Role.objects.order_by("id")
+        return Response(RoleDefinitionSerializer(roles, many=True).data)
+
+    @extend_schema(
+        request=RoleDefinitionSerializer,
+        responses=RoleDefinitionSerializer,
+        operation_id="roles_create",
+    )
+    def post(self, request):
+        serializer = RoleDefinitionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        role = serializer.save()
+        return Response(
+            RoleDefinitionSerializer(role).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class RoleDetailView(APIView):
+    permission_classes = (IsAdminRole, RolePermissionRequired)
+    rbac_resource = "users"
+    rbac_required_action = "manage"
+
+    def get_role(self, pk):
+        from django.shortcuts import get_object_or_404
+
+        return get_object_or_404(Role, pk=pk)
+
+    @extend_schema(
+        request=RoleDefinitionSerializer,
+        responses=RoleDefinitionSerializer,
+        operation_id="roles_update",
+    )
+    def patch(self, request, pk):
+        role = self.get_role(pk)
+        if role.name in Role.Name.values:
+            raise ValidationError({"role": "Los roles del sistema no se pueden editar."})
+        serializer = RoleDefinitionSerializer(role, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(RoleDefinitionSerializer(serializer.save()).data)
+
+    @extend_schema(operation_id="roles_delete", responses={204: None})
+    def delete(self, request, pk):
+        from django.shortcuts import get_object_or_404
+
+        with transaction.atomic():
+            role = get_object_or_404(Role.objects.select_for_update(), pk=pk)
+            if role.name in Role.Name.values:
+                raise ValidationError({"role": "Los roles del sistema no se pueden eliminar."})
+            if role.users.exists():
+                raise ValidationError(
+                    {"role": "Reasigna o elimina las cuentas que usan este rol antes de eliminarlo."}
+                )
+            role.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserManagementBaseView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
+    rbac_resource = "users"
+    serializer_class = UserAdminSerializer
+
+    def get_queryset(self):
+        return User.objects.select_related("role").order_by("id")
+
+    def get_object(self, pk):
+        from django.shortcuts import get_object_or_404
+
+        return get_object_or_404(self.get_queryset(), pk=pk)
+
+
+class UserListCreateView(UserManagementBaseView):
+    @extend_schema(responses=UserAdminSerializer(many=True), operation_id="users_list")
+    def get(self, request):
+        return Response(self.get_serializer(self.get_queryset(), many=True).data)
+
+    @extend_schema(
+        request=UserAdminSerializer,
+        responses=UserAdminSerializer,
+        operation_id="users_create",
+    )
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        target_role = serializer.validated_data["role"]
+        if (
+            target_role.name == Role.Name.ADMIN
+            and not request.user.is_platform_superadmin
+        ):
+            raise PermissionDenied(
+                "No tienes autorización para crear cuentas de administrador."
+            )
+        if (
+            target_role.name not in (Role.Name.ADOPTER, Role.Name.SHELTER)
+            and request.user.role.name != Role.Name.ADMIN
+            and not request.user.is_platform_superadmin
+        ):
+            raise PermissionDenied(
+                "Solo un administrador puede asignar roles veterinarios, administrativos o personalizados."
+            )
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class UserDetailView(UserManagementBaseView):
+    @extend_schema(responses=UserAdminSerializer, operation_id="users_retrieve")
+    def get(self, request, pk):
+        return Response(self.get_serializer(self.get_object(pk)).data)
+
+    @extend_schema(
+        request=UserAdminSerializer,
+        responses=UserAdminSerializer,
+        operation_id="users_update",
+    )
+    def patch(self, request, pk):
+        user = self.get_object(pk)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        target_role = serializer.validated_data.get("role", user.role)
+        if user.pk == request.user.pk and serializer.validated_data.get("active") is False:
+            raise ValidationError({"active": "No puedes desactivar tu propia cuenta."})
+        if (
+            (user.is_platform_superadmin or user.role.name == Role.Name.ADMIN
+             or target_role.name == Role.Name.ADMIN)
+            and not request.user.is_platform_superadmin
+        ):
+            raise PermissionDenied(
+                "No tienes autorización para administrar cuentas de administrador."
+            )
+        if user.is_platform_superadmin and (
+            target_role.pk != user.role_id
+            or serializer.validated_data.get("active") is False
+        ):
+            raise ValidationError(
+                {"role": "Esta cuenta está protegida y no puede degradarse ni desactivarse."}
+            )
+        if (
+            target_role.pk != user.role_id
+            and request.user.role.name != Role.Name.ADMIN
+            and not request.user.is_platform_superadmin
+        ):
+            raise PermissionDenied(
+                "Solo un administrador puede cambiar el rol de una cuenta."
+            )
+        if (
+            user.role.name == Role.Name.ADMIN
+            and user.active
+            and (
+                target_role.name != Role.Name.ADMIN
+                or serializer.validated_data.get("active") is False
+            )
+            and User.objects.filter(role__name=Role.Name.ADMIN, active=True).count() <= 1
+        ):
+            raise ValidationError(
+                {"role": "No se puede desactivar ni degradar al último administrador activo."}
+            )
+        serializer.save()
+        return Response(serializer.data)
+
+    @extend_schema(operation_id="users_delete", responses={204: None})
+    def delete(self, request, pk):
+        user = self.get_object(pk)
+        if (
+            (user.is_platform_superadmin or user.role.name == Role.Name.ADMIN)
+            and not request.user.is_platform_superadmin
+        ):
+            raise PermissionDenied(
+                "No tienes autorización para eliminar cuentas de administrador."
+            )
+        if user.is_platform_superadmin:
+            raise ValidationError("Esta cuenta está protegida y no se puede eliminar.")
+        if user.pk == request.user.pk:
+            raise ValidationError("No puedes eliminar tu propia cuenta.")
+        if user.role.name == Role.Name.ADMIN and user.active and (
+            User.objects.filter(role__name=Role.Name.ADMIN, active=True).count() <= 1
+        ):
+            raise ValidationError("No se puede eliminar al último administrador activo.")
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

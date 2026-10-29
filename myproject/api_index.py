@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 
-from users.models import Role
+from users.models import Role, RolePermission
+from users.rbac import DEFAULT_PERMISSIONS
 
 
 PUBLIC_RESOURCES = (
@@ -25,6 +26,7 @@ PUBLIC_RESOURCES = (
 AUTHENTICATED_RESOURCES = (
     "profile",
     "role_permissions",
+    "users",
     "shelter_members",
     "pet_photos",
     "adoption_requests",
@@ -44,6 +46,7 @@ RESOURCE_DEFINITIONS = {
     "refresh": ("Renovar token", "/api/v1/auth/refresh/"),
     "profile": ("Mi perfil", "/api/v1/auth/me/"),
     "role_permissions": ("Permisos por rol", "/api/v1/auth/permissions/"),
+    "users": ("Administración de usuarios", "/api/v1/auth/users/"),
     "verified_shelters": ("Refugios verificados", "/api/v1/shelters/"),
     "shelter_members": ("Integrantes de refugios", "/api/v1/shelter-members/"),
     "species": ("Especies", "/api/v1/species/"),
@@ -70,11 +73,42 @@ COMMON_AUTHENTICATED_RESOURCES = frozenset(
     (*PUBLIC_RESOURCES, *AUTHENTICATED_RESOURCES)
 )
 
+API_RESOURCE_PERMISSION_KEYS = {
+    "profile": "profile",
+    "users": "users",
+    "verified_shelters": "shelters",
+    "shelter_members": "shelterMembers",
+    "species": "pets",
+    "breeds": "pets",
+    "pets": "pets",
+    "pet_photos": "petPhotos",
+    "form_questions": "formQuestions",
+    "adoption_requests": "adoptionRequests",
+    "adoptions": "adoptions",
+    "follow_ups": "followUps",
+    "veterinarians": "veterinarians",
+    "medical_records": "medicalRecords",
+    "vaccines": "vaccines",
+    "reminders": "reminders",
+    "conversations": "conversations",
+    "messages": "messages",
+    "notifications": "notifications",
+    "adoption_statistics": "statistics",
+}
+
 ROLE_RESOURCES = {
-    Role.Name.ADOPTER: COMMON_AUTHENTICATED_RESOURCES,
-    Role.Name.SHELTER: COMMON_AUTHENTICATED_RESOURCES,
-    Role.Name.VETERINARIAN: COMMON_AUTHENTICATED_RESOURCES,
-    Role.Name.ADMIN: frozenset(RESOURCE_DEFINITIONS),
+    role: frozenset(
+        (*PUBLIC_RESOURCES, "role_permissions")
+        + tuple(
+            key
+            for key, permission_resource in API_RESOURCE_PERMISSION_KEYS.items()
+            if any(
+                resource == permission_resource and action in ("read", "manage")
+                for resource, action in role_permissions
+            )
+        )
+    )
+    for role, role_permissions in DEFAULT_PERMISSIONS.items()
 }
 
 
@@ -92,7 +126,18 @@ class ApiIndexView(APIView):
         role = None
         if request.user.is_authenticated:
             role = request.user.role.name
-            resource_keys = ROLE_RESOURCES[role]
+            grants = RolePermission.objects.filter(role_id=request.user.role_id)
+            allowed = set(grants.values_list("resource", "action"))
+            resource_keys = set(PUBLIC_RESOURCES)
+            resource_keys.add("role_permissions")
+            resource_keys.update(
+                key
+                for key, permission_resource in API_RESOURCE_PERMISSION_KEYS.items()
+                if any(
+                    resource == permission_resource and action in ("read", "manage")
+                    for resource, action in allowed
+                )
+            )
         else:
             resource_keys = PUBLIC_RESOURCES
 

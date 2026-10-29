@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from adoptions.models import Adoption
-from myproject.permissions import user_can_manage_shelter
+from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
 from users.models import Role
 
 from .models import MedicalRecord, Reminder, Vaccine, Veterinarian
@@ -17,6 +17,8 @@ from .services import medical_records_for_user, reminders_for_user
 
 
 class VeterinarianViewSet(viewsets.ModelViewSet):
+    rbac_resource = "veterinarians"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     serializer_class = VeterinarianSerializer
     ordering = ("id",)
     http_method_names = ("get", "post", "patch", "head", "options")
@@ -49,6 +51,8 @@ class VeterinarianViewSet(viewsets.ModelViewSet):
 
 
 class MedicalRecordViewSet(viewsets.ModelViewSet):
+    rbac_resource = "medicalRecords"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     serializer_class = MedicalRecordSerializer
     filterset_fields = ("pet", "record_type", "date", "vaccine")
     search_fields = ("description", "record_type", "pet__name")
@@ -104,6 +108,8 @@ class VaccineViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ReminderViewSet(viewsets.ModelViewSet):
+    rbac_resource = "reminders"
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     serializer_class = ReminderSerializer
     filterset_fields = ("adoption", "vaccine", "medical_record", "reminder_type", "status")
     ordering_fields = ("scheduled_date",)
