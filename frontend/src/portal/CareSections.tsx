@@ -1,6 +1,14 @@
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, labelStatus, text } from "./shared";
+import {
+  DataCard,
+  EmptyState,
+  Field,
+  SectionTitle,
+  hasStatus,
+  labelStatus,
+  text,
+} from "./shared";
 import type { PortalDataRow, PortalSender, PortalSubmit } from "./shared";
 
 type PermissionCheck = (resource: Resource, action: Action) => boolean;
@@ -39,7 +47,7 @@ export function AdoptionsSection({
       <div className="portal-grid">
         {adoptions.map((item) => (
           <DataCard key={text(item.id)} title={text(item.pet_name)} subtitle={`${text(item.applicant)} · desde ${text(item.adoption_date)}`} status={text(item.status)}>
-            {role === ROLES.SHELTER && item.status === "activa" && canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
+            {role === ROLES.SHELTER && hasStatus(item.status, "activa") && canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
               <form className="portal-card-form" onSubmit={submit(async () => {
                 await send("/api/v1/follow-ups/", "POST", {
                   adoption: Number(item.id),
@@ -53,7 +61,7 @@ export function AdoptionsSection({
                 <button className="portal-link">Añadir seguimiento</button>
               </form>
             )}
-            {item.status === "activa" && role !== ROLES.VETERINARIAN && canDo(RESOURCES.REMINDERS, ACTIONS.CREATE) && (
+            {hasStatus(item.status, "activa") && role !== ROLES.VETERINARIAN && canDo(RESOURCES.REMINDERS, ACTIONS.CREATE) && (
               <form className="portal-card-form" onSubmit={submit(async () => {
                 await send("/api/v1/reminders/", "POST", {
                   adoption: Number(item.id),
@@ -99,6 +107,7 @@ export function MessagesSection({
   send,
   setError,
   loading,
+  onRefresh,
   busy,
 }: {
   role: string;
@@ -115,13 +124,28 @@ export function MessagesSection({
   send: PortalSender;
   setError: (value: string) => void;
   loading: boolean;
+  onRefresh: () => void;
   busy: boolean;
 }) {
   const activeConversation =
     conversations.find((item) => text(item.id) === selectedConversation) ?? conversations[0];
   return (
     <>
-      <SectionTitle eyebrow="Comunicación directa" title="Mensajes" description="Mantén las conversaciones sobre adopciones organizadas en un solo lugar." />
+      <SectionTitle
+        eyebrow="Comunicación directa"
+        title="Mensajes"
+        description="Mantén las conversaciones sobre adopciones organizadas en un solo lugar."
+        action={
+          <button
+            type="button"
+            className="portal-button portal-button--secondary"
+            onClick={onRefresh}
+            disabled={loading}
+          >
+            {loading ? "Actualizando…" : "Actualizar mensajes"}
+          </button>
+        }
+      />
       {role === ROLES.ADOPTER && canDo(RESOURCES.CONVERSATIONS, ACTIONS.CREATE) && (
         <form className="portal-form portal-form--compact" onSubmit={submit(async () => {
           const pet = pets.find((item) => text(item.id) === form.pet);

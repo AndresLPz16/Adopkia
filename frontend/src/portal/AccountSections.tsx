@@ -96,7 +96,6 @@ export function ProfileSection({
           onChange={setValue}
           required
         />
-        <Field label="ID de cuenta" name="id" value={text(profile?.id)} onChange={() => undefined} readOnly />
         <Field label="Correo electrónico" name="email" value={text(profile?.email)} onChange={() => undefined} readOnly />
         <Field
           label="Teléfono"

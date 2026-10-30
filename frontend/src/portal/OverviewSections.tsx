@@ -1,4 +1,4 @@
-import { SectionTitle, text } from "./shared";
+import { SectionTitle, hasStatus, text } from "./shared";
 import type { PortalDataRow } from "./shared";
 
 type DashboardSectionProps = {
@@ -46,9 +46,9 @@ export function DashboardSection({
               { label: "Mascotas devueltas", value: text(stats?.returned_pets) || 0 },
             ]
           : [
-              { label: "Mascotas disponibles", value: pets.filter((item) => item.status === "disponible").length },
-              { label: "Solicitudes pendientes", value: requests.filter((item) => item.status === "pendiente").length },
-              { label: "Adopciones activas", value: adoptions.filter((item) => item.status === "activa").length },
+              { label: "Mascotas disponibles", value: pets.filter((item) => hasStatus(item.status, "disponible")).length },
+              { label: "Solicitudes pendientes", value: requests.filter((item) => hasStatus(item.status, "pendiente")).length },
+              { label: "Adopciones activas", value: adoptions.filter((item) => hasStatus(item.status, "activa")).length },
               { label: "Notificaciones", value: notifications.filter((item) => item.is_read !== true).length },
             ]
         ).map((stat) => (

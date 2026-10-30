@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, rows, text } from "./shared";
+import { DataCard, EmptyState, Field, SectionTitle, hasStatus, rows, text } from "./shared";
 import type {
   PortalDataRow,
   PortalPetSaver,
@@ -27,6 +27,7 @@ export function PetsSection({
   setEditingPet,
   busy,
   loading,
+  onRefresh,
   petSearch,
   setPetSearch,
   navTo,
@@ -46,6 +47,7 @@ export function PetsSection({
   setEditingPet: (value: string) => void;
   busy: boolean;
   loading: boolean;
+  onRefresh: () => void;
   petSearch: string;
   setPetSearch: (value: string) => void;
   navTo: (key: string) => void;
@@ -69,6 +71,16 @@ export function PetsSection({
           role === ROLES.ADOPTER
             ? "Explora perfiles y comienza una solicitud de adopción."
             : "Publica y administra los perfiles de tus mascotas."
+        }
+        action={
+          <button
+            type="button"
+            className="portal-button portal-button--secondary"
+            onClick={onRefresh}
+            disabled={loading}
+          >
+            {loading ? "Actualizando…" : "Actualizar datos"}
+          </button>
         }
       />
       {role === ROLES.ADOPTER && (
@@ -177,7 +189,7 @@ export function PetsSection({
                         void send(`/api/v1/pets/${text(pet.id)}/`, "DELETE", undefined, "Mascota eliminada.");
                       }
                     }}>Eliminar</button>}
-                    {pet.status === "devuelta" && canDo(RESOURCES.PETS, ACTIONS.UPDATE) && <button className="portal-link" onClick={() => void send(`/api/v1/pets/${text(pet.id)}/relist/`, "POST", {}, "Mascota republicada.")}>Volver a publicar</button>}
+                    {hasStatus(pet.status, "devuelta") && canDo(RESOURCES.PETS, ACTIONS.UPDATE) && <button className="portal-link" onClick={() => void send(`/api/v1/pets/${text(pet.id)}/relist/`, "POST", {}, "Mascota republicada.")}>Volver a publicar</button>}
                   </>
                 ) : role === ROLES.ADOPTER && canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.CREATE) ? (
                   <button className="portal-button" onClick={() => navTo("requests")}>Solicitar adopción</button>
@@ -212,6 +224,7 @@ export function RequestsSection({
   send,
   setError,
   loading,
+  onRefresh,
   busy,
 }: {
   role: string;
@@ -227,6 +240,7 @@ export function RequestsSection({
   send: PortalSender;
   setError: (value: string) => void;
   loading: boolean;
+  onRefresh: () => void;
   busy: boolean;
 }) {
   return (
@@ -235,6 +249,16 @@ export function RequestsSection({
         eyebrow="Adopción responsable"
         title={role === ROLES.ADOPTER ? "Mis solicitudes" : "Solicitudes recibidas"}
         description={role === ROLES.ADOPTER ? "Consulta el avance y responde el formulario de adopción." : "Revisa cada solicitud y acompaña a las familias interesadas."}
+        action={
+          <button
+            type="button"
+            className="portal-button portal-button--secondary"
+            onClick={onRefresh}
+            disabled={loading}
+          >
+            {loading ? "Actualizando…" : "Actualizar datos"}
+          </button>
+        }
       />
       {role === ROLES.ADOPTER && canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.CREATE) && (
         <form className="portal-form" onSubmit={submit(async () => {
@@ -253,7 +277,7 @@ export function RequestsSection({
           }, "Tu solicitud fue enviada al refugio.");
         })}>
           <h2>Iniciar una solicitud</h2>
-          <Field label="Mascota" name="pet" value={form.pet ?? ""} onChange={setValue} required options={pets.filter((pet) => pet.status === "disponible").map((pet) => ({ value: text(pet.id), label: `${text(pet.name)} · ${text(pet.species)}` }))} />
+          <Field label="Mascota" name="pet" value={form.pet ?? ""} onChange={setValue} required options={pets.filter((pet) => hasStatus(pet.status, "disponible")).map((pet) => ({ value: text(pet.id), label: `${text(pet.name)} · ${text(pet.species)}` }))} />
           {questions.map((question) => (
             <Field key={text(question.id)} label={`${text(question.prompt)}${question.required ? " *" : ""}`} name={text(question.id)} value={answers[text(question.id)] ?? ""} onChange={(name, value) => setAnswers((current) => ({ ...current, [name]: value }))} required={question.required === true} multiline={question.answer_type === "texto"} type={question.answer_type === "numero" ? "number" : "text"} />
           ))}
@@ -273,16 +297,52 @@ export function RequestsSection({
             {text(item.shelter_notes) && <p><strong>Nota del refugio:</strong> {text(item.shelter_notes)}</p>}
             {role === ROLES.SHELTER && Array.isArray(item.answers) && (
               <div className="portal-answer-list">
-                {(item.answers as PortalDataRow[]).map((answer) => <p key={text(answer.question)}><strong>Pregunta {text(answer.question)}:</strong> {text(answer.value)}</p>)}
+                {(item.answers as PortalDataRow[]).map((answer) => <p key={text(answer.question)}><strong>{text(answer.question_prompt) || `Pregunta ${text(answer.question)}`}:</strong> {text(answer.value)}</p>)}
               </div>
             )}
-            {role === ROLES.ADOPTER && item.status === "pendiente" && canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.UPDATE) && (
+            {role === ROLES.ADOPTER && hasStatus(item.status, "pendiente") && canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.UPDATE) && (
               <button className="portal-link portal-link--danger" onClick={() => void send(`/api/v1/adoption-requests/${text(item.id)}/cancel/`, "POST", {}, "Solicitud cancelada.")}>Cancelar solicitud</button>
             )}
-            {role === ROLES.SHELTER && item.status === "pendiente" && (
+            {role === ROLES.SHELTER && hasStatus(item.status, "pendiente") && (
               <div className="portal-inline-actions">
-                {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) && <button className="portal-button" onClick={() => void send(`/api/v1/adoption-requests/${text(item.id)}/approve/`, "POST", { message: form.decisionMessage ?? "" }, "Solicitud aprobada.")}>Aprobar</button>}
-                {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT) && <button className="portal-button portal-button--secondary" onClick={() => void send(`/api/v1/adoption-requests/${text(item.id)}/reject/`, "POST", { message: form.decisionMessage ?? "" }, "Solicitud rechazada.")}>Rechazar</button>}
+                <button
+                  className="portal-button"
+                  disabled={busy || !canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE)}
+                  title={
+                    canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE)
+                      ? undefined
+                      : "Tu rol no tiene permiso para aprobar solicitudes."
+                  }
+                  onClick={() =>
+                    void send(
+                      `/api/v1/adoption-requests/${text(item.id)}/approve/`,
+                      "POST",
+                      { message: form.decisionMessage ?? "" },
+                      "Solicitud aprobada.",
+                    )
+                  }
+                >
+                  Aprobar
+                </button>
+                <button
+                  className="portal-button portal-button--secondary"
+                  disabled={busy || !canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT)}
+                  title={
+                    canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT)
+                      ? undefined
+                      : "Tu rol no tiene permiso para rechazar solicitudes."
+                  }
+                  onClick={() =>
+                    void send(
+                      `/api/v1/adoption-requests/${text(item.id)}/reject/`,
+                      "POST",
+                      { message: form.decisionMessage ?? "" },
+                      "Solicitud rechazada.",
+                    )
+                  }
+                >
+                  Denegar
+                </button>
               </div>
             )}
           </DataCard>

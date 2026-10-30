@@ -1,6 +1,13 @@
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, text } from "./shared";
+import {
+  DataCard,
+  EmptyState,
+  Field,
+  SectionTitle,
+  hasStatus,
+  text,
+} from "./shared";
 import type { PortalDataRow, PortalSender, PortalSubmit } from "./shared";
 
 type PermissionCheck = (resource: Resource, action: Action) => boolean;
@@ -67,7 +74,7 @@ export function SheltersSection({
         {shelters.map((shelter) => (
           <DataCard key={text(shelter.id)} title={text(shelter.name)} subtitle={`${text(shelter.city)} · ${text(shelter.address)}`} status={text(shelter.verification_status)}>
             <p>{text(shelter.contact_email)} {shelter.contact_phone ? `· ${text(shelter.contact_phone)}` : ""}</p>
-            {shelter.verification_status === "pendiente" && canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY) && (
+            {hasStatus(shelter.verification_status, "pendiente") && canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY) && (
               <div className="portal-inline-actions">
                 <button className="portal-button" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: true }, "Refugio verificado.")}>Verificar</button>
                 <button className="portal-button portal-button--secondary" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: false }, "Solicitud de refugio rechazada.")}>Rechazar</button>

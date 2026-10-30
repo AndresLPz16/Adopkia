@@ -8,6 +8,7 @@ import { ACTIONS, RESOURCES, ROLES } from "./rbac/types";
 import type { Action, Resource } from "./rbac/types";
 import {
   responseData,
+  hasStatus,
   rows,
   text,
 } from "./portal/shared";
@@ -27,7 +28,7 @@ import {
   RecordsSection,
 } from "./portal/CareSections";
 import { SheltersSection, UsersSection } from "./portal/ManagementSections";
-import { loadSectionData } from "./portal/loadSectionData";
+import { loadAllPages, loadSectionData } from "./portal/loadSectionData";
 
 const roleNames: Record<string, string> = {
   [ROLES.ADOPTER]: "Adoptante",
@@ -162,13 +163,21 @@ function Portal({ onLogout }: { onLogout: () => void }) {
             "/api/v1/notifications/",
           ],
     pets: ["/api/v1/pets/", "/api/v1/shelters/", "/api/v1/breeds/", "/api/v1/shelter-members/"],
-    requests: ["/api/v1/adoption-requests/", "/api/v1/form-questions/"],
+    requests: [
+      "/api/v1/adoption-requests/",
+      "/api/v1/form-questions/",
+      "/api/v1/pets/",
+    ],
     adoptions: [
       "/api/v1/adoptions/",
       "/api/v1/follow-ups/",
       "/api/v1/reminders/",
     ],
-    messages: ["/api/v1/conversations/", "/api/v1/messages/"],
+    messages: [
+      "/api/v1/conversations/",
+      "/api/v1/messages/",
+      "/api/v1/pets/",
+    ],
     records: [
       "/api/v1/medical-records/",
       "/api/v1/pets/",
@@ -231,7 +240,18 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                 ? `?conversation=${encodeURIComponent(selectedConversation)}`
                 : "";
             const response = await request(`${endpoint}${suffix}`);
-            return responseData(response);
+            const result = await responseData(response);
+            if (
+              endpoint === "/api/v1/pets/" ||
+              endpoint === "/api/v1/adoption-requests/" ||
+              endpoint === "/api/v1/conversations/" ||
+              endpoint === "/api/v1/messages/"
+            ) {
+              return loadAllPages(result, endpoint, async (pageUrl) =>
+                responseData(await request(pageUrl)),
+              );
+            }
+            return result;
           },
         })),
       );
@@ -266,6 +286,12 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (section !== "messages" || busy) return;
+    const interval = window.setInterval(() => void reload(), 15_000);
+    return () => window.clearInterval(interval);
+  }, [busy, reload, section]);
 
   useEffect(() => {
     setForm({});
@@ -438,7 +464,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       ? shelters.filter((shelter) => myShelterIds.has(text(shelter.id)))
       : shelters;
   const visiblePets = (role === ROLES.ADOPTER
-    ? pets.filter((pet) => pet.status === "disponible")
+    ? pets.filter((pet) => hasStatus(pet.status, "disponible"))
     : managedPets
   ).filter((pet) =>
     [pet.name, pet.species, pet.city, pet.temperament]
@@ -513,6 +539,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
               setEditingPet={setEditingPet}
               busy={busy}
               loading={loading}
+              onRefresh={() => void reload()}
               petSearch={petSearch}
               setPetSearch={setPetSearch}
               navTo={navTo}
@@ -532,6 +559,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                 send={send}
                 setError={setError}
                 loading={loading}
+                onRefresh={() => void reload()}
                 busy={busy}
               />
           : section === "adoptions"
@@ -565,6 +593,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                   send={send}
                   setError={setError}
                   loading={loading}
+                  onRefresh={() => void reload()}
                   busy={busy}
                 />
               : section === "records"

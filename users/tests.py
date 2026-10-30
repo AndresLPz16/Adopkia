@@ -396,7 +396,15 @@ class RolePermissionApiTests(APITestCase):
         self.client.force_authenticate(moderator)
         self.assertEqual(self.client.get(reverse("profile")).status_code, 200)
         RolePermission.objects.filter(role=role, resource="profile").delete()
-        self.assertEqual(self.client.get(reverse("profile")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("profile")).status_code, 200)
+        self.assertEqual(
+            self.client.patch(
+                reverse("profile"),
+                {"name": "Updated"},
+                format="json",
+            ).status_code,
+            403,
+        )
 
         self.client.force_authenticate(self.admin)
         renamed = self.client.patch(

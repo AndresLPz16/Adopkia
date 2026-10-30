@@ -19,6 +19,12 @@
   gap: 1.5rem;
 }
 
+.rbac-panel__footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .rbac-panel__header {
   margin-bottom: 1.5rem;
 }
@@ -177,6 +183,12 @@
 .rbac-panel__footer button:disabled {
   cursor: wait;
   opacity: 0.6;
+}
+
+.rbac-panel__footer .rbac-panel__clear {
+  color: #247554;
+  background: #f3f8f5;
+  border: 1px solid #cbdad2;
 }
 
 .rbac-panel__error,

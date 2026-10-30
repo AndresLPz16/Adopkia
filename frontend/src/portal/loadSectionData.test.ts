@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadSectionData } from "./loadSectionData";
+import { loadAllPages, loadSectionData } from "./loadSectionData";
 
 describe("loadSectionData", () => {
   it("returns successful endpoint data and reports failed endpoints independently", async () => {
@@ -14,6 +14,47 @@ describe("loadSectionData", () => {
       { key: "/api/shelters/", message: "Sin conexión" },
       { key: "/api/messages/", message: "Timeout" },
     ]);
+  });
+
+  describe("loadAllPages", () => {
+    it("loads every page using a same-origin API path", async () => {
+      const fetchPage = vi
+        .fn()
+        .mockResolvedValueOnce({
+          results: [{ id: 2 }],
+          next: null,
+        });
+
+      await expect(
+        loadAllPages(
+          {
+            count: 2,
+            results: [{ id: 3 }],
+            next: "http://127.0.0.1:8000/api/v1/pets/?page=2",
+          },
+          "/api/v1/pets/",
+          fetchPage,
+        ),
+      ).resolves.toEqual({
+        count: 2,
+        results: [{ id: 3 }, { id: 2 }],
+        next: null,
+      });
+      expect(fetchPage).toHaveBeenCalledWith("/api/v1/pets/?page=2");
+    });
+
+    it("rejects pagination links outside the endpoint", async () => {
+      await expect(
+        loadAllPages(
+          {
+            results: [],
+            next: "https://example.com/api/v1/other/?page=2",
+          },
+          "/api/v1/pets/",
+          vi.fn(),
+        ),
+      ).rejects.toThrow("La siguiente página de la lista no es válida.");
+    });
   });
 
   it("returns empty results when there are no endpoints", async () => {

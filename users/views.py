@@ -28,6 +28,11 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
     rbac_resource = "profile"
 
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
     def get_object(self):
         return self.request.user
 

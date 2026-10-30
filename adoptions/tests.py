@@ -244,6 +244,15 @@ class AdoptionFlowTests(APITestCase):
         created = self.submit_request()
         request_id = created.data["id"]
 
+        detail = self.client.get(
+            reverse("adoption-request-detail", args=(request_id,))
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(
+            detail.data["answers"][0]["question_prompt"],
+            self.question.prompt,
+        )
+
         response = self.client.patch(
             reverse("adoption-request-detail", args=(request_id,)),
             {"pet": self.pet.pk},

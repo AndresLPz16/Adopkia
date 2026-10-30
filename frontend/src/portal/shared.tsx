@@ -33,6 +33,26 @@ export function text(value: unknown): string {
   return value == null ? "" : String(value);
 }
 
+const localizedStatuses: Record<string, string> = {
+  available: "disponible",
+  in_progress: "en_proceso",
+  adopted: "adoptada",
+  returned: "devuelta",
+  pending: "pendiente",
+  approved: "aprobada",
+  rejected: "rechazada",
+  cancelled: "cancelada",
+  canceled: "cancelada",
+  active: "activa",
+  finalized: "finalizada",
+  verified: "verificado",
+};
+
+export function hasStatus(value: unknown, expected: string): boolean {
+  const normalized = text(value).trim().toLocaleLowerCase().replaceAll(" ", "_");
+  return (localizedStatuses[normalized] ?? normalized) === expected;
+}
+
 export function rows(value: unknown): PortalDataRow[] {
   if (Array.isArray(value)) return value as PortalDataRow[];
   if (

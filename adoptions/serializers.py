@@ -17,9 +17,12 @@ class FormQuestionSerializer(LocalizedModelSerializer):
 
 
 class FormAnswerSerializer(LocalizedModelSerializer):
+    question_prompt = serializers.CharField(source="question.prompt", read_only=True)
+    catalog_fields = ("question_prompt",)
+
     class Meta:
         model = FormAnswer
-        fields = ("request", "question", "value")
+        fields = ("request", "question", "question_prompt", "value")
 
 
 class AdoptionRequestReadSerializer(LocalizedModelSerializer):

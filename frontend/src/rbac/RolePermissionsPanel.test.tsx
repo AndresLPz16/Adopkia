@@ -148,6 +148,66 @@ describe("RolePermissionsPanel", () => {
       expect(screen.getByRole("checkbox", { name: "Mascotas: Consultar" })).toBeInTheDocument();
   });
 
+  it("clears every permission for the selected role before saving", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/me/")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              id: 1,
+              name: "Admin",
+              email: "admin@example.test",
+              role: "administrador",
+              is_platform_superadmin: true,
+            }),
+          };
+        }
+        if (url.includes("/permissions/adoptante/") && init?.method === "PUT") {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ...permissionCatalog,
+              roles: permissionCatalog.roles.map((role) =>
+                role.name === "adoptante" ? { ...role, permissions: [] } : role,
+              ),
+            }),
+          };
+        }
+        return { ok: true, status: 200, json: async () => permissionCatalog };
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider getAccessToken={() => "access-token"}>
+        <RolePermissionsPanel />
+      </AuthProvider>,
+    );
+
+    await screen.findByRole("checkbox", { name: "Mascotas: Consultar" });
+    await user.selectOptions(screen.getByRole("combobox"), "adoptante");
+    await user.click(screen.getByRole("button", { name: "Quitar permisos" }));
+    expect(
+      screen.getByRole("checkbox", { name: "Mascotas: Consultar" }),
+    ).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      const saveCall = fetchMock.mock.calls.find(
+        ([input, init]) =>
+          String(input).includes("/permissions/adoptante/") &&
+          init?.method === "PUT",
+      );
+      expect(saveCall).toBeDefined();
+      expect(JSON.parse(String(saveCall?.[1]?.body))).toEqual([]);
+    });
+  });
+
   it("prevents a regular administrator from editing administrator permissions", async () => {
     vi.stubGlobal(
       "fetch",

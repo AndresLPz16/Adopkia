@@ -117,6 +117,26 @@ export function RolePermissionsPanel() {
     setNotice(null);
   };
 
+  const removeAllPermissions = () => {
+    if (!catalog || !currentRole || !canEditCurrentRole) return;
+    const permissions =
+      currentRole.name === ROLES.ADMIN
+        ? currentRole.permissions.filter(
+            (permission) =>
+              permission.resource === "users" &&
+              permission.action === "manage",
+          )
+        : [];
+    const updatedRole = { ...currentRole, permissions };
+    setCatalog({
+      ...catalog,
+      roles: catalog.roles.map((role) =>
+        role.name === selectedRole ? updatedRole : role,
+      ),
+    });
+    setNotice(null);
+  };
+
   const save = async () => {
     if (!currentRole || !canEditCurrentRole) return;
     setSaving(true);
@@ -383,13 +403,23 @@ export function RolePermissionsPanel() {
               Los cambios se aplican de inmediato en las solicitudes protegidas
               del backend. Los límites de propiedad y pertenencia siguen vigentes.
             </p>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={saving || !currentRole || !canEditCurrentRole}
-            >
-              {saving ? "Guardando…" : "Guardar cambios"}
-            </button>
+            <div className="rbac-panel__footer-actions">
+              <button
+                type="button"
+                className="rbac-panel__clear"
+                onClick={removeAllPermissions}
+                disabled={saving || !currentRole || !canEditCurrentRole}
+              >
+                Quitar permisos
+              </button>
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={saving || !currentRole || !canEditCurrentRole}
+              >
+                {saving ? "Guardando…" : "Guardar cambios"}
+              </button>
+            </div>
           </footer>
         </>
       )}
