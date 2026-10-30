@@ -5,17 +5,23 @@ export function NotificationsSection({
   notifications,
   loading,
   send,
+  isPlatformSuperadmin = false,
 }: {
   notifications: PortalDataRow[];
   loading: boolean;
   send: PortalSender;
+  isPlatformSuperadmin?: boolean;
 }) {
   return (
     <>
       <SectionTitle
         eyebrow="Actividad reciente"
         title="Notificaciones"
-        description="Mantente al día con mensajes, solicitudes y recordatorios."
+        description={
+          isPlatformSuperadmin
+            ? "Consulta el contenido de las notificaciones dirigidas a tu cuenta de superadministrador."
+            : "Mantente al día con mensajes, solicitudes y recordatorios."
+        }
       />
       <div className="portal-grid">
         {notifications.map((item) => (
@@ -45,7 +51,11 @@ export function NotificationsSection({
         ))}
       </div>
       {!loading && notifications.length === 0 && (
-        <EmptyState>No tienes notificaciones nuevas.</EmptyState>
+        <EmptyState>
+          {isPlatformSuperadmin
+            ? "No hay notificaciones dirigidas a esta cuenta."
+            : "No tienes notificaciones nuevas."}
+        </EmptyState>
       )}
     </>
   );
@@ -96,7 +106,6 @@ export function ProfileSection({
           onChange={setValue}
           required
         />
-        <Field label="ID de cuenta" name="id" value={text(profile?.id)} onChange={() => undefined} readOnly />
         <Field label="Correo electrónico" name="email" value={text(profile?.email)} onChange={() => undefined} readOnly />
         <Field
           label="Teléfono"

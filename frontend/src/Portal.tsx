@@ -7,6 +7,7 @@ import { can } from "./rbac/permissions";
 import { ACTIONS, RESOURCES, ROLES } from "./rbac/types";
 import type { Action, Resource } from "./rbac/types";
 import {
+  isAvailablePet,
   responseData,
   rows,
   text,
@@ -48,6 +49,56 @@ const sectionNames: Record<string, string> = {
   profile: "Mi perfil",
   users: "Usuarios",
   statistics: "Estadísticas",
+};
+
+const roleSectionNames: Record<string, Record<string, string>> = {
+  [ROLES.ADOPTER]: {
+    pets: "Explorar mascotas",
+    requests: "Mis solicitudes",
+    adoptions: "Mis adopciones",
+  },
+  [ROLES.SHELTER]: {
+    pets: "Mis mascotas",
+    requests: "Solicitudes de adopción",
+    shelters: "Mi refugio y equipo",
+  },
+  [ROLES.VETERINARIAN]: {
+    records: "Expedientes médicos",
+    adoptions: "Seguimientos",
+  },
+  [ROLES.ADMIN]: {
+    shelters: "Refugios",
+    requests: "Solicitudes de adopción",
+    adoptions: "Adopciones y cuidados",
+    messages: "Mensajes",
+    records: "Atención veterinaria",
+    notifications: "Notificaciones",
+    users: "Usuarios y roles",
+    permissions: "Permisos",
+  },
+};
+
+const roleSidebarCopy: Record<string, { heading: string; title: string; description: string }> = {
+  [ROLES.ADOPTER]: {
+    heading: "MI ADOPCIÓN",
+    title: "Tu próxima historia",
+    description: "Encuentra una mascota, conoce su perfil y sigue tu proceso de adopción.",
+  },
+  [ROLES.SHELTER]: {
+    heading: "GESTIÓN DEL REFUGIO",
+    title: "Herramientas del refugio",
+    description: "Organiza perfiles, solicitudes y el trabajo de tu equipo.",
+  },
+  [ROLES.VETERINARIAN]: {
+    heading: "ÁREA VETERINARIA",
+    title: "Atención y seguimiento",
+    description: "Consulta información clínica y mantén al día la atención de las mascotas.",
+  },
+  [ROLES.ADMIN]: {
+    heading: "ADMINISTRACIÓN",
+    title: "Control de plataforma",
+    description: "Supervisa el estado de Adopkia y administra sus participantes.",
+  },
 };
 
 function Portal({ onLogout }: { onLogout: () => void }) {
@@ -92,6 +143,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const [editingShelter, setEditingShelter] = useState("");
   const [editingUser, setEditingUser] = useState("");
   const [petSearch, setPetSearch] = useState("");
+  const [requestedPetId, setRequestedPetId] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -130,8 +182,18 @@ function Portal({ onLogout }: { onLogout: () => void }) {
         "profile",
       ];
     }
-    return ["dashboard", "shelters", "statistics", "users", "permissions", "profile"];
-  }, [role]);
+    return [
+      "dashboard",
+      "shelters",
+      "statistics",
+      "users",
+      "permissions",
+      "profile",
+      ...(isPlatformSuperadmin
+        ? ["requests", "adoptions", "messages", "records", "notifications"]
+        : []),
+    ];
+  }, [isPlatformSuperadmin, role]);
   const allSections = [
     "dashboard",
     "profile",
@@ -155,6 +217,21 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     dashboard:
       role === ROLES.ADMIN
         ? ["/api/v1/shelters/", "/api/v1/statistics/adoptions/"]
+        : role === ROLES.VETERINARIAN
+          ? [
+              "/api/v1/medical-records/",
+              "/api/v1/pets/",
+              "/api/v1/vaccines/",
+              "/api/v1/notifications/",
+            ]
+          : role === ROLES.SHELTER
+            ? [
+                "/api/v1/pets/",
+                "/api/v1/adoption-requests/",
+                "/api/v1/adoptions/",
+                "/api/v1/notifications/",
+                "/api/v1/shelter-members/",
+              ]
         : [
             "/api/v1/pets/",
             "/api/v1/adoption-requests/",
@@ -287,7 +364,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     method: string,
     body?: unknown,
     successMessage = "Cambios guardados correctamente.",
-  ) => {
+  ): Promise<boolean> => {
     setBusy(true);
     setError("");
     setNotice("");
@@ -305,10 +382,12 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       setEditingShelter("");
       setEditingUser("");
       await reload();
+      return true;
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "No se pudo completar la acción.",
       );
+      return false;
     } finally {
       setBusy(false);
     }
@@ -438,7 +517,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       ? shelters.filter((shelter) => myShelterIds.has(text(shelter.id)))
       : shelters;
   const visiblePets = (role === ROLES.ADOPTER
-    ? pets.filter((pet) => pet.status === "disponible")
+    ? pets.filter(isAvailablePet)
     : managedPets
   ).filter((pet) =>
     [pet.name, pet.species, pet.city, pet.temperament]
@@ -447,6 +526,15 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       .toLocaleLowerCase()
       .includes(petSearch.trim().toLocaleLowerCase()),
   );
+  const sidebarCopy = roleSidebarCopy[role] ?? {
+    heading: "MI ESPACIO",
+    title: "Adopkia",
+    description: "Un hogar y una segunda oportunidad para cada mascota.",
+  };
+  const visibleSectionNames = {
+    ...sectionNames,
+    ...roleSectionNames[role],
+  };
 
   useEffect(() => {
     if (
@@ -484,16 +572,20 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     : section === "dashboard"
       ? <DashboardSection
           userName={user.name}
+          role={role}
           roleName={roleNames[role] ?? ""}
           isAdmin={isAdmin}
           shelters={shelters}
           pets={pets}
+          managedPets={managedPets}
+          records={records}
+          vaccines={vaccines}
           requests={requests}
           adoptions={adoptions}
           notifications={notifications}
           stats={stats}
           visibleLinks={visibleLinks}
-          sectionNames={sectionNames}
+          sectionNames={visibleSectionNames}
           navTo={navTo}
         />
       : section === "pets"
@@ -515,15 +607,21 @@ function Portal({ onLogout }: { onLogout: () => void }) {
               loading={loading}
               petSearch={petSearch}
               setPetSearch={setPetSearch}
-              navTo={navTo}
+              onRequestAdoption={(petId) => {
+                setRequestedPetId(petId);
+                navTo("requests");
+              }}
             />
           : section === "requests"
             ? <RequestsSection
                 role={role}
+                isPlatformSuperadmin={isPlatformSuperadmin}
                 canDo={canDo}
                 questions={questions}
                 pets={pets}
                 requests={requests}
+                requestedPetId={requestedPetId}
+                onRequestSubmitted={() => setRequestedPetId("")}
                 form={form}
                 answers={answers}
                 setAnswers={setAnswers}
@@ -537,6 +635,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
           : section === "adoptions"
             ? <AdoptionsSection
                 role={role}
+                isPlatformSuperadmin={isPlatformSuperadmin}
                 canDo={canDo}
                 adoptions={adoptions}
                 followUps={followUps}
@@ -552,6 +651,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
             : section === "messages"
               ? <MessagesSection
                   role={role}
+                  isPlatformSuperadmin={isPlatformSuperadmin}
                   canDo={canDo}
                   userId={user.id}
                   pets={pets}
@@ -570,7 +670,8 @@ function Portal({ onLogout }: { onLogout: () => void }) {
               : section === "records"
                 ? <RecordsSection
                     role={role}
-                    canDo={canDo}
+                      isPlatformSuperadmin={isPlatformSuperadmin}
+                      canDo={canDo}
                     userId={user.id}
                     pets={pets}
                     records={records}
@@ -601,7 +702,12 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                       busy={busy}
                     />
                   : section === "notifications"
-                    ? <NotificationsSection notifications={notifications} loading={loading} send={send} />
+                    ? <NotificationsSection
+                        notifications={notifications}
+                        loading={loading}
+                        send={send}
+                        isPlatformSuperadmin={isPlatformSuperadmin}
+                      />
                     : section === "profile"
                       ? <ProfileSection
                           profile={profile}
@@ -637,24 +743,28 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                         ? <StatisticsSection stats={stats} />
                         : <DashboardSection
                             userName={user.name}
+                            role={role}
                             roleName={roleNames[role] ?? ""}
                             isAdmin={isAdmin}
                             shelters={shelters}
                             pets={pets}
+                            managedPets={managedPets}
+                            records={records}
+                            vaccines={vaccines}
                             requests={requests}
                             adoptions={adoptions}
                             notifications={notifications}
                             stats={stats}
                             visibleLinks={visibleLinks}
-                            sectionNames={sectionNames}
+                            sectionNames={visibleSectionNames}
                             navTo={navTo}
                           />;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-role={role}>
       <header className="app-header">
         <button className="app-header__brand" type="button" onClick={() => navTo("dashboard")}>
-          <span className="app-header__mark">A</span>
+          <img className="app-header__logo" src="/logo-adopkia-mark.png" alt="" />
           <span>Adopkia <small>{roleNames[role] ?? "Mi espacio"}</small></span>
         </button>
         <div className="app-header__account">
@@ -664,16 +774,16 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       </header>
       <div className="app-layout">
         <aside className="app-sidebar">
-          <p>MI ESPACIO</p>
+          <p>{sidebarCopy.heading}</p>
           <nav aria-label="Navegación principal">
             {visibleLinks.map((key) => (
               <button key={key} className={`app-sidebar__link ${section === key ? "app-sidebar__link--active" : ""}`} type="button" onClick={() => navTo(key)}>
                 <span aria-hidden="true">{({ dashboard: "⌂", pets: "♡", requests: "▤", adoptions: "⌂", messages: "✉", records: "+", shelters: "⌂", notifications: "♧", profile: "◉", statistics: "▥", permissions: "▦" } as Record<string, string>)[key] ?? "›"}</span>
-                {sectionNames[key] ?? "Permisos por rol"}
+                {visibleSectionNames[key] ?? "Permisos por rol"}
               </button>
             ))}
           </nav>
-          <div className="app-sidebar__note"><strong>Adopkia</strong><span>Un hogar y una segunda oportunidad para cada mascota.</span></div>
+          <div className="app-sidebar__note"><strong>{sidebarCopy.title}</strong><span>{sidebarCopy.description}</span></div>
         </aside>
         <main className="app-content">
           {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error">×</button></div>}

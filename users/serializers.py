@@ -9,6 +9,15 @@ from .rbac import ACTIONS, RESOURCES
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(validators=[])
+    username = serializers.CharField(
+        max_length=30,
+        validators=[
+            RegexValidator(
+                regex=r"^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$",
+                message=_("Usa entre 3 y 30 caracteres: letras, números, punto, guion o guion bajo."),
+            )
+        ],
+    )
     role = serializers.SlugRelatedField(
         slug_field="name",
         queryset=Role.objects.filter(name__in=(Role.Name.ADOPTER, Role.Name.SHELTER)),
@@ -22,7 +31,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "email", "password", "name", "phone", "role")
+        fields = ("id", "email", "username", "password", "name", "phone", "role")
         read_only_fields = ("id",)
         extra_kwargs = {"phone": {"required": False, "allow_null": True}}
 
@@ -31,7 +40,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_("Ya existe una cuenta registrada con este correo."))
         return email
 
+    def validate_username(self, username):
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError(_("Ese nombre de usuario ya está en uso."))
+        return username
+
     def create(self, validated_data):
+        validated_data["email_verified"] = False
         return User.objects.create_user(**validated_data)
 
 
@@ -41,7 +56,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         immutable_fields = {
             "id",
+            "username",
             "email",
+            "email_verified",
             "role",
             "active",
             "is_platform_superadmin",
@@ -60,7 +77,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "id",
+            "username",
             "email",
+            "email_verified",
             "name",
             "phone",
             "role",
@@ -71,6 +90,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "email",
+            "username",
+            "email_verified",
             "role",
             "active",
             "is_platform_superadmin",
@@ -95,6 +116,8 @@ class UserAdminSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "email",
+            "username",
+            "email_verified",
             "name",
             "phone",
             "role",
@@ -103,9 +126,15 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "registered_at",
             "password",
         )
-        read_only_fields = ("id", "is_platform_superadmin", "registered_at")
+        read_only_fields = (
+            "id",
+            "email_verified",
+            "is_platform_superadmin",
+            "registered_at",
+        )
         extra_kwargs = {
             "email": {"validators": []},
+            "username": {"validators": [], "required": False},
             "active": {"required": False},
             "phone": {"required": False, "allow_null": True},
         }
@@ -127,6 +156,18 @@ class UserAdminSerializer(serializers.ModelSerializer):
                 _("Ya existe una cuenta registrada con este correo.")
             )
         return email
+
+    def validate_username(self, username):
+        matching = User.objects.filter(username__iexact=username)
+        if self.instance is not None:
+            matching = matching.exclude(pk=self.instance.pk)
+        if matching.exists():
+            raise serializers.ValidationError(_("Ese nombre de usuario ya está en uso."))
+        RegexValidator(
+            regex=r"^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$",
+            message=_("Usa entre 3 y 30 caracteres: letras, números, punto, guion o guion bajo."),
+        )(username)
+        return username
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get("password"):

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
 import { DataCard, EmptyState, Field, SectionTitle, text } from "./shared";
@@ -166,6 +167,7 @@ export function UsersSection({
   busy: boolean;
   setError: (value: string) => void;
 }) {
+  const [userSearch, setUserSearch] = useState("");
   const mayCreate = canDo(RESOURCES.USERS, ACTIONS.CREATE);
   const mayUpdate = canDo(RESOURCES.USERS, ACTIONS.UPDATE);
   const mayDelete = canDo(RESOURCES.USERS, ACTIONS.DELETE);
@@ -197,6 +199,20 @@ export function UsersSection({
             ]
           : []),
       ];
+  const searchTerm = userSearch.trim().toLocaleLowerCase();
+  const filteredUsers = users.filter((account) =>
+    [
+      account.name,
+      account.username,
+      account.email,
+      roleNames[text(account.role)],
+      text(account.role),
+    ]
+      .map(text)
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(searchTerm),
+  );
 
   return (
     <>
@@ -205,6 +221,30 @@ export function UsersSection({
         title="Usuarios"
         description="Administra cuentas, roles y acceso al sistema. Las contraseñas nunca se muestran."
       />
+      {isPlatformSuperadmin && (
+        <>
+          <div className="portal-stat-grid">
+            <div className="portal-stat">
+              <span>Usuarios registrados</span>
+              <strong>{loading && users.length === 0 ? "…" : users.length}</strong>
+            </div>
+          </div>
+          <label className="portal-search">
+            <span>Buscar por nombre, usuario, correo o rol</span>
+            <input
+              type="search"
+              value={userSearch}
+              onChange={(event) => setUserSearch(event.target.value)}
+              placeholder="Ej. yoider00, refugio o adoptante"
+            />
+          </label>
+          {searchTerm && (
+            <p className="portal-form-hint">
+              Resultados: {filteredUsers.length} de {users.length} usuarios.
+            </p>
+          )}
+        </>
+      )}
       {(mayCreate || (editingUser && mayUpdate)) && (
         <form className="portal-form" onSubmit={submit(async () => {
           const payload: Record<string, unknown> = {
@@ -240,7 +280,7 @@ export function UsersSection({
         </form>
       )}
       <div className="portal-user-list">
-        {users.map((account) => {
+        {filteredUsers.map((account) => {
           const canManageAccount =
             isPlatformSuperadmin ||
             (text(account.role) !== ROLES.ADMIN && account.is_platform_superadmin !== true);
@@ -248,7 +288,7 @@ export function UsersSection({
             <DataCard
               key={text(account.id)}
               title={text(account.name)}
-              subtitle={`${text(account.email)} · Cuenta #${text(account.id)}`}
+              subtitle={`${account.username ? `@${text(account.username)} · ` : ""}${text(account.email)} · Cuenta #${text(account.id)}`}
               status={account.active === false ? "desactivada" : availableRoles.find((item) => item.value === text(account.role))?.label ?? roleNames[text(account.role)] ?? text(account.role)}
               actions={
                 <>
@@ -287,6 +327,9 @@ export function UsersSection({
         })}
       </div>
       {!loading && users.length === 0 && <EmptyState>No hay cuentas registradas.</EmptyState>}
+      {!loading && users.length > 0 && filteredUsers.length === 0 && (
+        <EmptyState>No se encontraron cuentas que coincidan con la búsqueda.</EmptyState>
+      )}
     </>
   );
 }

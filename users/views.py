@@ -1,13 +1,15 @@
 from django.db import transaction
-from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from django.utils import timezone
+from django.utils.crypto import constant_time_compare, salted_hmac
+from rest_framework import generics, permissions, serializers, status
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 
 from myproject.permissions import IsAdminRole, RolePermissionRequired
 
-from .models import Role, RolePermission, User
+from .models import EmailVerificationCode, LoginMathChallenge, Role, RolePermission, User
 from .rbac import ACTIONS, RESOURCES, get_permission_catalog
 from .serializers import (
     RoleDefinitionSerializer,
@@ -16,11 +18,121 @@ from .serializers import (
     UserProfileSerializer,
     UserRegistrationSerializer,
 )
+from .security import create_login_math_challenge, issue_email_verification_code
+
+
+class EmailAddressSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class EmailVerificationSerializer(EmailAddressSerializer):
+    code = serializers.RegexField(r"^\d{6}$")
 
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = (permissions.AllowAny,)
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        issue_email_verification_code(user)
+        return Response(
+            {
+                "detail": "Cuenta creada. Revisa tu correo e ingresa el código de verificación.",
+                "id": user.pk,
+                "email": user.email,
+                "username": user.username,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class EmailVerificationView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    @extend_schema(request=EmailVerificationSerializer, responses=OpenApiTypes.OBJECT)
+    def post(self, request):
+        serializer = EmailVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        code = serializer.validated_data["code"]
+
+        invalid_code = False
+        with transaction.atomic():
+            verification = (
+                EmailVerificationCode.objects.select_for_update()
+                .select_related("user")
+                .filter(user__email__iexact=email)
+                .first()
+            )
+            if (
+                verification is None
+                or verification.expires_at <= timezone.now()
+                or verification.failed_attempts >= 5
+            ):
+                if verification is not None:
+                    verification.delete()
+                invalid_code = True
+            else:
+                submitted_hash = salted_hmac(
+                    f"adopkia.email-verification:user:{verification.user_id}",
+                    code,
+                ).hexdigest()
+                if not constant_time_compare(verification.code_hash, submitted_hash):
+                    verification.failed_attempts += 1
+                    if verification.failed_attempts >= 5:
+                        verification.delete()
+                    else:
+                        verification.save(update_fields=("failed_attempts",))
+                    invalid_code = True
+                else:
+                    verification.user.email_verified = True
+                    verification.user.save(update_fields=("email_verified",))
+                    verification.delete()
+
+        if invalid_code:
+            raise AuthenticationFailed("El código es inválido o ha vencido.")
+
+        return Response({"detail": "Correo verificado. Ya puedes iniciar sesión."})
+
+
+class ResendEmailVerificationView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    @extend_schema(request=EmailAddressSerializer, responses=OpenApiTypes.OBJECT)
+    def post(self, request):
+        serializer = EmailAddressSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        user = User.objects.filter(email__iexact=email, email_verified=False).first()
+        if user is not None:
+            existing = EmailVerificationCode.objects.filter(user=user).first()
+            if (
+                existing is None
+                or (timezone.now() - existing.sent_at).total_seconds() >= 60
+            ):
+                issue_email_verification_code(user)
+        return Response(
+            {"detail": "Si la cuenta necesita verificación, recibirás un código por correo."}
+        )
+
+
+class LoginMathChallengeView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        LoginMathChallenge.objects.filter(expires_at__lte=timezone.now()).delete()
+        challenge, question = create_login_math_challenge()
+        return Response(
+            {
+                "challenge_id": str(challenge.pk),
+                "question": question,
+            }
+        )
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

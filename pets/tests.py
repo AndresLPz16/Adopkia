@@ -56,6 +56,7 @@ class PetApiTests(APITestCase):
             name="Luna",
             approximate_birth_date=date(2023, 1, 1),
             size=Pet.Size.MEDIUM,
+            health="Está en tratamiento veterinario.",
         )
 
     def test_public_pet_search_returns_calculated_age_and_catalog_filters(self):
@@ -66,6 +67,12 @@ class PetApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertIsInstance(response.data["results"][0]["age"], int)
+        self.assertEqual(response.data["results"][0]["shelter_name"], "Huellas")
+        self.assertEqual(response.data["results"][0]["breed_name"], "Mestizo")
+        self.assertEqual(
+            response.data["results"][0]["health"],
+            "Está en tratamiento veterinario.",
+        )
 
     def test_invalid_age_filter_returns_validation_error(self):
         response = self.client.get(reverse("pet-list"), {"min_age": "-1"})

@@ -1,3 +1,5 @@
+import re
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -30,7 +32,8 @@ class ApiIndexPermissionAlignmentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.json()["role"])
         expected_resources = {
-            "register", "login", "refresh", "verified_shelters", "species",
+            "register", "verify_email", "resend_email_verification",
+            "login", "login_challenge", "refresh", "verified_shelters", "species",
             "breeds", "pets", "form_questions", "vaccines", "api_docs",
             "openapi_schema",
         }
@@ -85,14 +88,23 @@ class ApiIndexPermissionAlignmentTests(TestCase):
         adopter, _ = self.roles[Role.Name.ADOPTER]
         adopter.active = False
         adopter.save(update_fields=["active"])
-        credentials = {"email": adopter.email, "password": "SafePass!2026"}
-
-        spanish = self.client.post(
-            "/api/v1/auth/login/?lang=es", credentials, format="json"
-        )
-        english = self.client.post(
-            "/api/v1/auth/login/?lang=en", credentials, format="json"
-        )
+        responses = []
+        for language in ("es", "en"):
+            challenge = self.client.get("/api/v1/auth/login-challenge/")
+            left, right = map(int, re.findall(r"\d+", challenge.data["question"]))
+            responses.append(
+                self.client.post(
+                    f"/api/v1/auth/login/?lang={language}",
+                    {
+                        "email": adopter.email,
+                        "password": "SafePass!2026",
+                        "challenge_id": challenge.data["challenge_id"],
+                        "challenge_answer": str(left + right),
+                    },
+                    format="json",
+                )
+            )
+        spanish, english = responses
 
         self.assertEqual(spanish.status_code, 401)
         self.assertEqual(english.status_code, 401)

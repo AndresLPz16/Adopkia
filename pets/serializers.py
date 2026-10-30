@@ -40,18 +40,23 @@ class PetReadSerializer(LocalizedModelSerializer):
     catalog_fields = ("species",)
 
     age = serializers.IntegerField(read_only=True, allow_null=True)
+    status_code = serializers.CharField(source="status", read_only=True)
     photos = PetPhotoSerializer(many=True, read_only=True)
     city = serializers.CharField(source="shelter.city", read_only=True)
+    shelter_name = serializers.CharField(source="shelter.name", read_only=True)
     species = serializers.CharField(source="breed.species.name", read_only=True)
+    breed_name = serializers.CharField(source="breed.name", read_only=True)
 
     class Meta:
         model = Pet
         fields = (
             "id",
             "shelter",
+            "shelter_name",
             "city",
             "species",
             "breed",
+            "breed_name",
             "name",
             "approximate_birth_date",
             "age",
@@ -59,6 +64,7 @@ class PetReadSerializer(LocalizedModelSerializer):
             "health",
             "temperament",
             "status",
+            "status_code",
             "published_at",
             "photos",
         )
