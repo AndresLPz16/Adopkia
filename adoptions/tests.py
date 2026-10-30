@@ -139,6 +139,30 @@ class AdoptionFlowTests(APITestCase):
         self.assertEqual(adoption.return_date, date.today())
         self.assertEqual(self.pet.status, Pet.Status.RETURNED)
 
+    def test_request_list_includes_question_prompts_for_superadmin_review(self):
+        self.submit_request()
+        self.admin.is_platform_superadmin = True
+        self.admin.save(update_fields=("is_platform_superadmin",))
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(reverse("adoption-request-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["results"][0]["answers"][0]["question_prompt"],
+            "¿Tienes experiencia con mascotas?",
+        )
+        self.assertEqual(response.data["results"][0]["answers"][0]["value"], "Sí")
+        self.assertEqual(response.data["results"][0]["pet_details"]["name"], "Luna")
+        self.assertEqual(
+            response.data["results"][0]["pet_details"]["status_code"],
+            Pet.Status.IN_PROCESS,
+        )
+        self.assertEqual(
+            response.data["results"][0]["status_code"],
+            AdoptionRequest.Status.PENDING,
+        )
+
     def test_each_request_state_change_creates_one_typed_notification(self):
         first = self.submit_request(self.adopter)
         second = self.submit_request(self.other_adopter)

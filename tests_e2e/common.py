@@ -1,4 +1,5 @@
 import json
+import re
 import secrets
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
@@ -125,10 +126,20 @@ def record_account(alias, *, email, password, role, user_id=None):
 
 def login_account(testcase, alias):
     account = STATE["accounts"][alias]
+    challenge = request("GET", "auth/login-challenge/")
+    challenge_data = assert_response(
+        testcase, f"reto-login/{alias}", challenge, 200
+    )
+    left, right = map(int, re.findall(r"\d+", challenge_data["question"]))
     response = request(
         "POST",
         "auth/login/",
-        data={"email": account["email"], "password": account["password"]},
+        data={
+            "email": account["email"],
+            "password": account["password"],
+            "challenge_id": challenge_data["challenge_id"],
+            "challenge_answer": str(left + right),
+        },
     )
     payload = assert_response(testcase, f"login/{alias}", response, 200)
     account["access"] = payload["access"]

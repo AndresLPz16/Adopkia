@@ -9,7 +9,9 @@
       "email": "e2e_a097635676_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:05:43Z"
+      "registered_at": "2026-10-08T23:05:43Z",
+      "username": "e2e_a097635676_adopter",
+      "email_verified": true
     }
   },
   {
@@ -22,7 +24,9 @@
       "email": "e2e_a097635676_other_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:05:43Z"
+      "registered_at": "2026-10-08T23:05:43Z",
+      "username": "e2e_a097635676_other_adopter",
+      "email_verified": true
     }
   },
   {
@@ -35,7 +39,9 @@
       "email": "e2e_a097635676_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:05:43Z"
+      "registered_at": "2026-10-08T23:05:43Z",
+      "username": "e2e_a097635676_shelter",
+      "email_verified": true
     }
   },
   {
@@ -48,7 +54,9 @@
       "email": "e2e_a097635676_other_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:05:43Z"
+      "registered_at": "2026-10-08T23:05:43Z",
+      "username": "e2e_a097635676_other_shelter",
+      "email_verified": true
     }
   },
   {
@@ -61,7 +69,9 @@
       "email": "e2e_a097635676_admin@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:05:43Z"
+      "registered_at": "2026-10-08T23:05:43Z",
+      "username": "e2e_a097635676_admin",
+      "email_verified": true
     }
   },
   {
@@ -74,7 +84,9 @@
       "email": "e2e_a097635676_veterinarian@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:05:44Z"
+      "registered_at": "2026-10-08T23:05:44Z",
+      "username": "e2e_a097635676_veterinarian",
+      "email_verified": true
     }
   },
   {
@@ -87,7 +99,9 @@
       "email": "e2e_a097635676_inactive@example.test",
       "phone": null,
       "active": false,
-      "registered_at": "2026-10-08T23:05:44Z"
+      "registered_at": "2026-10-08T23:05:44Z",
+      "username": "e2e_a097635676_inactive",
+      "email_verified": true
     }
   },
   {
@@ -100,7 +114,9 @@
       "email": "e2e_af86005689_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:32Z"
+      "registered_at": "2026-10-08T23:07:32Z",
+      "username": "e2e_af86005689_adopter",
+      "email_verified": true
     }
   },
   {
@@ -113,7 +129,9 @@
       "email": "e2e_af86005689_other_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:32Z"
+      "registered_at": "2026-10-08T23:07:32Z",
+      "username": "e2e_af86005689_other_adopter",
+      "email_verified": true
     }
   },
   {
@@ -126,7 +144,9 @@
       "email": "e2e_af86005689_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:32Z"
+      "registered_at": "2026-10-08T23:07:32Z",
+      "username": "e2e_af86005689_shelter",
+      "email_verified": true
     }
   },
   {
@@ -139,7 +159,9 @@
       "email": "e2e_af86005689_other_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:33Z"
+      "registered_at": "2026-10-08T23:07:33Z",
+      "username": "e2e_af86005689_other_shelter",
+      "email_verified": true
     }
   },
   {
@@ -152,7 +174,9 @@
       "email": "e2e_af86005689_admin@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:33Z"
+      "registered_at": "2026-10-08T23:07:33Z",
+      "username": "e2e_af86005689_admin",
+      "email_verified": true
     }
   },
   {
@@ -165,7 +189,9 @@
       "email": "e2e_af86005689_veterinarian@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:33Z"
+      "registered_at": "2026-10-08T23:07:33Z",
+      "username": "e2e_af86005689_veterinarian",
+      "email_verified": true
     }
   },
   {
@@ -178,7 +204,9 @@
       "email": "e2e_af86005689_inactive@example.test",
       "phone": null,
       "active": false,
-      "registered_at": "2026-10-08T23:07:33Z"
+      "registered_at": "2026-10-08T23:07:33Z",
+      "username": "e2e_af86005689_inactive",
+      "email_verified": true
     }
   },
   {
@@ -191,7 +219,9 @@
       "email": "e2e_af86005689_member@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:07:39Z"
+      "registered_at": "2026-10-08T23:07:39Z",
+      "username": "e2e_af86005689_member",
+      "email_verified": true
     }
   },
   {
@@ -204,7 +234,9 @@
       "email": "e2e_6197483769_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:08Z"
+      "registered_at": "2026-10-08T23:08:08Z",
+      "username": "e2e_6197483769_adopter",
+      "email_verified": true
     }
   },
   {
@@ -217,7 +249,9 @@
       "email": "e2e_6197483769_other_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:08Z"
+      "registered_at": "2026-10-08T23:08:08Z",
+      "username": "e2e_6197483769_other_adopter",
+      "email_verified": true
     }
   },
   {
@@ -230,7 +264,9 @@
       "email": "e2e_6197483769_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:08Z"
+      "registered_at": "2026-10-08T23:08:08Z",
+      "username": "e2e_6197483769_shelter",
+      "email_verified": true
     }
   },
   {
@@ -243,7 +279,9 @@
       "email": "e2e_6197483769_other_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:08Z"
+      "registered_at": "2026-10-08T23:08:08Z",
+      "username": "e2e_6197483769_other_shelter",
+      "email_verified": true
     }
   },
   {
@@ -256,7 +294,9 @@
       "email": "e2e_6197483769_admin@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:09Z"
+      "registered_at": "2026-10-08T23:08:09Z",
+      "username": "e2e_6197483769_admin",
+      "email_verified": true
     }
   },
   {
@@ -269,7 +309,9 @@
       "email": "e2e_6197483769_veterinarian@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:09Z"
+      "registered_at": "2026-10-08T23:08:09Z",
+      "username": "e2e_6197483769_veterinarian",
+      "email_verified": true
     }
   },
   {
@@ -282,7 +324,9 @@
       "email": "e2e_6197483769_inactive@example.test",
       "phone": null,
       "active": false,
-      "registered_at": "2026-10-08T23:08:09Z"
+      "registered_at": "2026-10-08T23:08:09Z",
+      "username": "e2e_6197483769_inactive",
+      "email_verified": true
     }
   },
   {
@@ -295,7 +339,9 @@
       "email": "e2e_6197483769_member@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:15Z"
+      "registered_at": "2026-10-08T23:08:15Z",
+      "username": "e2e_6197483769_member",
+      "email_verified": true
     }
   },
   {
@@ -308,7 +354,9 @@
       "email": "e2e_f8d2c9dc83_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:53Z"
+      "registered_at": "2026-10-08T23:08:53Z",
+      "username": "e2e_f8d2c9dc83_adopter",
+      "email_verified": true
     }
   },
   {
@@ -321,7 +369,9 @@
       "email": "e2e_f8d2c9dc83_other_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:53Z"
+      "registered_at": "2026-10-08T23:08:53Z",
+      "username": "e2e_f8d2c9dc83_other_adopter",
+      "email_verified": true
     }
   },
   {
@@ -334,7 +384,9 @@
       "email": "e2e_f8d2c9dc83_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:53Z"
+      "registered_at": "2026-10-08T23:08:53Z",
+      "username": "e2e_f8d2c9dc83_shelter",
+      "email_verified": true
     }
   },
   {
@@ -347,7 +399,9 @@
       "email": "e2e_f8d2c9dc83_other_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:54Z"
+      "registered_at": "2026-10-08T23:08:54Z",
+      "username": "e2e_f8d2c9dc83_other_shelter",
+      "email_verified": true
     }
   },
   {
@@ -360,7 +414,9 @@
       "email": "e2e_f8d2c9dc83_admin@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:54Z"
+      "registered_at": "2026-10-08T23:08:54Z",
+      "username": "e2e_f8d2c9dc83_admin",
+      "email_verified": true
     }
   },
   {
@@ -373,7 +429,9 @@
       "email": "e2e_f8d2c9dc83_veterinarian@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:08:54Z"
+      "registered_at": "2026-10-08T23:08:54Z",
+      "username": "e2e_f8d2c9dc83_veterinarian",
+      "email_verified": true
     }
   },
   {
@@ -386,7 +444,9 @@
       "email": "e2e_f8d2c9dc83_inactive@example.test",
       "phone": null,
       "active": false,
-      "registered_at": "2026-10-08T23:08:54Z"
+      "registered_at": "2026-10-08T23:08:54Z",
+      "username": "e2e_f8d2c9dc83_inactive",
+      "email_verified": true
     }
   },
   {
@@ -399,7 +459,9 @@
       "email": "e2e_f8d2c9dc83_member@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:01Z"
+      "registered_at": "2026-10-08T23:09:01Z",
+      "username": "e2e_f8d2c9dc83_member",
+      "email_verified": true
     }
   },
   {
@@ -412,7 +474,9 @@
       "email": "e2e_cb5e87fb41_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:58Z"
+      "registered_at": "2026-10-08T23:09:58Z",
+      "username": "e2e_cb5e87fb41_adopter",
+      "email_verified": true
     }
   },
   {
@@ -425,7 +489,9 @@
       "email": "e2e_cb5e87fb41_other_adopter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:58Z"
+      "registered_at": "2026-10-08T23:09:58Z",
+      "username": "e2e_cb5e87fb41_other_adopter",
+      "email_verified": true
     }
   },
   {
@@ -438,7 +504,9 @@
       "email": "e2e_cb5e87fb41_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:58Z"
+      "registered_at": "2026-10-08T23:09:58Z",
+      "username": "e2e_cb5e87fb41_shelter",
+      "email_verified": true
     }
   },
   {
@@ -451,7 +519,9 @@
       "email": "e2e_cb5e87fb41_other_shelter@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:59Z"
+      "registered_at": "2026-10-08T23:09:59Z",
+      "username": "e2e_cb5e87fb41_other_shelter",
+      "email_verified": true
     }
   },
   {
@@ -464,7 +534,9 @@
       "email": "e2e_cb5e87fb41_admin@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:59Z"
+      "registered_at": "2026-10-08T23:09:59Z",
+      "username": "e2e_cb5e87fb41_admin",
+      "email_verified": true
     }
   },
   {
@@ -477,7 +549,9 @@
       "email": "e2e_cb5e87fb41_veterinarian@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:09:59Z"
+      "registered_at": "2026-10-08T23:09:59Z",
+      "username": "e2e_cb5e87fb41_veterinarian",
+      "email_verified": true
     }
   },
   {
@@ -490,7 +564,9 @@
       "email": "e2e_cb5e87fb41_inactive@example.test",
       "phone": null,
       "active": false,
-      "registered_at": "2026-10-08T23:09:59Z"
+      "registered_at": "2026-10-08T23:09:59Z",
+      "username": "e2e_cb5e87fb41_inactive",
+      "email_verified": true
     }
   },
   {
@@ -503,7 +579,9 @@
       "email": "e2e_cb5e87fb41_member@example.test",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:10:05Z"
+      "registered_at": "2026-10-08T23:10:05Z",
+      "username": "e2e_cb5e87fb41_member",
+      "email_verified": true
     }
   },
   {
@@ -516,7 +594,9 @@
       "email": "yoiderbrito@gmail.com",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-08T23:32:04Z"
+      "registered_at": "2026-10-08T23:32:04Z",
+      "username": "yoiderbrito",
+      "email_verified": true
     }
   },
   {
@@ -529,7 +609,9 @@
       "email": "yoiderbritoo@gmail.com",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-15T01:07:14Z"
+      "registered_at": "2026-10-15T01:07:14Z",
+      "username": "yoiderbritoo",
+      "email_verified": true
     }
   },
   {
@@ -542,7 +624,9 @@
       "email": "yoiderdbrito@uniguajira.edu.co",
       "phone": null,
       "active": true,
-      "registered_at": "2026-10-15T01:09:51Z"
+      "registered_at": "2026-10-15T01:09:51Z",
+      "username": "yoiderdbrito",
+      "email_verified": true
     }
   },
   {
@@ -550,7 +634,7 @@
     "pk": 14,
     "fields": {
       "name": "[E2E] Refugio actualizado a097635676",
-      "address": "Dirección E2E actualizada",
+      "address": "Direcci\u00f3n E2E actualizada",
       "city": "E2E City a097635676",
       "contact_phone": "3000000000",
       "contact_email": "e2e_a097635676_shelter@example.test",
@@ -580,7 +664,7 @@
     "pk": 18,
     "fields": {
       "name": "[E2E] Refugio actualizado af86005689",
-      "address": "Dirección E2E actualizada",
+      "address": "Direcci\u00f3n E2E actualizada",
       "city": "E2E City af86005689",
       "contact_phone": "3000000000",
       "contact_email": "e2e_af86005689_shelter@example.test",
@@ -610,7 +694,7 @@
     "pk": 20,
     "fields": {
       "name": "[E2E] Refugio actualizado 6197483769",
-      "address": "Dirección E2E actualizada",
+      "address": "Direcci\u00f3n E2E actualizada",
       "city": "E2E City 6197483769",
       "contact_phone": "3000000000",
       "contact_email": "e2e_6197483769_shelter@example.test",
@@ -640,7 +724,7 @@
     "pk": 22,
     "fields": {
       "name": "[E2E] Refugio actualizado f8d2c9dc83",
-      "address": "Dirección E2E actualizada",
+      "address": "Direcci\u00f3n E2E actualizada",
       "city": "E2E City f8d2c9dc83",
       "contact_phone": "3000000000",
       "contact_email": "e2e_f8d2c9dc83_shelter@example.test",
@@ -670,7 +754,7 @@
     "pk": 24,
     "fields": {
       "name": "[E2E] Refugio actualizado cb5e87fb41",
-      "address": "Dirección E2E actualizada",
+      "address": "Direcci\u00f3n E2E actualizada",
       "city": "E2E City cb5e87fb41",
       "contact_phone": "3000000000",
       "contact_email": "e2e_cb5e87fb41_shelter@example.test",
@@ -4088,7 +4172,7 @@
     "fields": {
       "user": 69,
       "professional_card": "E2E-a097635676",
-      "clinic": "Clínica de prueba",
+      "clinic": "Cl\u00ednica de prueba",
       "specialty": "Medicina general"
     }
   },
@@ -4098,7 +4182,7 @@
     "fields": {
       "user": 84,
       "professional_card": "E2E-af86005689",
-      "clinic": "Clínica de prueba",
+      "clinic": "Cl\u00ednica de prueba",
       "specialty": "Medicina general"
     }
   },
@@ -4108,7 +4192,7 @@
     "fields": {
       "user": 92,
       "professional_card": "E2E-6197483769",
-      "clinic": "Clínica de prueba",
+      "clinic": "Cl\u00ednica de prueba",
       "specialty": "Medicina general"
     }
   },
@@ -4118,7 +4202,7 @@
     "fields": {
       "user": 100,
       "professional_card": "E2E-f8d2c9dc83",
-      "clinic": "Clínica de prueba",
+      "clinic": "Cl\u00ednica de prueba",
       "specialty": "Medicina general"
     }
   },
@@ -4128,7 +4212,7 @@
     "fields": {
       "user": 108,
       "professional_card": "E2E-cb5e87fb41",
-      "clinic": "Clínica de prueba",
+      "clinic": "Cl\u00ednica de prueba",
       "specialty": "Medicina general"
     }
   },
@@ -4141,7 +4225,7 @@
       "vaccine": 1,
       "date": "2026-10-08",
       "record_type": "vacunacion",
-      "description": "[E2E] aplicación de vacuna"
+      "description": "[E2E] aplicaci\u00f3n de vacuna"
     }
   },
   {
@@ -4153,7 +4237,7 @@
       "vaccine": 1,
       "date": "2026-10-08",
       "record_type": "vacunacion",
-      "description": "[E2E] aplicación de vacuna"
+      "description": "[E2E] aplicaci\u00f3n de vacuna"
     }
   },
   {
@@ -4165,7 +4249,7 @@
       "vaccine": 1,
       "date": "2026-10-08",
       "record_type": "vacunacion",
-      "description": "[E2E] aplicación de vacuna"
+      "description": "[E2E] aplicaci\u00f3n de vacuna"
     }
   },
   {
@@ -4177,7 +4261,7 @@
       "vaccine": 1,
       "date": "2026-10-08",
       "record_type": "vacunacion",
-      "description": "[E2E] aplicación de vacuna"
+      "description": "[E2E] aplicaci\u00f3n de vacuna"
     }
   },
   {
@@ -4189,7 +4273,7 @@
       "vaccine": 1,
       "date": "2026-10-08",
       "record_type": "vacunacion",
-      "description": "[E2E] aplicación de vacuna"
+      "description": "[E2E] aplicaci\u00f3n de vacuna"
     }
   },
   {
@@ -4432,7 +4516,7 @@
       "request": 18,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota a097635676-00.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota a097635676-00.",
       "sent_at": "2026-10-08T23:05:48Z",
       "is_read": false
     }
@@ -4445,7 +4529,7 @@
       "request": 20,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota a097635676-01.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota a097635676-01.",
       "sent_at": "2026-10-08T23:05:48Z",
       "is_read": false
     }
@@ -4458,7 +4542,7 @@
       "request": 20,
       "reminder": null,
       "notification_type": "sistema",
-      "message": "Una solicitud de adopción fue cancelada.",
+      "message": "Una solicitud de adopci\u00f3n fue cancelada.",
       "sent_at": "2026-10-08T23:05:48Z",
       "is_read": false
     }
@@ -4471,7 +4555,7 @@
       "request": 18,
       "reminder": null,
       "notification_type": "aprobacion",
-      "message": "Tu solicitud de adopción fue aprobada.",
+      "message": "Tu solicitud de adopci\u00f3n fue aprobada.",
       "sent_at": "2026-10-08T23:05:48Z",
       "is_read": false
     }
@@ -4484,7 +4568,7 @@
       "request": null,
       "reminder": 7,
       "notification_type": "recordatorio",
-      "message": "Recordatorio: Antirrábica para [E2E] Mascota a097635676-00 el 08/10/2026.",
+      "message": "Recordatorio: Antirr\u00e1bica para [E2E] Mascota a097635676-00 el 08/10/2026.",
       "sent_at": "2026-10-08T23:05:48Z",
       "is_read": false
     }
@@ -4497,7 +4581,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio a097635676.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio a097635676.",
       "sent_at": "2026-10-08T23:05:49Z",
       "is_read": false
     }
@@ -4510,7 +4594,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio a097635676.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio a097635676.",
       "sent_at": "2026-10-08T23:05:49Z",
       "is_read": false
     }
@@ -4523,7 +4607,7 @@
       "request": 24,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota af86005689-00.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota af86005689-00.",
       "sent_at": "2026-10-08T23:07:36Z",
       "is_read": false
     }
@@ -4536,7 +4620,7 @@
       "request": 26,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota af86005689-01.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota af86005689-01.",
       "sent_at": "2026-10-08T23:07:36Z",
       "is_read": false
     }
@@ -4549,7 +4633,7 @@
       "request": 26,
       "reminder": null,
       "notification_type": "sistema",
-      "message": "Una solicitud de adopción fue cancelada.",
+      "message": "Una solicitud de adopci\u00f3n fue cancelada.",
       "sent_at": "2026-10-08T23:07:36Z",
       "is_read": false
     }
@@ -4562,7 +4646,7 @@
       "request": 24,
       "reminder": null,
       "notification_type": "aprobacion",
-      "message": "Tu solicitud de adopción fue aprobada.",
+      "message": "Tu solicitud de adopci\u00f3n fue aprobada.",
       "sent_at": "2026-10-08T23:07:37Z",
       "is_read": false
     }
@@ -4575,7 +4659,7 @@
       "request": null,
       "reminder": 9,
       "notification_type": "recordatorio",
-      "message": "Recordatorio: Antirrábica para [E2E] Mascota af86005689-00 el 08/10/2026.",
+      "message": "Recordatorio: Antirr\u00e1bica para [E2E] Mascota af86005689-00 el 08/10/2026.",
       "sent_at": "2026-10-08T23:07:37Z",
       "is_read": false
     }
@@ -4588,7 +4672,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio af86005689.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio af86005689.",
       "sent_at": "2026-10-08T23:07:37Z",
       "is_read": false
     }
@@ -4601,7 +4685,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio af86005689.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio af86005689.",
       "sent_at": "2026-10-08T23:07:37Z",
       "is_read": false
     }
@@ -4614,7 +4698,7 @@
       "request": 27,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota 6197483769-00.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota 6197483769-00.",
       "sent_at": "2026-10-08T23:08:13Z",
       "is_read": false
     }
@@ -4627,7 +4711,7 @@
       "request": 29,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota 6197483769-01.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota 6197483769-01.",
       "sent_at": "2026-10-08T23:08:13Z",
       "is_read": false
     }
@@ -4640,7 +4724,7 @@
       "request": 29,
       "reminder": null,
       "notification_type": "sistema",
-      "message": "Una solicitud de adopción fue cancelada.",
+      "message": "Una solicitud de adopci\u00f3n fue cancelada.",
       "sent_at": "2026-10-08T23:08:13Z",
       "is_read": false
     }
@@ -4653,7 +4737,7 @@
       "request": 27,
       "reminder": null,
       "notification_type": "aprobacion",
-      "message": "Tu solicitud de adopción fue aprobada.",
+      "message": "Tu solicitud de adopci\u00f3n fue aprobada.",
       "sent_at": "2026-10-08T23:08:13Z",
       "is_read": false
     }
@@ -4666,7 +4750,7 @@
       "request": null,
       "reminder": 10,
       "notification_type": "recordatorio",
-      "message": "Recordatorio: Antirrábica para [E2E] Mascota 6197483769-00 el 08/10/2026.",
+      "message": "Recordatorio: Antirr\u00e1bica para [E2E] Mascota 6197483769-00 el 08/10/2026.",
       "sent_at": "2026-10-08T23:08:13Z",
       "is_read": false
     }
@@ -4679,7 +4763,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio 6197483769.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio 6197483769.",
       "sent_at": "2026-10-08T23:08:14Z",
       "is_read": false
     }
@@ -4692,7 +4776,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio 6197483769.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio 6197483769.",
       "sent_at": "2026-10-08T23:08:14Z",
       "is_read": false
     }
@@ -4705,7 +4789,7 @@
       "request": 30,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota 6197483769-03.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota 6197483769-03.",
       "sent_at": "2026-10-08T23:08:22Z",
       "is_read": false
     }
@@ -4718,7 +4802,7 @@
       "request": 31,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota f8d2c9dc83-00.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota f8d2c9dc83-00.",
       "sent_at": "2026-10-08T23:08:58Z",
       "is_read": false
     }
@@ -4731,7 +4815,7 @@
       "request": 33,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota f8d2c9dc83-01.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota f8d2c9dc83-01.",
       "sent_at": "2026-10-08T23:08:58Z",
       "is_read": false
     }
@@ -4744,7 +4828,7 @@
       "request": 33,
       "reminder": null,
       "notification_type": "sistema",
-      "message": "Una solicitud de adopción fue cancelada.",
+      "message": "Una solicitud de adopci\u00f3n fue cancelada.",
       "sent_at": "2026-10-08T23:08:58Z",
       "is_read": false
     }
@@ -4757,7 +4841,7 @@
       "request": 31,
       "reminder": null,
       "notification_type": "aprobacion",
-      "message": "Tu solicitud de adopción fue aprobada.",
+      "message": "Tu solicitud de adopci\u00f3n fue aprobada.",
       "sent_at": "2026-10-08T23:08:58Z",
       "is_read": false
     }
@@ -4770,7 +4854,7 @@
       "request": null,
       "reminder": 11,
       "notification_type": "recordatorio",
-      "message": "Recordatorio: Antirrábica para [E2E] Mascota f8d2c9dc83-00 el 08/10/2026.",
+      "message": "Recordatorio: Antirr\u00e1bica para [E2E] Mascota f8d2c9dc83-00 el 08/10/2026.",
       "sent_at": "2026-10-08T23:08:59Z",
       "is_read": false
     }
@@ -4783,7 +4867,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio f8d2c9dc83.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio f8d2c9dc83.",
       "sent_at": "2026-10-08T23:08:59Z",
       "is_read": false
     }
@@ -4796,7 +4880,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio f8d2c9dc83.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio f8d2c9dc83.",
       "sent_at": "2026-10-08T23:08:59Z",
       "is_read": false
     }
@@ -4809,7 +4893,7 @@
       "request": 34,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota f8d2c9dc83-03.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota f8d2c9dc83-03.",
       "sent_at": "2026-10-08T23:09:08Z",
       "is_read": false
     }
@@ -4822,7 +4906,7 @@
       "request": 35,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota cb5e87fb41-00.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota cb5e87fb41-00.",
       "sent_at": "2026-10-08T23:10:02Z",
       "is_read": false
     }
@@ -4835,7 +4919,7 @@
       "request": 37,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota cb5e87fb41-01.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota cb5e87fb41-01.",
       "sent_at": "2026-10-08T23:10:02Z",
       "is_read": false
     }
@@ -4848,7 +4932,7 @@
       "request": 37,
       "reminder": null,
       "notification_type": "sistema",
-      "message": "Una solicitud de adopción fue cancelada.",
+      "message": "Una solicitud de adopci\u00f3n fue cancelada.",
       "sent_at": "2026-10-08T23:10:02Z",
       "is_read": false
     }
@@ -4861,7 +4945,7 @@
       "request": 35,
       "reminder": null,
       "notification_type": "aprobacion",
-      "message": "Tu solicitud de adopción fue aprobada.",
+      "message": "Tu solicitud de adopci\u00f3n fue aprobada.",
       "sent_at": "2026-10-08T23:10:02Z",
       "is_read": false
     }
@@ -4874,7 +4958,7 @@
       "request": null,
       "reminder": 12,
       "notification_type": "recordatorio",
-      "message": "Recordatorio: Antirrábica para [E2E] Mascota cb5e87fb41-00 el 08/10/2026.",
+      "message": "Recordatorio: Antirr\u00e1bica para [E2E] Mascota cb5e87fb41-00 el 08/10/2026.",
       "sent_at": "2026-10-08T23:10:03Z",
       "is_read": false
     }
@@ -4887,7 +4971,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio cb5e87fb41.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio cb5e87fb41.",
       "sent_at": "2026-10-08T23:10:03Z",
       "is_read": false
     }
@@ -4900,7 +4984,7 @@
       "request": null,
       "reminder": null,
       "notification_type": "mensaje",
-      "message": "Nuevo mensaje en una conversación sobre [E2E] Refugio cb5e87fb41.",
+      "message": "Nuevo mensaje en una conversaci\u00f3n sobre [E2E] Refugio cb5e87fb41.",
       "sent_at": "2026-10-08T23:10:03Z",
       "is_read": false
     }
@@ -4913,7 +4997,7 @@
       "request": 38,
       "reminder": null,
       "notification_type": "nueva_solicitud",
-      "message": "Nueva solicitud de adopción para [E2E] Mascota cb5e87fb41-03.",
+      "message": "Nueva solicitud de adopci\u00f3n para [E2E] Mascota cb5e87fb41-03.",
       "sent_at": "2026-10-08T23:10:12Z",
       "is_read": false
     }
@@ -4926,7 +5010,7 @@
       "request": 38,
       "reminder": null,
       "notification_type": "sistema",
-      "message": "Una solicitud de adopción fue cancelada.",
+      "message": "Una solicitud de adopci\u00f3n fue cancelada.",
       "sent_at": "2026-10-08T23:10:12Z",
       "is_read": false
     }

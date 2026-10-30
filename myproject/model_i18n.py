@@ -7,7 +7,8 @@ MODEL_LABELS = {
     "users.Role": ("Rol", "Roles", {"id": "Identificador", "name": "Nombre", "description": "Descripción"}),
     "users.User": ("Usuario", "Usuarios", {
         "id": "Identificador", "password": "Contraseña", "role": "Rol", "name": "Nombre",
-        "email": "Correo electrónico", "phone": "Teléfono", "active": "Activo",
+        "username": "Nombre de usuario", "email": "Correo electrónico",
+        "email_verified": "Correo verificado", "phone": "Teléfono", "active": "Activo",
         "registered_at": "Fecha de registro",
     }),
     "shelters.Shelter": ("Refugio", "Refugios", {

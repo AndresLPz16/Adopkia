@@ -19,7 +19,7 @@ export type PortalSender = (
   method: string,
   body?: unknown,
   successMessage?: string,
-) => Promise<void>;
+) => Promise<boolean | void>;
 export type PortalPetSaver = (
   endpoint: string,
   method: string,
@@ -31,6 +31,11 @@ export type PortalSubmit = (callback: () => Promise<void>) => (event: FormEvent)
 
 export function text(value: unknown): string {
   return value == null ? "" : String(value);
+}
+
+export function isAvailablePet(pet: PortalDataRow): boolean {
+  const status = text(pet.status_code || pet.status).trim().toLocaleLowerCase();
+  return status === "disponible" || status === "available";
 }
 
 export function rows(value: unknown): PortalDataRow[] {

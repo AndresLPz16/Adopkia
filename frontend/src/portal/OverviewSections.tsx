@@ -1,12 +1,17 @@
-import { SectionTitle, text } from "./shared";
+import { isAvailablePet, SectionTitle, text } from "./shared";
 import type { PortalDataRow } from "./shared";
+import { ROLES } from "../rbac/types";
 
 type DashboardSectionProps = {
   userName: string;
+  role: string;
   roleName: string;
   isAdmin: boolean;
   shelters: PortalDataRow[];
   pets: PortalDataRow[];
+  managedPets: PortalDataRow[];
+  records: PortalDataRow[];
+  vaccines: PortalDataRow[];
   requests: PortalDataRow[];
   adoptions: PortalDataRow[];
   notifications: PortalDataRow[];
@@ -18,10 +23,14 @@ type DashboardSectionProps = {
 
 export function DashboardSection({
   userName,
+  role,
   roleName,
   isAdmin,
   shelters,
   pets,
+  managedPets,
+  records,
+  vaccines,
   requests,
   adoptions,
   notifications,
@@ -30,28 +39,96 @@ export function DashboardSection({
   sectionNames,
   navTo,
 }: DashboardSectionProps) {
+  const dashboardCopy: Record<string, { title: string; description: string; action: string; section: string }> = {
+    [ROLES.ADOPTER]: {
+      title: "Encuentra a tu nuevo compañero",
+      description: "Explora mascotas, sigue tus solicitudes y mantente al tanto de cada paso de tu adopción.",
+      action: "Explorar mascotas",
+      section: "pets",
+    },
+    [ROLES.SHELTER]: {
+      title: "Tu refugio, organizado",
+      description: "Publica mascotas y acompaña cada solicitud desde un solo lugar.",
+      action: "Gestionar mascotas",
+      section: "pets",
+    },
+    [ROLES.VETERINARIAN]: {
+      title: "Cuida cada historia",
+      description: "Accede a expedientes y seguimientos para apoyar el bienestar de las mascotas.",
+      action: "Abrir expedientes",
+      section: "records",
+    },
+    [ROLES.ADMIN]: {
+      title: "Adopkia bajo control",
+      description: "Supervisa refugios, actividad de adopción y el funcionamiento de la plataforma.",
+      action: "Revisar refugios",
+      section: "shelters",
+    },
+  };
+  const copy = dashboardCopy[role] ?? {
+    title: `Tu espacio ${roleName}`,
+    description: "Aquí tienes un resumen de lo que sucede en Adopkia.",
+    action: "Ver actividad",
+    section: "dashboard",
+  };
+  const availablePets = (role === ROLES.SHELTER ? managedPets : pets)
+    .filter(isAvailablePet);
+  const statsByRole: Record<string, { label: string; value: string | number }[]> = {
+    [ROLES.ADMIN]: [
+      { label: "Refugios registrados", value: shelters.length },
+      { label: "Adopciones", value: text(stats?.total_adoptions) || 0 },
+      { label: "Adopciones activas", value: text(stats?.active_adoptions) || 0 },
+      { label: "Mascotas devueltas", value: text(stats?.returned_pets) || 0 },
+    ],
+    [ROLES.SHELTER]: [
+      { label: "Mascotas a tu cuidado", value: managedPets.length },
+      { label: "Disponibles para adopción", value: availablePets.length },
+      { label: "Solicitudes pendientes", value: requests.filter((item) => item.status === "pendiente").length },
+      { label: "Adopciones activas", value: adoptions.filter((item) => item.status === "activa").length },
+    ],
+    [ROLES.VETERINARIAN]: [
+      { label: "Expedientes médicos", value: records.length },
+      { label: "Mascotas en seguimiento", value: pets.length },
+      { label: "Vacunas registradas", value: vaccines.length },
+      { label: "Notificaciones", value: notifications.filter((item) => item.is_read !== true).length },
+    ],
+    [ROLES.ADOPTER]: [
+      { label: "Mascotas disponibles", value: availablePets.length },
+      { label: "Solicitudes pendientes", value: requests.filter((item) => item.status === "pendiente").length },
+      { label: "Adopciones activas", value: adoptions.filter((item) => item.status === "activa").length },
+      { label: "Notificaciones", value: notifications.filter((item) => item.is_read !== true).length },
+    ],
+  };
+  const shortcutKeysByRole: Record<string, string[]> = {
+    [ROLES.ADOPTER]: ["pets", "requests", "adoptions", "messages"],
+    [ROLES.SHELTER]: ["pets", "requests", "adoptions", "messages", "shelters"],
+    [ROLES.VETERINARIAN]: ["records", "adoptions", "notifications"],
+    [ROLES.ADMIN]: ["shelters", "statistics", "users", "permissions"],
+  };
+  const shortcutLabels: Record<string, Record<string, string>> = {
+    [ROLES.ADOPTER]: { pets: "Explorar mascotas", requests: "Mis solicitudes", adoptions: "Mis adopciones" },
+    [ROLES.SHELTER]: { pets: "Mis mascotas", requests: "Solicitudes de adopción", shelters: "Mi refugio" },
+    [ROLES.VETERINARIAN]: { records: "Expedientes médicos", adoptions: "Seguimientos" },
+  };
+  const shortcuts = (shortcutKeysByRole[role] ?? visibleLinks)
+    .filter((key) => key !== "dashboard" && key !== "permissions" && visibleLinks.includes(key));
+
   return (
-    <>
-      <SectionTitle
-        eyebrow={`Hola, ${userName}`}
-        title={`Tu espacio ${roleName}`}
-        description="Aquí tienes un resumen de lo que sucede en Adopkia."
-      />
+    <div className="portal-dashboard" data-role={role}>
+      <div className="portal-dashboard__hero">
+        <SectionTitle
+          eyebrow={`Hola, ${userName}`}
+          title={copy.title}
+          description={copy.description}
+        />
+        {visibleLinks.includes(copy.section) && (
+          <button className="portal-button" onClick={() => navTo(copy.section)}>
+            {copy.action}
+          </button>
+        )}
+      </div>
       <div className="portal-stat-grid">
-        {(isAdmin
-          ? [
-              { label: "Refugios registrados", value: shelters.length },
-              { label: "Adopciones", value: text(stats?.total_adoptions) || 0 },
-              { label: "Adopciones activas", value: text(stats?.active_adoptions) || 0 },
-              { label: "Mascotas devueltas", value: text(stats?.returned_pets) || 0 },
-            ]
-          : [
-              { label: "Mascotas disponibles", value: pets.filter((item) => item.status === "disponible").length },
-              { label: "Solicitudes pendientes", value: requests.filter((item) => item.status === "pendiente").length },
-              { label: "Adopciones activas", value: adoptions.filter((item) => item.status === "activa").length },
-              { label: "Notificaciones", value: notifications.filter((item) => item.is_read !== true).length },
-            ]
-        ).map((stat) => (
+        {(statsByRole[role] ?? []).map((stat) => (
           <div className="portal-stat" key={stat.label}>
             <span>{stat.label}</span>
             <strong>{stat.value}</strong>
@@ -59,30 +136,28 @@ export function DashboardSection({
         ))}
       </div>
       <div className="portal-shortcuts">
-        {visibleLinks
-          .filter((key) => key !== "dashboard" && key !== "permissions")
-          .map((key) => (
-            <button key={key} className="portal-shortcut" onClick={() => navTo(key)}>
-              <span aria-hidden="true">
-                {(
-                  {
-                    pets: "♡",
-                    requests: "▤",
-                    adoptions: "⌂",
-                    messages: "✉",
-                    records: "+",
-                    shelters: "⌂",
-                    notifications: "♧",
-                    profile: "◉",
-                    statistics: "▥",
-                    users: "♙",
-                  } as Record<string, string>
-                )[key] ?? "›"}
-              </span>
-              <strong>{sectionNames[key]}</strong>
-              <small>Ir a la sección</small>
-            </button>
-          ))}
+        {shortcuts.map((key) => (
+          <button key={key} className="portal-shortcut" onClick={() => navTo(key)}>
+            <span aria-hidden="true">
+              {(
+                {
+                  pets: "♡",
+                  requests: "▤",
+                  adoptions: "⌂",
+                  messages: "✉",
+                  records: "+",
+                  shelters: "⌂",
+                  notifications: "♧",
+                  profile: "◉",
+                  statistics: "▥",
+                  users: "♙",
+                } as Record<string, string>
+              )[key] ?? "›"}
+            </span>
+            <strong>{shortcutLabels[role]?.[key] ?? sectionNames[key]}</strong>
+            <small>{key === "messages" ? "Conversa con tu equipo" : "Ver y gestionar actividad"}</small>
+          </button>
+        ))}
         {visibleLinks.includes("permissions") && (
           <button className="portal-shortcut" onClick={() => navTo("permissions")}>
             <span aria-hidden="true">▦</span>
@@ -106,7 +181,7 @@ export function DashboardSection({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

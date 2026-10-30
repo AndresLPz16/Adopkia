@@ -1,4 +1,5 @@
 import unittest
+import re
 
 from django.contrib.auth import get_user_model
 
@@ -32,12 +33,14 @@ class E2EAuthenticationHttpFlowTests(unittest.TestCase):
                 "auth/register/",
                 data={
                     "email": email,
+                    "username": f"{prefix[:15]}_{alias}",
                     "password": password,
                     "name": f"[E2E] {alias}",
                     "role": role,
                 },
             )
             payload = assert_response(self, f"registro/{alias}", response, 201)
+            User.objects.filter(pk=payload["id"]).update(email_verified=True)
             record_account(
                 alias,
                 email=email,
@@ -120,10 +123,23 @@ class E2EAuthenticationHttpFlowTests(unittest.TestCase):
         )
 
         inactive = STATE["accounts"]["inactive"]
+        inactive_challenge = request("GET", "auth/login-challenge/")
+        inactive_challenge_data = assert_response(
+            self, "reto-login/inactive", inactive_challenge, 200
+        )
+        left, right = map(
+            int,
+            re.findall(r"\d+", inactive_challenge_data["question"]),
+        )
         inactive_login = request(
             "POST",
             "auth/login/",
-            data={"email": inactive["email"], "password": inactive["password"]},
+            data={
+                "email": inactive["email"],
+                "password": inactive["password"],
+                "challenge_id": inactive_challenge_data["challenge_id"],
+                "challenge_answer": str(left + right),
+            },
         )
         assert_response(self, "login-usuario-inactivo", inactive_login, 401)
 
@@ -151,6 +167,7 @@ class E2EAuthenticationHttpFlowTests(unittest.TestCase):
             "auth/register/",
             data={
                 "email": f'{STATE["email_prefix"]}_privilege@example.test',
+                "username": f'{STATE["email_prefix"][:15]}_privilege',
                 "password": new_password(),
                 "name": "[E2E] rol privilegiado",
                 "role": "administrador",

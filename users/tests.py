@@ -1,8 +1,10 @@
+import re
 from io import StringIO
 
 from django.contrib import admin
+from django.core import mail
 from django.core.management import call_command
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.utils import translation
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -78,24 +80,39 @@ class DjangoAdminLoginTests(TestCase):
 
 
 class AuthenticationTests(APITestCase):
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_public_registration_creates_adopter(self):
+        mail.outbox.clear()
         response = self.client.post(
             reverse("register"),
             {
                 "email": "adopter@example.com",
+                "username": "ana_adopta",
                 "password": "SafePass!2026",
                 "name": "Ana Adoptante",
             },
         )
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data["role"], Role.Name.ADOPTER)
-        self.assertTrue(User.objects.filter(email="adopter@example.com").exists())
+        user = User.objects.get(email="adopter@example.com")
+        self.assertEqual(user.role.name, Role.Name.ADOPTER)
+        self.assertEqual(user.username, "ana_adopta")
+        self.assertFalse(user.email_verified)
+        self.assertEqual(len(mail.outbox), 1)
+        code = re.search(r"\b(\d{6})\b", mail.outbox[0].body).group(1)
+        verification = self.client.post(
+            reverse("verify-email"),
+            {"email": user.email, "code": code},
+        )
+        self.assertEqual(verification.status_code, 200)
+        user.refresh_from_db()
+        self.assertTrue(user.email_verified)
 
     def test_public_registration_cannot_assign_privileged_role(self):
         response = self.client.post(
             reverse("register"),
             {
                 "email": "admin@example.com",
+                "username": "admin_publico",
                 "password": "SafePass!2026",
                 "name": "Admin",
                 "role": Role.Name.ADMIN,
@@ -105,14 +122,21 @@ class AuthenticationTests(APITestCase):
         self.assertFalse(User.objects.filter(email="admin@example.com").exists())
 
     def test_jwt_login_and_profile(self):
-        User.objects.create_user(
+        user = User.objects.create_user(
             email="adopter@example.com",
             password="SafePass!2026",
             name="Ana Adoptante",
         )
+        challenge = self.client.get(reverse("login-challenge"))
+        left, right = map(int, re.findall(r"\d+", challenge.data["question"]))
         login = self.client.post(
             reverse("token_obtain_pair"),
-            {"email": "adopter@example.com", "password": "SafePass!2026"},
+            {
+                "identifier": user.username,
+                "password": "SafePass!2026",
+                "challenge_id": challenge.data["challenge_id"],
+                "challenge_answer": str(left + right),
+            },
         )
         self.assertEqual(login.status_code, 200)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
@@ -120,6 +144,44 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(profile.status_code, 200)
         self.assertEqual(profile.data["email"], "adopter@example.com")
         self.assertFalse(profile.data["is_platform_superadmin"])
+
+    def test_login_rejects_an_incorrect_math_challenge(self):
+        User.objects.create_user(
+            email="challenge@example.com",
+            password="SafePass!2026",
+            name="Challenge User",
+        )
+        challenge = self.client.get(reverse("login-challenge"))
+        login = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "email": "challenge@example.com",
+                "password": "SafePass!2026",
+                "challenge_id": challenge.data["challenge_id"],
+                "challenge_answer": "999",
+            },
+        )
+        self.assertEqual(login.status_code, 401)
+
+    def test_unverified_account_cannot_log_in(self):
+        user = User.objects.create_user(
+            email="unverified@example.com",
+            password="SafePass!2026",
+            name="Unverified User",
+            email_verified=False,
+        )
+        challenge = self.client.get(reverse("login-challenge"))
+        left, right = map(int, re.findall(r"\d+", challenge.data["question"]))
+        login = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "identifier": user.username,
+                "password": "SafePass!2026",
+                "challenge_id": challenge.data["challenge_id"],
+                "challenge_answer": str(left + right),
+            },
+        )
+        self.assertEqual(login.status_code, 401)
 
 
 class RolePermissionApiTests(APITestCase):

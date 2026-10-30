@@ -2,11 +2,17 @@ export type PublicPetPreview = {
   id: number;
   name: string;
   species: string;
+  breed_name: string;
+  shelter_name: string;
   city: string;
   age: number | null;
+  approximate_birth_date: string | null;
+  size: string;
+  health: string | null;
   temperament: string | null;
   status: string;
-  photos: { url: string; is_primary: boolean }[];
+  published_at: string;
+  photos: { id: number; url: string; is_primary: boolean }[];
 };
 
 type PetPage = {

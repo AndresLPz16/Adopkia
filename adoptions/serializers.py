@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from myproject.i18n import LocalizedModelSerializer
+from pets.serializers import PetReadSerializer
 from .models import Adoption, AdoptionRequest, FormAnswer, FormQuestion, FollowUp
 from .services import create_adoption_request, update_adoption_request
 
@@ -17,16 +18,20 @@ class FormQuestionSerializer(LocalizedModelSerializer):
 
 
 class FormAnswerSerializer(LocalizedModelSerializer):
+    question_prompt = serializers.CharField(source="question.prompt", read_only=True)
+
     class Meta:
         model = FormAnswer
-        fields = ("request", "question", "value")
+        fields = ("request", "question", "question_prompt", "value")
 
 
 class AdoptionRequestReadSerializer(LocalizedModelSerializer):
     choice_fields = ("status",)
+    status_code = serializers.CharField(source="status", read_only=True)
     answers = FormAnswerSerializer(many=True, read_only=True)
     applicant_name = serializers.CharField(source="applicant.name", read_only=True)
     pet_name = serializers.CharField(source="pet.name", read_only=True)
+    pet_details = PetReadSerializer(source="pet", read_only=True)
 
     class Meta:
         model = AdoptionRequest
@@ -36,8 +41,10 @@ class AdoptionRequestReadSerializer(LocalizedModelSerializer):
             "applicant_name",
             "pet",
             "pet_name",
+            "pet_details",
             "requested_at",
             "status",
+            "status_code",
             "responded_at",
             "shelter_notes",
             "pending_unique",
