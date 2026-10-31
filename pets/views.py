@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions, viewsets
@@ -94,11 +95,30 @@ class PetViewSet(viewsets.ModelViewSet):
         pet = self.get_object()
         if not user_can_manage_shelter(request.user, pet.shelter):
             raise PermissionDenied(_("Solo integrantes del refugio pueden volver a publicar la mascota."))
-        if pet.status != Pet.Status.RETURNED:
-            raise ValidationError({"status": _("Solo se puede volver a publicar una mascota devuelta.")})
-        pet.status = Pet.Status.AVAILABLE
-        pet.save(update_fields=("status",))
-        return Response(PetReadSerializer(pet, context=self.get_serializer_context()).data)
+        from adoptions.models import Adoption
+
+        with transaction.atomic():
+            pet = Pet.objects.select_for_update().get(pk=pet.pk)
+            if pet.status != Pet.Status.RETURNED:
+                raise ValidationError(
+                    {"status": _("Solo se puede volver a publicar una mascota devuelta.")}
+                )
+            if Adoption.objects.filter(
+                request__pet=pet,
+                status=Adoption.Status.ACTIVE,
+            ).exists():
+                raise ValidationError(
+                    {
+                        "status": _(
+                            "No se puede volver a publicar una mascota con una adopción activa."
+                        )
+                    }
+                )
+            pet.status = Pet.Status.AVAILABLE
+            pet.save(update_fields=("status",))
+        return Response(
+            PetReadSerializer(pet, context=self.get_serializer_context()).data
+        )
 
 
 class PetPhotoViewSet(viewsets.ModelViewSet):

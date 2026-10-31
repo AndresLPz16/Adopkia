@@ -19,7 +19,7 @@ export type PortalSender = (
   method: string,
   body?: unknown,
   successMessage?: string,
-) => Promise<void>;
+) => Promise<boolean | void>;
 export type PortalPetSaver = (
   endpoint: string,
   method: string,
@@ -51,6 +51,11 @@ const localizedStatuses: Record<string, string> = {
 export function hasStatus(value: unknown, expected: string): boolean {
   const normalized = text(value).trim().toLocaleLowerCase().replaceAll(" ", "_");
   return (localizedStatuses[normalized] ?? normalized) === expected;
+}
+
+export function isAvailablePet(pet: PortalDataRow): boolean {
+  const status = text(pet.status_code || pet.status).trim().toLocaleLowerCase();
+  return status === "disponible" || status === "available";
 }
 
 export function rows(value: unknown): PortalDataRow[] {
@@ -105,7 +110,14 @@ export function apiErrorMessage(data: unknown, status: number): string {
   ) {
     return data.detail;
   }
-  if (typeof data === "string" && data) return data;
+  if (typeof data === "string" && data) {
+    if (/^\s*<(?:!doctype html|html)\b/i.test(data)) {
+      return status >= 500
+        ? "El servidor tuvo un problema interno. Inténtalo más tarde."
+        : `La solicitud falló (HTTP ${status}).`;
+    }
+    return data;
+  }
 
   if (data && typeof data === "object" && !Array.isArray(data)) {
     const labels: Record<string, string> = {

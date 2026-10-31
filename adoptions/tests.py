@@ -90,10 +90,14 @@ class AdoptionFlowTests(APITestCase):
         created = self.submit_request()
         self.assertEqual(created.status_code, 201)
         request_id = created.data["id"]
-        self.assertEqual(Notification.objects.filter(request_id=request_id).count(), 1)
+        self.assertEqual(Notification.objects.filter(request_id=request_id).count(), 2)
         self.assertEqual(
-            Notification.objects.get(request_id=request_id).notification_type,
-            Notification.NotificationType.NEW_REQUEST,
+            set(
+                Notification.objects.filter(request_id=request_id).values_list(
+                    "notification_type", flat=True
+                )
+            ),
+            {Notification.NotificationType.NEW_REQUEST},
         )
         self.pet.refresh_from_db()
         self.assertEqual(self.pet.status, Pet.Status.IN_PROCESS)
@@ -108,6 +112,7 @@ class AdoptionFlowTests(APITestCase):
             reverse("adoption-request-approve", args=(request_id,)), {}, format="json"
         )
         self.assertEqual(approved.status_code, 201)
+        self.assertEqual(approved.data["status_code"], Adoption.Status.ACTIVE)
         self.assertEqual(
             Notification.objects.filter(
                 request_id=request_id,
@@ -121,10 +126,15 @@ class AdoptionFlowTests(APITestCase):
 
         follow_up = self.client.post(
             reverse("follow-up-list"),
-            {"adoption": adoption.pk, "date": date.today().isoformat(), "observations": "Bien"},
+            {
+                "adoption": adoption.pk,
+                "date": date.today().isoformat(),
+                "observations": "Come bien y está activa.",
+            },
             format="json",
         )
         self.assertEqual(follow_up.status_code, 201)
+        self.assertEqual(follow_up.data["observations"], "Come bien y está activa.")
         self.assertEqual(FollowUp.objects.filter(adoption=adoption).count(), 1)
 
         returned = self.client.post(
@@ -133,18 +143,62 @@ class AdoptionFlowTests(APITestCase):
             format="json",
         )
         self.assertEqual(returned.status_code, 200)
+        self.assertEqual(returned.data["status_code"], Adoption.Status.RETURNED)
         adoption.refresh_from_db()
         self.pet.refresh_from_db()
         self.assertEqual(adoption.status, Adoption.Status.RETURNED)
         self.assertEqual(adoption.return_date, date.today())
         self.assertEqual(self.pet.status, Pet.Status.RETURNED)
 
+    def test_request_list_includes_question_prompts_for_superadmin_review(self):
+        self.submit_request()
+        self.admin.is_platform_superadmin = True
+        self.admin.save(update_fields=("is_platform_superadmin",))
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(reverse("adoption-request-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["results"][0]["answers"][0]["question_prompt"],
+            "¿Tienes experiencia con mascotas?",
+        )
+        self.assertEqual(response.data["results"][0]["answers"][0]["value"], "Sí")
+        self.assertEqual(response.data["results"][0]["pet_details"]["name"], "Luna")
+        self.assertEqual(
+            response.data["results"][0]["pet_details"]["status_code"],
+            Pet.Status.IN_PROCESS,
+        )
+        self.assertEqual(
+            response.data["results"][0]["status_code"],
+            AdoptionRequest.Status.PENDING,
+        )
+
+    def test_request_and_notification_are_visible_to_every_shelter_member(self):
+        created = self.submit_request()
+        self.assertEqual(created.status_code, 201)
+        request_id = created.data["id"]
+
+        self.client.force_authenticate(self.second_shelter_user)
+        response = self.client.get(reverse("adoption-request-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], request_id)
+        self.assertEqual(response.data["results"][0]["answers"][0]["value"], "Sí")
+
+        notifications = self.client.get(reverse("notification-list"))
+        self.assertEqual(notifications.status_code, 200)
+        self.assertEqual(
+            notifications.data["results"][0]["notification_type"],
+            "Nueva solicitud",
+        )
+
     def test_each_request_state_change_creates_one_typed_notification(self):
         first = self.submit_request(self.adopter)
         second = self.submit_request(self.other_adopter)
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 201)
-        self.assertEqual(Notification.objects.count(), 2)
+        self.assertEqual(Notification.objects.count(), 4)
 
         self.client.force_authenticate(self.shelter_user)
         approved = self.client.post(
@@ -153,7 +207,7 @@ class AdoptionFlowTests(APITestCase):
             format="json",
         )
         self.assertEqual(approved.status_code, 201)
-        self.assertEqual(Notification.objects.count(), 4)
+        self.assertEqual(Notification.objects.count(), 6)
         self.assertEqual(
             Notification.objects.filter(
                 request_id=first.data["id"],
@@ -191,13 +245,13 @@ class AdoptionFlowTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Notification.objects.count(), 6)
+        self.assertEqual(Notification.objects.count(), 10)
         self.assertEqual(
             Notification.objects.filter(
                 request_id=cancelled.data["id"],
                 notification_type=Notification.NotificationType.SYSTEM,
             ).count(),
-            1,
+            2,
         )
         self.assertEqual(
             set(Notification.objects.values_list("notification_type", flat=True)),

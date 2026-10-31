@@ -1,4 +1,8 @@
+import re
+
+from django.core import mail
 from django.test import Client, TestCase
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -28,13 +32,15 @@ class BrowsableApiAuthenticationTests(TestCase):
                 role=role,
             )
 
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_anonymous_register_and_login_render_and_accept_html_forms(self):
+        mail.outbox.clear()
         register_url = reverse("register")
         login_url = reverse("token_obtain_pair")
 
         for url, field_names in (
-            (register_url, (b"email", b"password", b"name")),
-            (login_url, (b"email", b"password")),
+            (register_url, (b"email", b"username", b"password", b"name")),
+            (login_url, (b"email", b"password", b"challenge_id", b"challenge_answer")),
         ):
             with self.subTest(url=url):
                 response = self.client.get(url, HTTP_ACCEPT="text/html")
@@ -48,15 +54,30 @@ class BrowsableApiAuthenticationTests(TestCase):
             register_url,
             {
                 "email": "browsable-created@example.com",
+                "username": "browsable_created",
                 "password": self.password,
                 "name": "Browsable Created",
             },
             HTTP_ACCEPT="text/html",
         )
         self.assertEqual(registration.status_code, 201)
+        code = re.search(r"\b(\d{6})\b", mail.outbox[0].body).group(1)
+        verified = self.client.post(
+            reverse("verify-email"),
+            {"email": "browsable-created@example.com", "code": code},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(verified.status_code, 200)
+        challenge = APIClient().get(reverse("login-challenge"))
+        left, right = map(int, re.findall(r"\d+", challenge.data["question"]))
         login = self.client.post(
             login_url,
-            {"email": "browsable-created@example.com", "password": self.password},
+            {
+                "email": "browsable-created@example.com",
+                "password": self.password,
+                "challenge_id": challenge.data["challenge_id"],
+                "challenge_answer": str(left + right),
+            },
             HTTP_ACCEPT="text/html",
         )
         self.assertEqual(login.status_code, 200)

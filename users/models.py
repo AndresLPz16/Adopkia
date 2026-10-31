@@ -1,5 +1,8 @@
+import uuid
+
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from myproject.db_fields import (
@@ -60,6 +63,21 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError(_("El correo electrónico es obligatorio."))
         email = self.normalize_email(email)
+        username = extra_fields.get("username")
+        if not username:
+            base = email.split("@", 1)[0].lower()
+            normalized = "".join(
+                character if character.isalnum() or character in "._-" else "_"
+                for character in base
+            ).strip("._-")
+            base = (normalized or "usuario")[:24]
+            username = base
+            suffix = 1
+            while User.objects.filter(username__iexact=username).exists():
+                username = f"{base[:24 - len(str(suffix))]}{suffix}"
+                suffix += 1
+            extra_fields["username"] = username
+        extra_fields.setdefault("email_verified", True)
         role = extra_fields.pop("role", None)
         if role is None:
             role = Role.objects.get(name=Role.Name.ADOPTER)
@@ -101,7 +119,9 @@ class User(AbstractBaseUser):
         db_column="id_rol",
     )
     name = models.CharField(max_length=100, db_column="nombre")
+    username = models.CharField(max_length=30, unique=True, db_column="nombre_usuario")
     email = models.EmailField(max_length=150, unique=True, db_column="correo")
+    email_verified = models.BooleanField(default=False, db_column="correo_verificado")
     phone = models.CharField(max_length=20, null=True, db_column="telefono")
     active = models.BooleanField(default=True, db_column="activo")
     is_platform_superadmin = models.BooleanField(
@@ -142,3 +162,28 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
+
+
+class EmailVerificationCode(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="email_verification_code",
+        db_column="id_usuario",
+    )
+    code_hash = models.CharField(max_length=64, db_column="codigo_hash")
+    expires_at = models.DateTimeField(db_column="expira_en")
+    failed_attempts = models.PositiveSmallIntegerField(default=0, db_column="intentos_fallidos")
+    sent_at = models.DateTimeField(default=timezone.now, db_column="enviado_en")
+
+    class Meta:
+        db_table = "codigo_verificacion_correo"
+
+
+class LoginMathChallenge(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="id_reto")
+    answer_hash = models.CharField(max_length=64, db_column="respuesta_hash")
+    expires_at = models.DateTimeField(db_column="expira_en")
+
+    class Meta:
+        db_table = "reto_matematico_login"

@@ -67,6 +67,12 @@ SAMPLE_PETS = (
         "birth_date": "2021-12-01",
         "temperament": "Sereno y amable; busca un rincón soleado para descansar.",
         "image": "/demo-pets/simon.svg",
+        "additional_images": (
+            "/demo-pets/simon-2.svg",
+            "/demo-pets/simon-3.svg",
+            "/demo-pets/simon-4.svg",
+            "/demo-pets/simon-5.svg",
+        ),
     },
 )
 
@@ -162,6 +168,12 @@ class Command(BaseCommand):
                 url=item["image"],
                 defaults={"is_primary": True},
             )
+            for image in item.get("additional_images", ())[:4]:
+                PetPhoto.objects.update_or_create(
+                    pet=pet,
+                    url=image,
+                    defaults={"is_primary": False},
+                )
 
         self.stdout.write(
             self.style.SUCCESS(

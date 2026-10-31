@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from myproject.i18n import LocalizedModelSerializer
+from pets.serializers import PetReadSerializer
 from .models import Adoption, AdoptionRequest, FormAnswer, FormQuestion, FollowUp
 from .services import create_adoption_request, update_adoption_request
 
@@ -27,9 +28,11 @@ class FormAnswerSerializer(LocalizedModelSerializer):
 
 class AdoptionRequestReadSerializer(LocalizedModelSerializer):
     choice_fields = ("status",)
+    status_code = serializers.CharField(source="status", read_only=True)
     answers = FormAnswerSerializer(many=True, read_only=True)
     applicant_name = serializers.CharField(source="applicant.name", read_only=True)
     pet_name = serializers.CharField(source="pet.name", read_only=True)
+    pet_details = PetReadSerializer(source="pet", read_only=True)
 
     class Meta:
         model = AdoptionRequest
@@ -39,8 +42,10 @@ class AdoptionRequestReadSerializer(LocalizedModelSerializer):
             "applicant_name",
             "pet",
             "pet_name",
+            "pet_details",
             "requested_at",
             "status",
+            "status_code",
             "responded_at",
             "shelter_notes",
             "pending_unique",
@@ -100,6 +105,7 @@ class AdoptionRequestWriteSerializer(LocalizedModelSerializer):
 
 class AdoptionSerializer(LocalizedModelSerializer):
     choice_fields = ("status",)
+    status_code = serializers.CharField(source="status", read_only=True)
     applicant = serializers.CharField(source="request.applicant.name", read_only=True)
     pet = serializers.IntegerField(source="request.pet_id", read_only=True)
     pet_name = serializers.CharField(source="request.pet.name", read_only=True)
@@ -114,6 +120,7 @@ class AdoptionSerializer(LocalizedModelSerializer):
             "pet_name",
             "adoption_date",
             "status",
+            "status_code",
             "return_date",
             "return_reason",
         )

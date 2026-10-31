@@ -46,8 +46,12 @@ class AdoptionRequestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = AdoptionRequest.objects.select_related(
-            "applicant", "pet", "pet__shelter"
-        ).prefetch_related("answers__question")
+            "applicant",
+            "pet",
+            "pet__shelter",
+            "pet__breed",
+            "pet__breed__species",
+        ).prefetch_related("answers__question", "pet__photos")
         user = self.request.user
         if not user.is_authenticated:
             return queryset.none()

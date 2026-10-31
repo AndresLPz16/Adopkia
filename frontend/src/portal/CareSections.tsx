@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
 import {
@@ -13,8 +14,166 @@ import type { PortalDataRow, PortalSender, PortalSubmit } from "./shared";
 
 type PermissionCheck = (resource: Resource, action: Action) => boolean;
 
+function currentDate(): string {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function isActiveAdoption(adoption: PortalDataRow): boolean {
+  return hasStatus(adoption.status_code || adoption.status, "activa");
+}
+
+function FollowUpForm({
+  adoptionId,
+  submit,
+  send,
+  busy,
+}: {
+  adoptionId: string;
+  submit: PortalSubmit;
+  send: PortalSender;
+  busy: boolean;
+}) {
+  const [date, setDate] = useState(currentDate);
+  const [wellbeing, setWellbeing] = useState("bueno");
+  const [observations, setObservations] = useState("");
+
+  return (
+    <form
+      className="portal-card-form"
+      aria-label={`Registrar seguimiento de la adopción ${adoptionId}`}
+      onSubmit={submit(async () => {
+        const saved = await send(
+          "/api/v1/follow-ups/",
+          "POST",
+          { adoption: Number(adoptionId), date, wellbeing, observations },
+          "Seguimiento registrado.",
+        );
+        if (saved !== false) {
+          setDate(currentDate());
+          setWellbeing("bueno");
+          setObservations("");
+        }
+      })}
+    >
+      <h3>Nuevo seguimiento</h3>
+      <Field
+        label="Fecha del seguimiento"
+        name={`follow-up-date-${adoptionId}`}
+        type="date"
+        value={date}
+        onChange={(_name, value) => setDate(value)}
+        required
+      />
+      <Field
+        label="Bienestar"
+        name={`follow-up-wellbeing-${adoptionId}`}
+        value={wellbeing}
+        onChange={(_name, value) => setWellbeing(value)}
+        options={[
+          { value: "excelente", label: "Excelente" },
+          { value: "bueno", label: "Bueno" },
+          { value: "regular", label: "Regular" },
+          { value: "preocupante", label: "Requiere atención" },
+        ]}
+      />
+      <Field
+        label="Observaciones del seguimiento"
+        name={`follow-up-observations-${adoptionId}`}
+        value={observations}
+        onChange={(_name, value) => setObservations(value)}
+        multiline
+      />
+      <button className="portal-button" disabled={busy}>
+        Guardar seguimiento
+      </button>
+    </form>
+  );
+}
+
+function AdoptionReturnAction({
+  adoptionId,
+  submit,
+  send,
+  busy,
+}: {
+  adoptionId: string;
+  submit: PortalSubmit;
+  send: PortalSender;
+  busy: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [returnDate, setReturnDate] = useState(currentDate);
+  const [reason, setReason] = useState("");
+
+  if (!isOpen) {
+    return (
+      <button
+        className="portal-button portal-button--secondary"
+        type="button"
+        onClick={() => setIsOpen(true)}
+      >
+        Registrar devolución
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="portal-card-form"
+      aria-label={`Registrar devolución de la adopción ${adoptionId}`}
+      onSubmit={submit(async () => {
+        const returned = await send(
+          `/api/v1/adoptions/${adoptionId}/return/`,
+          "POST",
+          { reason, return_date: returnDate },
+          "Devolución registrada.",
+        );
+        if (returned !== false) {
+          setIsOpen(false);
+          setReason("");
+        }
+      })}
+    >
+      <h3>Registrar devolución</h3>
+      <Field
+        label="Fecha de devolución"
+        name={`return-date-${adoptionId}`}
+        type="date"
+        value={returnDate}
+        onChange={(_name, value) => setReturnDate(value)}
+        required
+      />
+      <Field
+        label="Motivo de la devolución"
+        name={`return-reason-${adoptionId}`}
+        value={reason}
+        onChange={(_name, value) => setReason(value)}
+        multiline
+        required
+      />
+      <div className="portal-inline-actions">
+        <button className="portal-button" disabled={busy}>
+          Confirmar devolución
+        </button>
+        <button
+          className="portal-button portal-button--secondary"
+          type="button"
+          disabled={busy}
+          onClick={() => setIsOpen(false)}
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function AdoptionsSection({
   role,
+  isPlatformSuperadmin,
   canDo,
   adoptions,
   followUps,
@@ -28,6 +187,7 @@ export function AdoptionsSection({
   busy,
 }: {
   role: string;
+  isPlatformSuperadmin: boolean;
   canDo: PermissionCheck;
   adoptions: PortalDataRow[];
   followUps: PortalDataRow[];
@@ -45,23 +205,45 @@ export function AdoptionsSection({
       <SectionTitle eyebrow="Acompañamiento" title="Adopciones y cuidados" description="Consulta adopciones activas, recordatorios y seguimientos de bienestar." />
       <h2 className="portal-subheading">Adopciones</h2>
       <div className="portal-grid">
-        {adoptions.map((item) => (
+        {adoptions.map((item) => {
+          const adoptionId = text(item.id);
+          const active = isActiveAdoption(item);
+          return (
           <DataCard key={text(item.id)} title={text(item.pet_name)} subtitle={`${text(item.applicant)} · desde ${text(item.adoption_date)}`} status={text(item.status)}>
-            {role === ROLES.SHELTER && hasStatus(item.status, "activa") && canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
-              <form className="portal-card-form" onSubmit={submit(async () => {
-                await send("/api/v1/follow-ups/", "POST", {
-                  adoption: Number(item.id),
-                  date: form.date || new Date().toISOString().slice(0, 10),
-                  wellbeing: form.wellbeing || "bueno",
-                  observations: form.observations || "",
-                }, "Seguimiento registrado.");
-              })}>
-                <Field label="Bienestar" name="wellbeing" value={form.wellbeing ?? ""} onChange={setValue} options={[{ value: "excelente", label: "Excelente" }, { value: "bueno", label: "Bueno" }, { value: "regular", label: "Regular" }, { value: "preocupante", label: "Requiere atención" }]} />
-                <Field label="Observaciones" name="observations" value={form.observations ?? ""} onChange={setValue} multiline />
-                <button className="portal-link">Añadir seguimiento</button>
-              </form>
+            {Boolean(item.return_date) && (
+              <p>
+                <strong>Fecha de devolución:</strong> {text(item.return_date)}
+              </p>
             )}
-            {hasStatus(item.status, "activa") && role !== ROLES.VETERINARIAN && canDo(RESOURCES.REMINDERS, ACTIONS.CREATE) && (
+            {Boolean(item.return_reason) && (
+              <p>
+                <strong>Motivo de devolución:</strong> {text(item.return_reason)}
+              </p>
+            )}
+            {role === ROLES.SHELTER &&
+              active &&
+              canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
+                <FollowUpForm
+                  adoptionId={adoptionId}
+                  submit={submit}
+                  send={send}
+                  busy={busy}
+                />
+              )}
+            {(role === ROLES.SHELTER || role === ROLES.ADMIN) &&
+              active &&
+              canDo(RESOURCES.ADOPTIONS, ACTIONS.RETURN) && (
+                <AdoptionReturnAction
+                  adoptionId={adoptionId}
+                  submit={submit}
+                  send={send}
+                  busy={busy}
+                />
+            )}
+            {active &&
+              role !== ROLES.VETERINARIAN &&
+              !isPlatformSuperadmin &&
+              canDo(RESOURCES.REMINDERS, ACTIONS.CREATE) && (
               <form className="portal-card-form" onSubmit={submit(async () => {
                 await send("/api/v1/reminders/", "POST", {
                   adoption: Number(item.id),
@@ -77,15 +259,54 @@ export function AdoptionsSection({
               </form>
             )}
           </DataCard>
-        ))}
+          );
+        })}
       </div>
       <h2 className="portal-subheading">Seguimientos</h2>
       <div className="portal-grid">
-        {followUps.map((item) => <DataCard key={text(item.id)} title={`Adopción #${text(item.adoption)}`} subtitle={text(item.date)} status={text(item.wellbeing)}>{Boolean(item.observations) && <p>{text(item.observations)}</p>}</DataCard>)}
+        {followUps.map((item) => {
+          const adoption = adoptions.find(
+            (entry) => text(entry.id) === text(item.adoption),
+          );
+          return (
+            <DataCard
+              key={text(item.id)}
+              title={
+                adoption
+                  ? `Seguimiento de ${text(adoption.pet_name)}`
+                  : `Adopción #${text(item.adoption)}`
+              }
+              subtitle={
+                adoption
+                  ? `${text(adoption.applicant)} · ${text(item.date)}`
+                  : text(item.date)
+              }
+              status={text(item.wellbeing)}
+            >
+              {Boolean(item.observations) && <p>{text(item.observations)}</p>}
+            </DataCard>
+          );
+        })}
       </div>
       <h2 className="portal-subheading">Recordatorios</h2>
       <div className="portal-grid">
-        {reminders.map((item) => <DataCard key={text(item.id)} title={text(item.vaccine_name) || labelStatus(item.reminder_type)} subtitle={`Mascota #${text(item.pet)} · ${text(item.scheduled_date)}`} status={text(item.status)} />)}
+        {reminders.map((item) => {
+          const adoption = adoptions.find(
+            (entry) => text(entry.id) === text(item.adoption),
+          );
+          return (
+            <DataCard
+              key={text(item.id)}
+              title={text(item.vaccine_name) || labelStatus(item.reminder_type)}
+              subtitle={
+                adoption
+                  ? `${text(adoption.pet_name)} · ${text(adoption.applicant)} · ${text(item.scheduled_date)}`
+                  : `Mascota #${text(item.pet)} · ${text(item.scheduled_date)}`
+              }
+              status={text(item.status)}
+            />
+          );
+        })}
       </div>
       {!loading && adoptions.length === 0 && followUps.length === 0 && reminders.length === 0 && <EmptyState>Cuando haya una adopción, verás aquí su seguimiento y cuidados.</EmptyState>}
     </>
@@ -94,6 +315,7 @@ export function AdoptionsSection({
 
 export function MessagesSection({
   role,
+  isPlatformSuperadmin,
   canDo,
   userId,
   pets,
@@ -111,6 +333,7 @@ export function MessagesSection({
   busy,
 }: {
   role: string;
+  isPlatformSuperadmin: boolean;
   canDo: PermissionCheck;
   userId: string | number;
   pets: PortalDataRow[];
@@ -177,7 +400,7 @@ export function MessagesSection({
                 {messages.map((message) => <div key={text(message.id)} className={`portal-message ${text(message.sender) === text(userId) ? "portal-message--mine" : ""}`}><strong>{text(message.sender_name)}</strong><p>{text(message.content)}</p><small>{text(message.sent_at)}</small>{text(message.sender) !== text(userId) && message.is_read !== true && <button className="portal-link" onClick={() => void send(`/api/v1/messages/${text(message.id)}/mark-read/`, "POST", {}, "Mensaje marcado como leído.")}>Marcar como leído</button>}</div>)}
                 {!loading && messages.length === 0 && <EmptyState>Envía el primer mensaje de esta conversación.</EmptyState>}
               </div>
-              {canDo(RESOURCES.MESSAGES, ACTIONS.CREATE) && <form className="portal-chat__form" onSubmit={submit(async () => {
+              {canDo(RESOURCES.MESSAGES, ACTIONS.CREATE) && !isPlatformSuperadmin && <form className="portal-chat__form" onSubmit={submit(async () => {
                 await send("/api/v1/messages/", "POST", { conversation: Number(activeConversation.id), content: form.content }, "Mensaje enviado.");
               })}>
                 <Field label="Escribe un mensaje" name="content" value={form.content ?? ""} onChange={setValue} required />
@@ -193,6 +416,7 @@ export function MessagesSection({
 
 export function RecordsSection({
   role,
+  isPlatformSuperadmin,
   canDo,
   userId,
   pets,
@@ -207,6 +431,7 @@ export function RecordsSection({
   busy,
 }: {
   role: string;
+  isPlatformSuperadmin: boolean;
   canDo: PermissionCheck;
   userId: string | number;
   pets: PortalDataRow[];
@@ -250,7 +475,9 @@ export function RecordsSection({
           <button className="portal-button" disabled={busy}>Actualizar perfil</button>
         </form>
       )}
-      {(myProfile || role !== ROLES.VETERINARIAN) && canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.CREATE) && (
+      {(myProfile || role !== ROLES.VETERINARIAN) &&
+        !isPlatformSuperadmin &&
+        canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.CREATE) && (
         <form className="portal-form" onSubmit={submit(async () => {
           await send("/api/v1/medical-records/", "POST", {
             pet: Number(form.pet),

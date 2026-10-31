@@ -11,7 +11,10 @@ from users.rbac import DEFAULT_PERMISSIONS
 
 PUBLIC_RESOURCES = (
     "register",
+    "verify_email",
+    "resend_email_verification",
     "login",
+    "login_challenge",
     "refresh",
     "verified_shelters",
     "species",
@@ -42,7 +45,13 @@ AUTHENTICATED_RESOURCES = (
 
 RESOURCE_DEFINITIONS = {
     "register": ("Registro", "/api/v1/auth/register/"),
+    "verify_email": ("Verificación de correo", "/api/v1/auth/verify-email/"),
+    "resend_email_verification": (
+        "Reenviar verificación de correo",
+        "/api/v1/auth/resend-email-verification/",
+    ),
     "login": ("Iniciar sesión", "/api/v1/auth/login/"),
+    "login_challenge": ("Reto de seguridad de inicio de sesión", "/api/v1/auth/login-challenge/"),
     "refresh": ("Renovar token", "/api/v1/auth/refresh/"),
     "profile": ("Mi perfil", "/api/v1/auth/me/"),
     "role_permissions": ("Permisos por rol", "/api/v1/auth/permissions/"),

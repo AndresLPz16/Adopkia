@@ -125,3 +125,41 @@ class ShelterApiTests(APITestCase):
         self.assertIn("address", admin_response.data)
         self.assertIn("contact_phone", admin_response.data)
         self.assertIn("contact_email", admin_response.data)
+
+    def test_manager_adds_existing_shelter_account_by_email_not_user_id(self):
+        teammate = User.objects.create_user(
+            email="teammate@example.com",
+            password="secure-password-123",
+            name="Integrante",
+            role=Role.Name.SHELTER,
+        )
+        self.client.force_authenticate(self.shelter_user)
+
+        response = self.client.post(
+            reverse("shelter-members", args=(self.shelter.pk,)),
+            {"email": "TEAMMATE@example.com", "position": ShelterMember.Position.COLLABORATOR},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["user"], teammate.pk)
+        self.assertEqual(response.data["position"], "Colaborador")
+
+    def test_member_addition_rejects_ids_unknown_accounts_and_non_shelter_users(self):
+        self.client.force_authenticate(self.shelter_user)
+        endpoint = reverse("shelter-members", args=(self.shelter.pk,))
+
+        legacy_id = self.client.post(endpoint, {"user": -1}, format="json")
+        self.assertEqual(legacy_id.status_code, 400)
+        self.assertIn("email", legacy_id.data)
+
+        unknown_account = self.client.post(
+            endpoint, {"email": "missing@example.com"}, format="json"
+        )
+        self.assertEqual(unknown_account.status_code, 400)
+
+        self.client.force_authenticate(self.shelter_user)
+        wrong_role = self.client.post(
+            endpoint, {"email": self.adopter.email}, format="json"
+        )
+        self.assertEqual(wrong_role.status_code, 400)
