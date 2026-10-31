@@ -15,7 +15,7 @@ def notify_new_message(sender, instance, created, raw=False, **kwargs):
         return
     conversation = instance.conversation
     if instance.sender_id == conversation.adopter_id:
-        recipient_id = (
+        recipient_ids = list(
             conversation.shelter.members.order_by(
                 Case(
                     When(position="responsable", then=Value(0)),
@@ -23,18 +23,25 @@ def notify_new_message(sender, instance, created, raw=False, **kwargs):
                     output_field=IntegerField(),
                 ),
                 "id",
-            )
-            .values_list("user_id", flat=True)
-            .first()
+            ).values_list("user_id", flat=True)
         )
-        if recipient_id is None:
+        if not recipient_ids:
             raise ValidationError(
                 {"conversation": _("El refugio debe tener un integrante para recibir mensajes.")}
             )
+        Notification.objects.bulk_create(
+            [
+                Notification(
+                    user_id=recipient_id,
+                    notification_type=Notification.NotificationType.MESSAGE,
+                    message=f"Nuevo mensaje en una conversación sobre {conversation.shelter.name}.",
+                )
+                for recipient_id in recipient_ids
+            ]
+        )
     else:
-        recipient_id = conversation.adopter_id
-    Notification.objects.create(
-        user_id=recipient_id,
-        notification_type=Notification.NotificationType.MESSAGE,
-        message=f"Nuevo mensaje en una conversación sobre {conversation.shelter.name}.",
-    )
+        Notification.objects.create(
+            user_id=conversation.adopter_id,
+            notification_type=Notification.NotificationType.MESSAGE,
+            message=f"Nuevo mensaje en una conversación sobre {conversation.shelter.name}.",
+        )

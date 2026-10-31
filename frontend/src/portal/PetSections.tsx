@@ -113,6 +113,33 @@ export function PetsSection({
     photoOpenerRef.current?.focus();
   };
 
+  const openPetForEditing = async (pet: PortalDataRow) => {
+    const status = text(pet.status_code || pet.status)
+      .trim()
+      .toLocaleLowerCase();
+    if (status === "devuelta" || status === "returned") {
+      await send(
+        `/api/v1/pets/${text(pet.id)}/relist/`,
+        "POST",
+        {},
+        "Mascota disponible nuevamente.",
+      );
+    }
+
+    setEditingPet(text(pet.id));
+    clearPhotos();
+    setForm({
+      name: text(pet.name),
+      shelter: text(pet.shelter),
+      breed: text(pet.breed),
+      size: text(pet.size),
+      approximate_birth_date: text(pet.approximate_birth_date),
+      health: text(pet.health),
+      temperament: text(pet.temperament),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   useEffect(() => {
     if (!selectedPet) return;
     petDialogCloseRef.current?.focus();
@@ -137,20 +164,7 @@ export function PetsSection({
             <>
               <button
                 className="portal-link"
-                onClick={() => {
-                  setEditingPet(text(pet.id));
-                  clearPhotos();
-                  setForm({
-                    name: text(pet.name),
-                    shelter: text(pet.shelter),
-                    breed: text(pet.breed),
-                    size: text(pet.size),
-                    approximate_birth_date: text(pet.approximate_birth_date),
-                    health: text(pet.health),
-                    temperament: text(pet.temperament),
-                  });
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onClick={() => void openPetForEditing(pet)}
               >
                 Editar
               </button>
@@ -171,7 +185,12 @@ export function PetsSection({
                   Eliminar
                 </button>
               )}
-              {pet.status === "devuelta" &&
+              {(text(pet.status_code || pet.status)
+                .trim()
+                .toLocaleLowerCase() === "devuelta" ||
+                text(pet.status_code || pet.status)
+                  .trim()
+                  .toLocaleLowerCase() === "returned") &&
                 canDo(RESOURCES.PETS, ACTIONS.UPDATE) && (
                   <button
                     className="portal-link"
@@ -728,13 +747,25 @@ export function RequestsSection({
           </div>
         </form>
       )}
-      {role === ROLES.SHELTER && (
-        <form className="portal-form portal-form--compact" onSubmit={(event) => event.preventDefault()}>
-          <h2>Mensaje para la decisión</h2>
-          <Field label="Nota para la familia (opcional)" name="decisionMessage" value={form.decisionMessage ?? ""} onChange={setValue} />
-          <p className="portal-form-hint">Se incluirá al aprobar o rechazar una solicitud.</p>
-        </form>
-      )}
+      {(role === ROLES.SHELTER || role === ROLES.ADMIN) &&
+        (canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) ||
+          canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT)) && (
+          <form
+            className="portal-form portal-form--compact"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <h2>Mensaje para la decisión</h2>
+            <Field
+              label="Nota para la familia (opcional)"
+              name="decisionMessage"
+              value={form.decisionMessage ?? ""}
+              onChange={setValue}
+            />
+            <p className="portal-form-hint">
+              Se incluirá al aprobar o rechazar una solicitud.
+            </p>
+          </form>
+        )}
       <div className="portal-grid">
         {requests.map((item) => {
           const pet =
@@ -795,40 +826,43 @@ export function RequestsSection({
                         </button>
                       </div>
                     )}
-                  {role === ROLES.SHELTER && requestStatus === "pendiente" && (
-                    <div className="portal-inline-actions">
-                      {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) && (
-                        <button
-                          className="portal-button"
-                          onClick={() =>
-                            void send(
-                              `/api/v1/adoption-requests/${text(item.id)}/approve/`,
-                              "POST",
-                              { message: form.decisionMessage ?? "" },
-                              "Solicitud aprobada.",
-                            )
-                          }
-                        >
-                          Aprobar
-                        </button>
-                      )}
-                      {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT) && (
-                        <button
-                          className="portal-button portal-button--secondary"
-                          onClick={() =>
-                            void send(
-                              `/api/v1/adoption-requests/${text(item.id)}/reject/`,
-                              "POST",
-                              { message: form.decisionMessage ?? "" },
-                              "Solicitud rechazada.",
-                            )
-                          }
-                        >
-                          Rechazar
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  {(role === ROLES.SHELTER || role === ROLES.ADMIN) &&
+                    requestStatus === "pendiente" && (
+                      <div className="portal-inline-actions">
+                        {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) && (
+                          <button
+                            className="portal-button"
+                            type="button"
+                            onClick={() =>
+                              void send(
+                                `/api/v1/adoption-requests/${text(item.id)}/approve/`,
+                                "POST",
+                                { message: form.decisionMessage ?? "" },
+                                "Solicitud aprobada.",
+                              )
+                            }
+                          >
+                            Aprobar
+                          </button>
+                        )}
+                        {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT) && (
+                          <button
+                            className="portal-button portal-button--secondary"
+                            type="button"
+                            onClick={() =>
+                              void send(
+                                `/api/v1/adoption-requests/${text(item.id)}/reject/`,
+                                "POST",
+                                { message: form.decisionMessage ?? "" },
+                                "Solicitud rechazada.",
+                              )
+                            }
+                          >
+                            Rechazar
+                          </button>
+                        )}
+                      </div>
+                    )}
                 </>
               }
             />
@@ -839,6 +873,7 @@ export function RequestsSection({
       {selectedRequest && (
         <div
           className="landing-pet-dialog__backdrop"
+          data-testid="request-dialog-backdrop"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setSelectedRequest(null);

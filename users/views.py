@@ -195,15 +195,21 @@ class RolePermissionUpdateView(APIView):
             for item in permissions_data
         ):
             raise ValidationError({"permissions": "Recurso o acción desconocidos."})
-        if role.name == Role.Name.ADMIN and (
-            "users",
-            "manage",
-        ) not in pairs:
+        required_admin_permissions = {
+            ("users", "manage"),
+            ("shelters", "verify"),
+        }
+        missing_admin_permissions = (
+            required_admin_permissions.difference(pairs)
+            if role.name == Role.Name.ADMIN
+            else set()
+        )
+        if missing_admin_permissions:
             raise ValidationError(
                 {
                     "permissions": (
-                        "El administrador debe conservar el permiso para gestionar "
-                        "roles y permisos."
+                        "El administrador debe conservar los permisos para gestionar "
+                        "roles y permisos y verificar refugios."
                     )
                 }
             )

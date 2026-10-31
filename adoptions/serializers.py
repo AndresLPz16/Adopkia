@@ -104,6 +104,7 @@ class AdoptionRequestWriteSerializer(LocalizedModelSerializer):
 
 class AdoptionSerializer(LocalizedModelSerializer):
     choice_fields = ("status",)
+    status_code = serializers.CharField(source="status", read_only=True)
     applicant = serializers.CharField(source="request.applicant.name", read_only=True)
     pet = serializers.IntegerField(source="request.pet_id", read_only=True)
     pet_name = serializers.CharField(source="request.pet.name", read_only=True)
@@ -118,6 +119,7 @@ class AdoptionSerializer(LocalizedModelSerializer):
             "pet_name",
             "adoption_date",
             "status",
+            "status_code",
             "return_date",
             "return_reason",
         )

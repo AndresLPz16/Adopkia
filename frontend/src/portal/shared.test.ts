@@ -31,4 +31,10 @@ describe("apiErrorMessage", () => {
       "No autorizado.",
     );
   });
+
+  it("does not display Django's HTML error page as an API message", () => {
+    expect(
+      apiErrorMessage("<!DOCTYPE html><html><body>Internal Server Error</body></html>", 500),
+    ).toBe("El servidor tuvo un problema interno. Inténtalo más tarde.");
+  });
 });

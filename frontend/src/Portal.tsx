@@ -345,6 +345,71 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   }, [reload]);
 
   useEffect(() => {
+    if (section !== "requests" || role !== ROLES.SHELTER) return;
+
+    let refreshing = false;
+    const intervalId = window.setInterval(() => {
+      if (refreshing) return;
+      refreshing = true;
+      void reload().finally(() => {
+        refreshing = false;
+      });
+    }, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [reload, role, section]);
+
+  useEffect(() => {
+    if (section !== "messages" || !selectedConversation) return;
+
+    const controller = new AbortController();
+    let active = true;
+    let refreshing = false;
+    const refreshMessages = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const response = await request(
+          `/api/v1/messages/?conversation=${encodeURIComponent(selectedConversation)}`,
+          { signal: controller.signal },
+        );
+        const messageData = await responseData(response);
+        if (active) {
+          setData((current) => ({
+            ...current,
+            "/api/v1/messages/": messageData,
+          }));
+          setError((current) =>
+            current.startsWith("No se pudieron actualizar los mensajes.")
+              ? ""
+              : current,
+          );
+        }
+      } catch (caught) {
+        if (active) {
+          setError(
+            `No se pudieron actualizar los mensajes. ${
+              caught instanceof Error
+                ? caught.message
+                : "Inténtalo de nuevo en unos segundos."
+            }`,
+          );
+        }
+      } finally {
+        refreshing = false;
+      }
+    };
+    const intervalId = window.setInterval(() => {
+      void refreshMessages();
+    }, 5000);
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [request, section, selectedConversation]);
+
+  useEffect(() => {
     setForm({});
     setAnswers({});
     setEditingPet("");

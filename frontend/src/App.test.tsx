@@ -87,6 +87,56 @@ describe("public landing page", () => {
     expect(screen.getByLabelText("Tu respuesta")).toBeInTheDocument();
   });
 
+  it("explains a login challenge failure and lets the user retry", async () => {
+    const user = userEvent.setup();
+    let challengeAttempts = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        if (String(input).includes("login-challenge")) {
+          challengeAttempts += 1;
+          if (challengeAttempts === 1) {
+            return Promise.resolve(
+              new Response("<!DOCTYPE html><html>Server error</html>", {
+                status: 500,
+                headers: { "Content-Type": "text/html" },
+              }),
+            );
+          }
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                challenge_id: "challenge-retry",
+                question: "3 + 4 = ?",
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ results: pets, next: null }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }),
+    );
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Iniciar sesión" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "El servidor tuvo un problema interno. Inténtalo más tarde.",
+    );
+    expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Entrar" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(await screen.findByText("3 + 4 = ?")).toBeInTheDocument();
+    expect(challengeAttempts).toBe(2);
+  });
+
   it("shows six pets per horizontal carousel page and resets after filtering", async () => {
     const user = userEvent.setup();
     render(<App />);

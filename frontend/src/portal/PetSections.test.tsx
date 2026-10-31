@@ -85,6 +85,88 @@ describe("pet photo uploads", () => {
   });
 });
 
+describe("editing returned pets", () => {
+  it("re-lists a returned pet before opening its edit form", async () => {
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const send = vi.fn().mockResolvedValue(true);
+    const setEditingPet = vi.fn();
+    const setForm = vi.fn();
+    render(
+      <PetsSection
+        {...makePetsSectionProps({
+          role: "refugio",
+          canDo: () => true,
+          visiblePets: [
+            {
+              id: 33,
+              name: "Neron",
+              shelter: 4,
+              breed: 2,
+              size: "mediano",
+              status: "Devuelta",
+              status_code: "devuelta",
+            },
+          ],
+          managedShelters: [{ id: 4, name: "Huellas" }],
+          breeds: [{ id: 2, name: "Mestizo" }],
+          send,
+          setEditingPet,
+          setForm,
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+
+    await waitFor(() => {
+      expect(send).toHaveBeenCalledWith(
+        "/api/v1/pets/33/relist/",
+        "POST",
+        {},
+        "Mascota disponible nuevamente.",
+      );
+      expect(setEditingPet).toHaveBeenCalledWith("33");
+    });
+    expect(setForm).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Neron", shelter: "4" }),
+    );
+    vi.restoreAllMocks();
+  });
+
+  it("keeps edit mode available if the server blocks relisting", async () => {
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const send = vi.fn().mockResolvedValue(false);
+    const setEditingPet = vi.fn();
+    render(
+      <PetsSection
+        {...makePetsSectionProps({
+          role: "refugio",
+          canDo: () => true,
+          visiblePets: [
+            {
+              id: 33,
+              name: "Neron",
+              shelter: 4,
+              breed: 2,
+              size: "mediano",
+              status: "Devuelta",
+              status_code: "devuelta",
+            },
+          ],
+          send,
+          setEditingPet,
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    await waitFor(() => expect(send).toHaveBeenCalledOnce());
+
+    expect(setEditingPet).toHaveBeenCalledWith("33");
+    vi.restoreAllMocks();
+  });
+});
+
 describe("adopter pet discovery", () => {
   it("opens a detailed photo gallery and starts a request for the selected pet", async () => {
     const onRequestAdoption = vi.fn();
@@ -351,5 +433,60 @@ describe("adoption request pet selection", () => {
       );
     });
     expect(onRequestSubmitted).toHaveBeenCalledOnce();
+  });
+});
+
+describe("adoption request review", () => {
+  it("lets administrators decide pending requests and inspect the form answers", async () => {
+    const send = vi.fn().mockResolvedValue(true);
+    render(
+      <RequestsSection
+        role="administrador"
+        isPlatformSuperadmin={false}
+        canDo={() => true}
+        questions={[{ id: 8, prompt: "¿Tienes experiencia con mascotas?" }]}
+        pets={[]}
+        requests={[
+          {
+            id: 12,
+            pet: 5,
+            pet_name: "Luna",
+            applicant_name: "Ana",
+            status: "pendiente",
+            status_code: "pendiente",
+            requested_at: "2026-03-15T13:45:00Z",
+            answers: [{ question: 8, value: "Sí, tuve dos perros." }],
+          },
+        ]}
+        form={{}}
+        answers={{}}
+        setAnswers={vi.fn()}
+        setValue={vi.fn()}
+        submit={(callback) => (event) => {
+          event.preventDefault();
+          void callback();
+        }}
+        send={send}
+        setError={vi.fn()}
+        loading={false}
+        busy={false}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Aprobar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rechazar" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ver solicitud completa" }));
+    expect(screen.getByText("¿Tienes experiencia con mascotas?")).toBeInTheDocument();
+    expect(screen.getByText("Sí, tuve dos perros.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Aprobar" }));
+    await waitFor(() =>
+      expect(send).toHaveBeenCalledWith(
+        "/api/v1/adoption-requests/12/approve/",
+        "POST",
+        { message: "" },
+        "Solicitud aprobada.",
+      ),
+    );
   });
 });

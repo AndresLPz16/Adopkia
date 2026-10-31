@@ -1089,16 +1089,21 @@ select:focus-visible {
 }
 
 .portal-request-dialog {
-  display: block;
+  display: flex;
   width: min(100%, 720px);
-  grid-template-columns: minmax(0, 1fr);
+  max-height: min(90vh, 760px);
+  max-height: min(90dvh, 760px);
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .portal-request-dialog .landing-pet-dialog__content {
   align-items: stretch;
-  max-height: min(85vh, 700px);
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding-top: 3.25rem;
+  padding: 4rem clamp(1.25rem, 4vw, 2rem) 1.5rem;
 }
 
 .portal-request-dialog__metadata {
@@ -2327,7 +2332,6 @@ select:focus-visible {
 
   .portal-request-dialog {
     max-width: 520px;
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .portal-request-dialog__dates {

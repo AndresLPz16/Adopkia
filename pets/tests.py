@@ -9,6 +9,7 @@ from django.urls import reverse
 from PIL import Image
 from rest_framework.test import APITestCase
 
+from adoptions.models import Adoption, AdoptionRequest
 from shelters.models import Shelter, ShelterMember
 from users.models import Role, User
 
@@ -108,6 +109,47 @@ class PetApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Pet.objects.get(name="Milo").status, Pet.Status.AVAILABLE)
+
+    def test_returned_pet_can_be_relisted_without_an_active_adoption(self):
+        self.pet.status = Pet.Status.RETURNED
+        self.pet.save(update_fields=("status",))
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.post(
+            reverse("pet-relist", args=(self.pet.pk,)),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.status, Pet.Status.AVAILABLE)
+
+    def test_returned_pet_with_active_adoption_cannot_be_relisted(self):
+        self.pet.status = Pet.Status.RETURNED
+        self.pet.save(update_fields=("status",))
+        adoption_request = AdoptionRequest.objects.create(
+            applicant=self.other,
+            pet=self.pet,
+            status=AdoptionRequest.Status.APPROVED,
+        )
+        Adoption.objects.create(
+            request=adoption_request,
+            adoption_date=date(2026, 10, 1),
+            status=Adoption.Status.ACTIVE,
+        )
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.post(
+            reverse("pet-relist", args=(self.pet.pk,)),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("adopción activa", str(response.data).lower())
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.status, Pet.Status.RETURNED)
 
     def test_shelter_can_add_photo_url_to_pet(self):
         self.client.force_authenticate(self.owner)

@@ -90,7 +90,14 @@ export function apiErrorMessage(data: unknown, status: number): string {
   ) {
     return data.detail;
   }
-  if (typeof data === "string" && data) return data;
+  if (typeof data === "string" && data) {
+    if (/^\s*<(?:!doctype html|html)\b/i.test(data)) {
+      return status >= 500
+        ? "El servidor tuvo un problema interno. Inténtalo más tarde."
+        : `La solicitud falló (HTTP ${status}).`;
+    }
+    return data;
+  }
 
   if (data && typeof data === "object" && !Array.isArray(data)) {
     const labels: Record<string, string> = {

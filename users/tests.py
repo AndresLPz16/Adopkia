@@ -323,6 +323,29 @@ class RolePermissionApiTests(APITestCase):
             ).exists()
         )
 
+    def test_platform_superadmin_cannot_remove_admin_shelter_verification(self):
+        self.admin.is_platform_superadmin = True
+        self.admin.save(update_fields=("is_platform_superadmin",))
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADMIN},
+            ),
+            [{"resource": "users", "action": "manage"}],
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(
+            RolePermission.objects.filter(
+                role=self.admin.role,
+                resource="shelters",
+                action="verify",
+            ).exists()
+        )
+
     def test_role_matrix_management_requires_users_manage_grant(self):
         RolePermission.objects.filter(
             role=self.admin.role,

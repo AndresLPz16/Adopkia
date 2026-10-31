@@ -6,6 +6,66 @@ import type { PortalDataRow, PortalSender, PortalSubmit } from "./shared";
 
 type PermissionCheck = (resource: Resource, action: Action) => boolean;
 
+function isPendingShelter(shelter: PortalDataRow): boolean {
+  const status = text(shelter.verification_status).trim().toLocaleLowerCase();
+  return status === "pendiente" || status === "pending";
+}
+
+function ShelterMemberForm({
+  shelterId,
+  submit,
+  send,
+  busy,
+}: {
+  shelterId: string;
+  submit: PortalSubmit;
+  send: PortalSender;
+  busy: boolean;
+}) {
+  const [email, setEmail] = useState("");
+  const [position, setPosition] = useState("colaborador");
+
+  return (
+    <form
+      className="portal-card-form"
+      onSubmit={submit(async () => {
+        const added = await send(
+          `/api/v1/shelters/${shelterId}/members/`,
+          "POST",
+          { email, position },
+          "Integrante agregado.",
+        );
+        if (added !== false) {
+          setEmail("");
+          setPosition("colaborador");
+        }
+      })}
+    >
+      <Field
+        label="Correo de la cuenta de refugio a agregar"
+        name="email"
+        type="email"
+        value={email}
+        onChange={(_name, value) => setEmail(value)}
+        required
+      />
+      <Field
+        label="Cargo"
+        name="position"
+        value={position}
+        onChange={(_name, value) => setPosition(value)}
+        options={[
+          { value: "responsable", label: "Responsable" },
+          { value: "colaborador", label: "Colaborador" },
+        ]}
+      />
+      <button className="portal-link" disabled={busy}>
+        Agregar integrante
+      </button>
+    </form>
+  );
+}
+
 export function SheltersSection({
   role,
   userId,
@@ -68,7 +128,7 @@ export function SheltersSection({
         {shelters.map((shelter) => (
           <DataCard key={text(shelter.id)} title={text(shelter.name)} subtitle={`${text(shelter.city)} · ${text(shelter.address)}`} status={text(shelter.verification_status)}>
             <p>{text(shelter.contact_email)} {shelter.contact_phone ? `· ${text(shelter.contact_phone)}` : ""}</p>
-            {shelter.verification_status === "pendiente" && canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY) && (
+            {isPendingShelter(shelter) && canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY) && (
               <div className="portal-inline-actions">
                 <button className="portal-button" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: true }, "Refugio verificado.")}>Verificar</button>
                 <button className="portal-button portal-button--secondary" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: false }, "Solicitud de refugio rechazada.")}>Rechazar</button>
@@ -89,13 +149,14 @@ export function SheltersSection({
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}>Editar refugio</button>
                 </div>}
-                {canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.CREATE) && <form className="portal-card-form" onSubmit={submit(async () => {
-                  await send(`/api/v1/shelters/${text(shelter.id)}/members/`, "POST", { user: Number(form.member_user), position: form.position || "colaborador" }, "Integrante agregado.");
-                })}>
-                  <Field label="ID de la cuenta de refugio a agregar" name="member_user" type="number" value={form.member_user ?? ""} onChange={setValue} required />
-                  <Field label="Cargo" name="position" value={form.position ?? "colaborador"} onChange={setValue} options={[{ value: "responsable", label: "Responsable" }, { value: "colaborador", label: "Colaborador" }]} />
-                  <button className="portal-link" disabled={busy}>Agregar integrante</button>
-                </form>}
+                {canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.CREATE) && (
+                  <ShelterMemberForm
+                    shelterId={text(shelter.id)}
+                    submit={submit}
+                    send={send}
+                    busy={busy}
+                  />
+                )}
               </>
             )}
           </DataCard>

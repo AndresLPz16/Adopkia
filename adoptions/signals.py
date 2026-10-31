@@ -9,7 +9,7 @@ from notifications.models import Notification
 from .models import AdoptionRequest
 
 
-def _shelter_notification_recipient(adoption_request):
+def _shelter_notification_recipients(adoption_request):
     shelter_members = adoption_request.pet.shelter.members.order_by(
         Case(
             When(position="responsable", then=Value(0)),
@@ -18,12 +18,26 @@ def _shelter_notification_recipient(adoption_request):
         ),
         "id",
     )
-    user_id = shelter_members.values_list("user_id", flat=True).first()
-    if user_id is None:
+    user_ids = list(shelter_members.values_list("user_id", flat=True))
+    if not user_ids:
         raise ValidationError(
             {"pet": _("El refugio debe tener un integrante para recibir notificaciones.")}
         )
-    return user_id
+    return user_ids
+
+
+def _notify_shelter_members(adoption_request, notification_type, message):
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                user_id=user_id,
+                request=adoption_request,
+                notification_type=notification_type,
+                message=message,
+            )
+            for user_id in _shelter_notification_recipients(adoption_request)
+        ]
+    )
 
 
 @receiver(pre_save, sender=AdoptionRequest, dispatch_uid="adoptions.remember_request_status")
@@ -43,20 +57,19 @@ def notify_request_changes(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     if created and instance.status == AdoptionRequest.Status.PENDING:
-        Notification.objects.create(
-            user_id=_shelter_notification_recipient(instance),
-            request=instance,
-            notification_type=Notification.NotificationType.NEW_REQUEST,
-            message=f"Nueva solicitud de adopción para {instance.pet.name}.",
+        _notify_shelter_members(
+            instance,
+            Notification.NotificationType.NEW_REQUEST,
+            f"Nueva solicitud de adopción para {instance.pet.name}.",
         )
     elif (
         instance._previous_status is not None
         and instance._previous_status != instance.status
     ):
         if instance.status == AdoptionRequest.Status.PENDING:
-            recipient_id = _shelter_notification_recipient(instance)
             kind = Notification.NotificationType.NEW_REQUEST
             message = f"Nueva solicitud de adopción para {instance.pet.name}."
+            _notify_shelter_members(instance, kind, message)
         elif instance.status == AdoptionRequest.Status.APPROVED:
             recipient_id = instance.applicant_id
             kind = Notification.NotificationType.APPROVAL
@@ -66,9 +79,10 @@ def notify_request_changes(sender, instance, created, raw=False, **kwargs):
             kind = Notification.NotificationType.REJECTION
             message = "Tu solicitud de adopción fue rechazada."
         else:
-            recipient_id = _shelter_notification_recipient(instance)
             kind = Notification.NotificationType.SYSTEM
             message = "Una solicitud de adopción fue cancelada."
+            _notify_shelter_members(instance, kind, message)
+            return
         Notification.objects.create(
             user_id=recipient_id,
             request=instance,

@@ -17,6 +17,17 @@ const permissionCatalog = {
         { key: "manage", label: "Administrar" },
       ],
     },
+    {
+      key: "messages",
+      label: "Mensajes",
+      actions: [
+        { key: "read", label: "Consultar" },
+        { key: "create", label: "Crear" },
+        { key: "update", label: "Editar" },
+        { key: "delete", label: "Eliminar" },
+        { key: "manage", label: "Administrar" },
+      ],
+    },
   ],
   roles: [
     {
@@ -73,6 +84,11 @@ describe("RolePermissionsPanel", () => {
     });
     await user.click(deletePermission);
     expect(deletePermission).toBeChecked();
+    const adopterMessagePermission = screen.getByRole("checkbox", {
+      name: "Mensajes: Crear",
+    });
+    await user.click(adopterMessagePermission);
+    expect(adopterMessagePermission).toBeChecked();
     await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() =>
@@ -89,6 +105,10 @@ describe("RolePermissionsPanel", () => {
     expect(JSON.parse(String(saveCall?.[1]?.body))).toContainEqual({
       resource: "pets",
       action: "delete",
+    });
+    expect(JSON.parse(String(saveCall?.[1]?.body))).toContainEqual({
+      resource: "messages",
+      action: "create",
     });
   });
 
