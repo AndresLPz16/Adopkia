@@ -100,9 +100,7 @@ class PetViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             pet = Pet.objects.select_for_update().get(pk=pet.pk)
             if pet.status != Pet.Status.RETURNED:
-                raise ValidationError(
-                    {"status": _("Solo se puede volver a publicar una mascota devuelta.")}
-                )
+                raise ValidationError({"status": _("Solo se puede volver a publicar una mascota devuelta.")})
             if Adoption.objects.filter(
                 request__pet=pet,
                 status=Adoption.Status.ACTIVE,
@@ -116,9 +114,7 @@ class PetViewSet(viewsets.ModelViewSet):
                 )
             pet.status = Pet.Status.AVAILABLE
             pet.save(update_fields=("status",))
-        return Response(
-            PetReadSerializer(pet, context=self.get_serializer_context()).data
-        )
+        return Response(PetReadSerializer(pet, context=self.get_serializer_context()).data)
 
 
 class PetPhotoViewSet(viewsets.ModelViewSet):

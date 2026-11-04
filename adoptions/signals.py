@@ -59,33 +59,36 @@ def notify_request_changes(sender, instance, created, raw=False, **kwargs):
     if created and instance.status == AdoptionRequest.Status.PENDING:
         _notify_shelter_members(
             instance,
-            Notification.NotificationType.NEW_REQUEST,
-            f"Nueva solicitud de adopción para {instance.pet.name}.",
+            notification_type=Notification.NotificationType.NEW_REQUEST,
+            message=f"Nueva solicitud de adopción para {instance.pet.name}.",
         )
     elif (
         instance._previous_status is not None
         and instance._previous_status != instance.status
     ):
         if instance.status == AdoptionRequest.Status.PENDING:
-            kind = Notification.NotificationType.NEW_REQUEST
-            message = f"Nueva solicitud de adopción para {instance.pet.name}."
-            _notify_shelter_members(instance, kind, message)
+            _notify_shelter_members(
+                instance,
+                notification_type=Notification.NotificationType.NEW_REQUEST,
+                message=f"Nueva solicitud de adopción para {instance.pet.name}.",
+            )
         elif instance.status == AdoptionRequest.Status.APPROVED:
-            recipient_id = instance.applicant_id
-            kind = Notification.NotificationType.APPROVAL
-            message = "Tu solicitud de adopción fue aprobada."
+            Notification.objects.create(
+                user_id=instance.applicant_id,
+                request=instance,
+                notification_type=Notification.NotificationType.APPROVAL,
+                message="Tu solicitud de adopción fue aprobada.",
+            )
         elif instance.status == AdoptionRequest.Status.REJECTED:
-            recipient_id = instance.applicant_id
-            kind = Notification.NotificationType.REJECTION
-            message = "Tu solicitud de adopción fue rechazada."
+            Notification.objects.create(
+                user_id=instance.applicant_id,
+                request=instance,
+                notification_type=Notification.NotificationType.REJECTION,
+                message="Tu solicitud de adopción fue rechazada.",
+            )
         else:
-            kind = Notification.NotificationType.SYSTEM
-            message = "Una solicitud de adopción fue cancelada."
-            _notify_shelter_members(instance, kind, message)
-            return
-        Notification.objects.create(
-            user_id=recipient_id,
-            request=instance,
-            notification_type=kind,
-            message=message,
-        )
+            _notify_shelter_members(
+                instance,
+                notification_type=Notification.NotificationType.SYSTEM,
+                message="Una solicitud de adopción fue cancelada.",
+            )

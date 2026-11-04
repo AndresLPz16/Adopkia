@@ -61,6 +61,10 @@ export function labelStatus(value: unknown): string {
     aprobada: "Aprobada",
     rechazada: "Rechazada",
     cancelada: "Cancelada",
+    notificado: "Notificado",
+    cumplido: "Realizado",
+    vencido: "Vencido",
+    cancelado: "Cancelado",
     activa: "Activa",
     finalizada: "Finalizada",
     verificado: "Verificado",
@@ -70,6 +74,9 @@ export function labelStatus(value: unknown): string {
     regular: "Regular",
     preocupante: "Requiere atención",
     vacunacion: "Vacunación",
+    vacuna: "Vacuna",
+    control_veterinario: "Control veterinario",
+    checkin: "Seguimiento",
     consulta: "Consulta",
     desparasitacion: "Desparasitación",
     cirugia: "Cirugía",
@@ -90,14 +97,7 @@ export function apiErrorMessage(data: unknown, status: number): string {
   ) {
     return data.detail;
   }
-  if (typeof data === "string" && data) {
-    if (/^\s*<(?:!doctype html|html)\b/i.test(data)) {
-      return status >= 500
-        ? "El servidor tuvo un problema interno. Inténtalo más tarde."
-        : `La solicitud falló (HTTP ${status}).`;
-    }
-    return data;
-  }
+  if (typeof data === "string" && data) return data;
 
   if (data && typeof data === "object" && !Array.isArray(data)) {
     const labels: Record<string, string> = {

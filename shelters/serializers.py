@@ -49,28 +49,13 @@ class ShelterMemberSerializer(LocalizedModelSerializer):
 
 
 class ShelterMemberCreateSerializer(LocalizedModelSerializer):
-    email = serializers.EmailField(write_only=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = ShelterMember
-        fields = ("email", "position")
+        fields = ("user", "position")
 
-    def validate_email(self, email):
-        user = User.objects.filter(email__iexact=email).first()
-        if user is None:
-            raise serializers.ValidationError(
-                _("No existe una cuenta con ese correo electrónico.")
-            )
+    def validate_user(self, user):
         if user.role.name != Role.Name.SHELTER:
-            raise serializers.ValidationError(
-                _("La cuenta debe tener rol de refugio.")
-            )
-        if ShelterMember.objects.filter(user=user).exists():
-            raise serializers.ValidationError(
-                _("La cuenta ya pertenece a un refugio.")
-            )
+            raise serializers.ValidationError(_("El integrante debe tener rol de refugio."))
         return user
-
-    def create(self, validated_data):
-        user = validated_data.pop("email")
-        return ShelterMember.objects.create(user=user, **validated_data)

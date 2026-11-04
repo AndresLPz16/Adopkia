@@ -14,7 +14,7 @@ class FormQuestionSerializer(LocalizedModelSerializer):
     class Meta:
         model = FormQuestion
         fields = ("id", "prompt", "answer_type", "required", "order", "active")
-        read_only_fields = fields
+        read_only_fields = ("id",)
 
 
 class FormAnswerSerializer(LocalizedModelSerializer):

@@ -8,16 +8,18 @@ from .models import MedicalRecord, Reminder, Vaccine, Veterinarian
 
 class VeterinarianSerializer(LocalizedModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
+    user_name = serializers.CharField(source="user.name", read_only=True)
 
     class Meta:
         model = Veterinarian
-        fields = ("id", "user", "professional_card", "clinic", "specialty")
+        fields = ("id", "user", "user_name", "professional_card", "clinic", "specialty")
         read_only_fields = ("id", "user")
 
 
 class MedicalRecordSerializer(LocalizedModelSerializer):
     choice_fields = ("record_type",)
 
+    pet_name = serializers.CharField(source="pet.name", read_only=True)
     veterinarian_name = serializers.CharField(
         source="veterinarian.user.name", read_only=True, allow_null=True
     )
@@ -27,6 +29,7 @@ class MedicalRecordSerializer(LocalizedModelSerializer):
         fields = (
             "id",
             "pet",
+            "pet_name",
             "veterinarian",
             "veterinarian_name",
             "vaccine",
@@ -53,7 +56,7 @@ class VaccineSerializer(LocalizedModelSerializer):
     class Meta:
         model = Vaccine
         fields = ("id", "species", "species_name", "name", "description", "booster_interval_days")
-        read_only_fields = fields
+        read_only_fields = ("id", "species_name")
 
 
 class ReminderSerializer(LocalizedModelSerializer):
@@ -75,6 +78,7 @@ class ReminderSerializer(LocalizedModelSerializer):
             "medical_record",
             "reminder_type",
             "scheduled_date",
+            "notes",
             "status",
         )
         read_only_fields = ("id", "adopter", "pet", "vaccine_name")

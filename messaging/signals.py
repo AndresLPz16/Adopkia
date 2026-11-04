@@ -23,7 +23,8 @@ def notify_new_message(sender, instance, created, raw=False, **kwargs):
                     output_field=IntegerField(),
                 ),
                 "id",
-            ).values_list("user_id", flat=True)
+            )
+            .values_list("user_id", flat=True)
         )
         if not recipient_ids:
             raise ValidationError(

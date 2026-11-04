@@ -85,6 +85,9 @@ DEFAULT_PERMISSIONS = {
         ("shelterMembers", "update"),
         ("shelterMembers", "delete"),
         ("formQuestions", "read"),
+        ("formQuestions", "create"),
+        ("formQuestions", "update"),
+        ("formQuestions", "delete"),
         ("adoptionRequests", "read"),
         ("adoptionRequests", "approve"),
         ("adoptionRequests", "reject"),
@@ -135,7 +138,7 @@ DEFAULT_PERMISSIONS = {
         for resource, _label in RESOURCES
         for permission in (
             ((resource, "read"),)
-            if resource in ("dashboard", "statistics", "formQuestions", "vaccines")
+            if resource in ("dashboard", "statistics")
             else ((resource, "manage"),)
         )
     )
