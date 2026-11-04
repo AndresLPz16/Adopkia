@@ -3,7 +3,11 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from adoptions.models import Adoption
-from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
+from myproject.permissions import (
+    RolePermissionRequired,
+    user_can_manage_shelter,
+    user_has_role_permission,
+)
 from users.models import Role
 
 from .models import MedicalRecord, Reminder, Vaccine, Veterinarian
@@ -29,9 +33,7 @@ class VeterinarianViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not user.is_authenticated:
             return Veterinarian.objects.none()
-        if user.role.name == Role.Name.VETERINARIAN:
-            return Veterinarian.objects.filter(user=user)
-        if user.role.name in (Role.Name.ADMIN, Role.Name.SHELTER):
+        if user_has_role_permission(user, "veterinarians", "read"):
             return Veterinarian.objects.select_related("user").all()
         return Veterinarian.objects.none()
 
@@ -98,13 +100,22 @@ class MedicalRecordViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-class VaccineViewSet(viewsets.ReadOnlyModelViewSet):
+class VaccineViewSet(viewsets.ModelViewSet):
+    rbac_resource = "vaccines"
+    rbac_allow_anonymous_read = True
     queryset = Vaccine.objects.select_related("species").all()
     serializer_class = VaccineSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (RolePermissionRequired,)
     ordering = ("id",)
     filterset_fields = ("species",)
     search_fields = ("name", "species__name")
+
+    def perform_destroy(self, instance):
+        if instance.medical_records.exists() or instance.reminders.exists():
+            raise ValidationError(
+                {"vaccine": _("No se puede eliminar una vacuna que ya está asociada a historiales o recordatorios.")}
+            )
+        instance.delete()
 
 
 class ReminderViewSet(viewsets.ModelViewSet):

@@ -113,33 +113,6 @@ export function PetsSection({
     photoOpenerRef.current?.focus();
   };
 
-  const openPetForEditing = async (pet: PortalDataRow) => {
-    const status = text(pet.status_code || pet.status)
-      .trim()
-      .toLocaleLowerCase();
-    if (status === "devuelta" || status === "returned") {
-      await send(
-        `/api/v1/pets/${text(pet.id)}/relist/`,
-        "POST",
-        {},
-        "Mascota disponible nuevamente.",
-      );
-    }
-
-    setEditingPet(text(pet.id));
-    clearPhotos();
-    setForm({
-      name: text(pet.name),
-      shelter: text(pet.shelter),
-      breed: text(pet.breed),
-      size: text(pet.size),
-      approximate_birth_date: text(pet.approximate_birth_date),
-      health: text(pet.health),
-      temperament: text(pet.temperament),
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   useEffect(() => {
     if (!selectedPet) return;
     petDialogCloseRef.current?.focus();
@@ -164,7 +137,20 @@ export function PetsSection({
             <>
               <button
                 className="portal-link"
-                onClick={() => void openPetForEditing(pet)}
+                onClick={() => {
+                  setEditingPet(text(pet.id));
+                  clearPhotos();
+                  setForm({
+                    name: text(pet.name),
+                    shelter: text(pet.shelter),
+                    breed: text(pet.breed),
+                    size: text(pet.size),
+                    approximate_birth_date: text(pet.approximate_birth_date),
+                    health: text(pet.health),
+                    temperament: text(pet.temperament),
+                  });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
                 Editar
               </button>
@@ -185,12 +171,7 @@ export function PetsSection({
                   Eliminar
                 </button>
               )}
-              {(text(pet.status_code || pet.status)
-                .trim()
-                .toLocaleLowerCase() === "devuelta" ||
-                text(pet.status_code || pet.status)
-                  .trim()
-                  .toLocaleLowerCase() === "returned") &&
+              {pet.status === "devuelta" &&
                 canDo(RESOURCES.PETS, ACTIONS.UPDATE) && (
                   <button
                     className="portal-link"
@@ -639,6 +620,15 @@ export function RequestsSection({
     null,
   );
   const [editingRequestId, setEditingRequestId] = useState("");
+  const [editingQuestionId, setEditingQuestionId] = useState("");
+  const [questionForm, setQuestionForm] = useState({
+    prompt: "",
+    answer_type: "texto",
+    required: "true",
+    order: "1",
+    active: "true",
+  });
+  const activeQuestions = questions.filter((question) => question.active !== false);
   const requestOpenerRef = useRef<HTMLButtonElement | null>(null);
   const requestDialogCloseRef = useRef<HTMLButtonElement | null>(null);
   const editingRequest = requests.find(
@@ -698,10 +688,188 @@ export function RequestsSection({
               : "Revisa cada solicitud y acompaña a las familias interesadas."
         }
       />
+      {(canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.CREATE) ||
+        canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.UPDATE) ||
+        canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.DELETE)) && (
+        <section className="portal-section" aria-label="Administrar preguntas de adopción">
+          <h2 className="portal-subheading">Preguntas del formulario</h2>
+          {(canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.CREATE) ||
+            (Boolean(editingQuestionId) &&
+              canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.UPDATE))) && (
+            <form
+              className="portal-form portal-form--compact"
+              onSubmit={submit(async () => {
+                const saved = await send(
+                  editingQuestionId
+                    ? `/api/v1/form-questions/${editingQuestionId}/`
+                    : "/api/v1/form-questions/",
+                  editingQuestionId ? "PATCH" : "POST",
+                  {
+                    ...questionForm,
+                    required: questionForm.required === "true",
+                    active: questionForm.active === "true",
+                    order: Number(questionForm.order),
+                  },
+                  editingQuestionId
+                    ? "Pregunta actualizada."
+                    : "Pregunta agregada al formulario.",
+                );
+                if (saved !== false) {
+                  setEditingQuestionId("");
+                  setQuestionForm({
+                    prompt: "",
+                    answer_type: "texto",
+                    required: "true",
+                    order: String(activeQuestions.length + 1),
+                    active: "true",
+                  });
+                }
+              })}
+            >
+              <h3>{editingQuestionId ? "Editar pregunta" : "Agregar pregunta"}</h3>
+              <Field
+                label="Pregunta"
+                name="prompt"
+                value={questionForm.prompt}
+                onChange={(name, value) =>
+                  setQuestionForm((current) => ({ ...current, [name]: value }))
+                }
+                required
+              />
+              <Field
+                label="Tipo de respuesta"
+                name="answer_type"
+                value={questionForm.answer_type}
+                onChange={(name, value) =>
+                  setQuestionForm((current) => ({ ...current, [name]: value }))
+                }
+                options={[
+                  { value: "texto", label: "Texto" },
+                  { value: "si_no", label: "Sí / No" },
+                  { value: "numero", label: "Número" },
+                  { value: "opcion", label: "Opción" },
+                ]}
+              />
+              <Field
+                label="Obligatoria"
+                name="required"
+                value={questionForm.required}
+                onChange={(name, value) =>
+                  setQuestionForm((current) => ({ ...current, [name]: value }))
+                }
+                options={[
+                  { value: "true", label: "Sí" },
+                  { value: "false", label: "No" },
+                ]}
+              />
+              <Field
+                label="Orden"
+                name="order"
+                type="number"
+                value={questionForm.order}
+                onChange={(name, value) =>
+                  setQuestionForm((current) => ({ ...current, [name]: value }))
+                }
+                required
+              />
+              {editingQuestionId && (
+                <Field
+                  label="Estado"
+                  name="active"
+                  value={questionForm.active}
+                  onChange={(name, value) =>
+                    setQuestionForm((current) => ({ ...current, [name]: value }))
+                  }
+                  options={[
+                    { value: "true", label: "Activa" },
+                    { value: "false", label: "Archivada" },
+                  ]}
+                />
+              )}
+              <div className="portal-inline-actions">
+                <button className="portal-button" disabled={busy}>
+                  {editingQuestionId ? "Guardar cambios" : "Agregar pregunta"}
+                </button>
+                {editingQuestionId && (
+                  <button
+                    className="portal-button portal-button--secondary"
+                    type="button"
+                    onClick={() => {
+                      setEditingQuestionId("");
+                      setQuestionForm({
+                        prompt: "",
+                        answer_type: "texto",
+                        required: "true",
+                        order: String(activeQuestions.length + 1),
+                        active: "true",
+                      });
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
+          <div className="portal-grid">
+            {questions.map((question) => (
+              <DataCard
+                key={text(question.id)}
+                title={text(question.prompt)}
+                subtitle={`Orden ${text(question.order)} · ${text(question.answer_type)}`}
+                status={
+                  question.active === false
+                    ? "Archivada"
+                    : question.required === true
+                      ? "Obligatoria"
+                      : "Opcional"
+                }
+                actions={
+                  <div className="portal-inline-actions">
+                    {canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.UPDATE) && (
+                      <button
+                        className="portal-link"
+                        onClick={() => {
+                          setEditingQuestionId(text(question.id));
+                          setQuestionForm({
+                            prompt: text(question.prompt),
+                            answer_type: text(question.answer_type),
+                            required: String(question.required === true),
+                            order: text(question.order),
+                            active: String(question.active !== false),
+                          });
+                        }}
+                      >
+                        Editar
+                      </button>
+                    )}
+                    {question.active !== false &&
+                      canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.DELETE) && (
+                        <button
+                          className="portal-link portal-link--danger"
+                          onClick={() => {
+                            void send(
+                              `/api/v1/form-questions/${text(question.id)}/`,
+                              "DELETE",
+                              undefined,
+                              "Pregunta archivada; se conservaron las respuestas existentes.",
+                            );
+                          }}
+                        >
+                          Archivar
+                        </button>
+                      )}
+                  </div>
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
       {role === ROLES.ADOPTER && canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.CREATE) && (
         <form className="portal-form" onSubmit={submit(async () => {
           const petId = form.pet || requestedPetId;
-          const requiredQuestions = questions.filter((question) => question.required === true);
+          const requiredQuestions = activeQuestions.filter((question) => question.required === true);
           const missing = requiredQuestions.some((question) => !answers[text(question.id)]?.trim());
           if (missing) {
             setError("Completa todas las preguntas obligatorias antes de enviar.");
@@ -719,7 +887,7 @@ export function RequestsSection({
             editingRequestId ? "PATCH" : "POST",
             {
             pet: Number(petId),
-            answers: questions.map((question) => ({
+            answers: activeQuestions.map((question) => ({
               question: Number(question.id),
               value: answers[text(question.id)] ?? "",
             })),
@@ -734,11 +902,11 @@ export function RequestsSection({
         })}>
           <h2>{editingRequestId ? "Editar solicitud" : "Iniciar una solicitud"}</h2>
           <Field label="Mascota" name="pet" value={form.pet || requestedPetId} onChange={setValue} required options={pets.filter((pet) => isAvailablePet(pet) || text(pet.id) === editingPetId).map((pet) => ({ value: text(pet.id), label: `${text(pet.name)} · ${text(pet.species)}` }))} />
-          {questions.map((question) => (
+          {activeQuestions.map((question) => (
             <Field key={text(question.id)} label={`${text(question.prompt)}${question.required ? " *" : ""}`} name={text(question.id)} value={answers[text(question.id)] ?? ""} onChange={(name, value) => setAnswers((current) => ({ ...current, [name]: value }))} required={question.required === true} multiline={question.answer_type === "texto"} type={question.answer_type === "numero" ? "number" : "text"} />
           ))}
           <div className="portal-inline-actions">
-            <button className="portal-button" disabled={busy || questions.length === 0}>{busy ? "Guardando…" : editingRequestId ? "Guardar cambios" : "Enviar solicitud"}</button>
+            <button className="portal-button" disabled={busy || activeQuestions.length === 0}>{busy ? "Guardando…" : editingRequestId ? "Guardar cambios" : "Enviar solicitud"}</button>
             {editingRequestId && (
               <button className="portal-button portal-button--secondary" type="button" onClick={stopEditingRequest} disabled={busy}>
                 Dejar de editar
@@ -747,25 +915,13 @@ export function RequestsSection({
           </div>
         </form>
       )}
-      {(role === ROLES.SHELTER || role === ROLES.ADMIN) &&
-        (canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) ||
-          canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT)) && (
-          <form
-            className="portal-form portal-form--compact"
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <h2>Mensaje para la decisión</h2>
-            <Field
-              label="Nota para la familia (opcional)"
-              name="decisionMessage"
-              value={form.decisionMessage ?? ""}
-              onChange={setValue}
-            />
-            <p className="portal-form-hint">
-              Se incluirá al aprobar o rechazar una solicitud.
-            </p>
-          </form>
-        )}
+      {role === ROLES.SHELTER && (
+        <form className="portal-form portal-form--compact" onSubmit={(event) => event.preventDefault()}>
+          <h2>Mensaje para la decisión</h2>
+          <Field label="Nota para la familia (opcional)" name="decisionMessage" value={form.decisionMessage ?? ""} onChange={setValue} />
+          <p className="portal-form-hint">Se incluirá al aprobar o rechazar una solicitud.</p>
+        </form>
+      )}
       <div className="portal-grid">
         {requests.map((item) => {
           const pet =
@@ -826,43 +982,40 @@ export function RequestsSection({
                         </button>
                       </div>
                     )}
-                  {(role === ROLES.SHELTER || role === ROLES.ADMIN) &&
-                    requestStatus === "pendiente" && (
-                      <div className="portal-inline-actions">
-                        {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) && (
-                          <button
-                            className="portal-button"
-                            type="button"
-                            onClick={() =>
-                              void send(
-                                `/api/v1/adoption-requests/${text(item.id)}/approve/`,
-                                "POST",
-                                { message: form.decisionMessage ?? "" },
-                                "Solicitud aprobada.",
-                              )
-                            }
-                          >
-                            Aprobar
-                          </button>
-                        )}
-                        {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT) && (
-                          <button
-                            className="portal-button portal-button--secondary"
-                            type="button"
-                            onClick={() =>
-                              void send(
-                                `/api/v1/adoption-requests/${text(item.id)}/reject/`,
-                                "POST",
-                                { message: form.decisionMessage ?? "" },
-                                "Solicitud rechazada.",
-                              )
-                            }
-                          >
-                            Rechazar
-                          </button>
-                        )}
-                      </div>
-                    )}
+                  {role === ROLES.SHELTER && requestStatus === "pendiente" && (
+                    <div className="portal-inline-actions">
+                      {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.APPROVE) && (
+                        <button
+                          className="portal-button"
+                          onClick={() =>
+                            void send(
+                              `/api/v1/adoption-requests/${text(item.id)}/approve/`,
+                              "POST",
+                              { message: form.decisionMessage ?? "" },
+                              "Solicitud aprobada.",
+                            )
+                          }
+                        >
+                          Aprobar
+                        </button>
+                      )}
+                      {canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.REJECT) && (
+                        <button
+                          className="portal-button portal-button--secondary"
+                          onClick={() =>
+                            void send(
+                              `/api/v1/adoption-requests/${text(item.id)}/reject/`,
+                              "POST",
+                              { message: form.decisionMessage ?? "" },
+                              "Solicitud rechazada.",
+                            )
+                          }
+                        >
+                          Rechazar
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </>
               }
             />
@@ -873,7 +1026,6 @@ export function RequestsSection({
       {selectedRequest && (
         <div
           className="landing-pet-dialog__backdrop"
-          data-testid="request-dialog-backdrop"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setSelectedRequest(null);

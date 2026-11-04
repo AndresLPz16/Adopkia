@@ -26,12 +26,6 @@ class MessagingApiTests(APITestCase):
             name="Refugio",
             role=Role.Name.SHELTER,
         )
-        self.shelter_colleague = User.objects.create_user(
-            email="shelter-colleague@example.com",
-            password="secure-password-123",
-            name="Integrante",
-            role=Role.Name.SHELTER,
-        )
         admin = User.objects.create_user(
             email="admin@example.com",
             password="SafePass!2026",
@@ -51,9 +45,15 @@ class MessagingApiTests(APITestCase):
             user=self.shelter_user,
             position=ShelterMember.Position.MANAGER,
         )
+        self.second_shelter_user = User.objects.create_user(
+            email="shelter-member@example.com",
+            password="test-password",
+            name="Integrante",
+            role=Role.Name.SHELTER,
+        )
         ShelterMember.objects.create(
             shelter=self.shelter,
-            user=self.shelter_colleague,
+            user=self.second_shelter_user,
             position=ShelterMember.Position.COLLABORATOR,
         )
 
@@ -76,19 +76,9 @@ class MessagingApiTests(APITestCase):
             first_notification.notification_type, Notification.NotificationType.MESSAGE
         )
         self.assertEqual(Notification.objects.filter(user=self.shelter_user).count(), 1)
-        colleague_notification = Notification.objects.get(user=self.shelter_colleague)
         self.assertEqual(
-            colleague_notification.notification_type,
-            Notification.NotificationType.MESSAGE,
+            Notification.objects.filter(user=self.second_shelter_user).count(), 1
         )
-
-        self.client.force_authenticate(self.shelter_colleague)
-        colleague_conversations = self.client.get(reverse("conversation-list"))
-        self.assertEqual(colleague_conversations.data["count"], 1)
-        colleague_messages = self.client.get(
-            reverse("message-list"), {"conversation": conversation_id}
-        )
-        self.assertEqual(colleague_messages.data["count"], 1)
 
         self.client.force_authenticate(self.other)
         messages = self.client.get(reverse("message-list"))

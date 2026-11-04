@@ -231,9 +231,16 @@ class RolePermissionApiTests(APITestCase):
         adopter_data = next(
             role for role in response.data["roles"] if role["name"] == "adoptante"
         )
+        admin_data = next(
+            role for role in response.data["roles"] if role["name"] == "administrador"
+        )
         self.assertIn(
             {"resource": "pets", "action": "read"},
             adopter_data["permissions"],
+        )
+        self.assertIn(
+            {"resource": "vaccines", "action": "manage"},
+            admin_data["permissions"],
         )
 
     def test_only_administrator_can_replace_role_permissions(self):
@@ -323,7 +330,7 @@ class RolePermissionApiTests(APITestCase):
             ).exists()
         )
 
-    def test_platform_superadmin_cannot_remove_admin_shelter_verification(self):
+    def test_administrator_cannot_remove_its_shelter_verification_permission(self):
         self.admin.is_platform_superadmin = True
         self.admin.save(update_fields=("is_platform_superadmin",))
         self.client.force_authenticate(self.admin)
@@ -333,7 +340,10 @@ class RolePermissionApiTests(APITestCase):
                 "role-permissions-update",
                 kwargs={"role_name": Role.Name.ADMIN},
             ),
-            [{"resource": "users", "action": "manage"}],
+            [
+                {"resource": "users", "action": "manage"},
+                {"resource": "dashboard", "action": "read"},
+            ],
             format="json",
         )
 
@@ -621,6 +631,7 @@ class RolePermissionApiTests(APITestCase):
             ),
             [
                 {"resource": "users", "action": "manage"},
+                {"resource": "shelters", "action": "verify"},
                 {"resource": "dashboard", "action": "read"},
             ],
             format="json",

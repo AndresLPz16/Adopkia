@@ -26,6 +26,8 @@ import {
   AdoptionsSection,
   MessagesSection,
   RecordsSection,
+  VaccineCatalogSection,
+  VeterinariansSection,
 } from "./portal/CareSections";
 import { SheltersSection, UsersSection } from "./portal/ManagementSections";
 import { loadSectionData } from "./portal/loadSectionData";
@@ -40,10 +42,12 @@ const roleNames: Record<string, string> = {
 const sectionNames: Record<string, string> = {
   dashboard: "Inicio",
   pets: "Mascotas",
+  vaccines: "Catálogo de vacunas",
   requests: "Solicitudes",
   adoptions: "Adopciones y cuidados",
   messages: "Mensajes",
   records: "Atención veterinaria",
+  veterinarians: "Perfiles veterinarios",
   shelters: "Refugios y equipo",
   notifications: "Notificaciones",
   profile: "Mi perfil",
@@ -72,6 +76,7 @@ const roleSectionNames: Record<string, Record<string, string>> = {
     adoptions: "Adopciones y cuidados",
     messages: "Mensajes",
     records: "Atención veterinaria",
+    veterinarians: "Perfiles veterinarios",
     notifications: "Notificaciones",
     users: "Usuarios y roles",
     permissions: "Permisos",
@@ -118,20 +123,31 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     dashboard: [["DASHBOARD", "READ"]],
     profile: [["PROFILE", "READ"]],
     pets: [["PETS", "READ"]],
+    vaccines: [["VACCINES", "READ"]],
     requests: [["ADOPTION_REQUESTS", "READ"]],
     adoptions: [["ADOPTIONS", "READ"]],
     messages: [["CONVERSATIONS", "READ"], ["MESSAGES", "READ"]],
     records: [["MEDICAL_RECORDS", "READ"]],
+    veterinarians: [["VETERINARIANS", "READ"]],
     shelters: [["SHELTERS", "READ"]],
     notifications: [["NOTIFICATIONS", "READ"]],
     users: [["USERS", "READ"]],
     statistics: [["STATISTICS", "READ"]],
     permissions: [["USERS", "MANAGE"]],
   };
-  const hasAccess = (key: string) =>
-    (sectionAccess[key] ?? []).every(([resource, action]) =>
+  const hasAccess = (key: string) => {
+    if (key === "requests") {
+      return (
+        can(user, RESOURCES.ADOPTION_REQUESTS, ACTIONS.READ, permissions ?? {}) ||
+        can(user, RESOURCES.FORM_QUESTIONS, ACTIONS.CREATE, permissions ?? {}) ||
+        can(user, RESOURCES.FORM_QUESTIONS, ACTIONS.UPDATE, permissions ?? {}) ||
+        can(user, RESOURCES.FORM_QUESTIONS, ACTIONS.DELETE, permissions ?? {})
+      );
+    }
+    return (sectionAccess[key] ?? []).every(([resource, action]) =>
       can(user, RESOURCES[resource], ACTIONS[action], permissions ?? {}),
     );
+  };
   const canDo = (resource: Resource, action: Action) =>
     can(user, resource, action, permissions ?? {});
 
@@ -177,6 +193,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       return [
         "dashboard",
         "records",
+        "veterinarians",
         "adoptions",
         "notifications",
         "profile",
@@ -198,10 +215,12 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     "dashboard",
     "profile",
     "pets",
+    "vaccines",
     "requests",
     "adoptions",
     "messages",
     "records",
+    "veterinarians",
     "shelters",
     "notifications",
     "users",
@@ -239,6 +258,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
             "/api/v1/notifications/",
           ],
     pets: ["/api/v1/pets/", "/api/v1/shelters/", "/api/v1/breeds/", "/api/v1/shelter-members/"],
+    vaccines: ["/api/v1/vaccines/", "/api/v1/species/"],
     requests: ["/api/v1/adoption-requests/", "/api/v1/form-questions/"],
     adoptions: [
       "/api/v1/adoptions/",
@@ -252,6 +272,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       "/api/v1/vaccines/",
       "/api/v1/veterinarians/",
     ],
+    veterinarians: ["/api/v1/veterinarians/"],
     shelters: ["/api/v1/shelters/", "/api/v1/shelter-members/"],
     notifications: ["/api/v1/notifications/"],
     profile: ["/api/v1/auth/me/"],
@@ -290,7 +311,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       "/api/v1/statistics/adoptions/": RESOURCES.STATISTICS,
     };
     const allowedEndpoints = endpoints.filter((endpoint) => {
-      if (["/api/v1/form-questions/", "/api/v1/vaccines/"].includes(endpoint)) {
+      if (["/api/v1/form-questions/", "/api/v1/vaccines/", "/api/v1/species/"].includes(endpoint)) {
         return true;
       }
       const resource = endpointResources[endpoint];
@@ -343,71 +364,6 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     void reload();
   }, [reload]);
-
-  useEffect(() => {
-    if (section !== "requests" || role !== ROLES.SHELTER) return;
-
-    let refreshing = false;
-    const intervalId = window.setInterval(() => {
-      if (refreshing) return;
-      refreshing = true;
-      void reload().finally(() => {
-        refreshing = false;
-      });
-    }, 5000);
-    return () => window.clearInterval(intervalId);
-  }, [reload, role, section]);
-
-  useEffect(() => {
-    if (section !== "messages" || !selectedConversation) return;
-
-    const controller = new AbortController();
-    let active = true;
-    let refreshing = false;
-    const refreshMessages = async () => {
-      if (refreshing) return;
-      refreshing = true;
-      try {
-        const response = await request(
-          `/api/v1/messages/?conversation=${encodeURIComponent(selectedConversation)}`,
-          { signal: controller.signal },
-        );
-        const messageData = await responseData(response);
-        if (active) {
-          setData((current) => ({
-            ...current,
-            "/api/v1/messages/": messageData,
-          }));
-          setError((current) =>
-            current.startsWith("No se pudieron actualizar los mensajes.")
-              ? ""
-              : current,
-          );
-        }
-      } catch (caught) {
-        if (active) {
-          setError(
-            `No se pudieron actualizar los mensajes. ${
-              caught instanceof Error
-                ? caught.message
-                : "Inténtalo de nuevo en unos segundos."
-            }`,
-          );
-        }
-      } finally {
-        refreshing = false;
-      }
-    };
-    const intervalId = window.setInterval(() => {
-      void refreshMessages();
-    }, 5000);
-
-    return () => {
-      active = false;
-      controller.abort();
-      window.clearInterval(intervalId);
-    };
-  }, [request, section, selectedConversation]);
 
   useEffect(() => {
     setForm({});
@@ -562,6 +518,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const messages = rows(data["/api/v1/messages/"]);
   const records = rows(data["/api/v1/medical-records/"]);
   const vaccines = rows(data["/api/v1/vaccines/"]);
+  const species = rows(data["/api/v1/species/"]);
   const veterinarians = rows(data["/api/v1/veterinarians/"]);
   const members = rows(data["/api/v1/shelter-members/"]);
   const notifications = rows(data["/api/v1/notifications/"]);
@@ -749,6 +706,17 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                     loading={loading}
                     busy={busy}
                   />
+                : section === "veterinarians"
+                  ? <VeterinariansSection veterinarians={veterinarians} loading={loading} />
+                    : section === "vaccines"
+                      ? <VaccineCatalogSection
+                          vaccines={vaccines}
+                          species={species}
+                          canDo={canDo}
+                          send={send}
+                          loading={loading}
+                          busy={busy}
+                        />
                 : section === "shelters"
                   ? <SheltersSection
                       role={role}

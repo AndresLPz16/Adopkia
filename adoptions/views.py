@@ -7,7 +7,11 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.serializers import CharField, DateField, Serializer
 
-from myproject.permissions import RolePermissionRequired, user_can_manage_shelter
+from myproject.permissions import (
+    RolePermissionRequired,
+    user_can_manage_shelter,
+    user_has_role_permission,
+)
 from users.models import Role
 
 from .models import Adoption, AdoptionRequest, FormQuestion, FollowUp
@@ -21,6 +25,17 @@ from .serializers import (
 from .services import cancel_adoption_request, decide_adoption_request, return_adoption
 
 
+class FormQuestionPermissionRequired(RolePermissionRequired):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS and request.user.is_authenticated:
+            if any(
+                user_has_role_permission(request.user, "formQuestions", action)
+                for action in ("create", "update", "delete")
+            ):
+                return True
+        return super().has_permission(request, view)
+
+
 class DecisionSerializer(Serializer):
     message = CharField(required=False, allow_blank=True, max_length=2000)
 
@@ -30,10 +45,25 @@ class ReturnSerializer(Serializer):
     return_date = DateField(required=False)
 
 
-class FormQuestionViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = FormQuestion.objects.filter(active=True)
+class FormQuestionViewSet(viewsets.ModelViewSet):
     serializer_class = FormQuestionSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (FormQuestionPermissionRequired,)
+    rbac_resource = "formQuestions"
+    rbac_allow_anonymous_read = True
+
+    def get_queryset(self):
+        queryset = FormQuestion.objects.all()
+        user = self.request.user
+        if not user.is_authenticated or not any(
+            user_has_role_permission(user, "formQuestions", action)
+            for action in ("create", "update", "delete")
+        ):
+            return queryset.filter(active=True)
+        return queryset
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save(update_fields=("active",))
 
 
 class AdoptionRequestViewSet(viewsets.ModelViewSet):

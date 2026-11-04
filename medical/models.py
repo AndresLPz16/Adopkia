@@ -115,6 +115,7 @@ class Reminder(models.Model):
         max_length=25, choices=ReminderType.choices, db_column="tipo"
     )
     scheduled_date = models.DateField(db_column="fecha_programada")
+    notes = models.TextField(blank=True, default="", db_column="notas")
     status = EnumField(
         max_length=20, choices=Status.choices, default=Status.PENDING, db_column="estado"
     )

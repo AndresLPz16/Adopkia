@@ -361,6 +361,7 @@ CREATE TABLE recordatorio (
   id_historial       INT UNSIGNED NULL COMMENT 'Atención que cumplió el recordatorio',
   tipo               ENUM('vacuna','control_veterinario','checkin') NOT NULL,
   fecha_programada   DATE         NOT NULL,
+  notas              TEXT         NOT NULL,
   estado             ENUM('pendiente','notificado','cumplido','vencido','cancelado')
                      NOT NULL DEFAULT 'pendiente',
   PRIMARY KEY (id_recordatorio),

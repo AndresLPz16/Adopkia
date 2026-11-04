@@ -6,162 +6,202 @@ import type { PortalDataRow, PortalSender, PortalSubmit } from "./shared";
 
 type PermissionCheck = (resource: Resource, action: Action) => boolean;
 
-function currentDate(): string {
-  const date = new Date();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function isActiveAdoption(adoption: PortalDataRow): boolean {
-  return text(adoption.status_code || adoption.status)
-    .trim()
-    .toLocaleLowerCase() === "activa";
-}
-
-function FollowUpForm({
-  adoptionId,
-  submit,
+export function VaccineCatalogSection({
+  vaccines,
+  species,
+  canDo,
   send,
+  loading,
   busy,
 }: {
-  adoptionId: string;
-  submit: PortalSubmit;
+  vaccines: PortalDataRow[];
+  species: PortalDataRow[];
+  canDo: PermissionCheck;
   send: PortalSender;
+  loading: boolean;
   busy: boolean;
 }) {
-  const [date, setDate] = useState(currentDate);
-  const [wellbeing, setWellbeing] = useState("bueno");
-  const [observations, setObservations] = useState("");
+  const [editingId, setEditingId] = useState("");
+  const [draft, setDraft] = useState({
+    species: "",
+    name: "",
+    description: "",
+    booster_interval_days: "",
+  });
+  const canCreate = canDo(RESOURCES.VACCINES, ACTIONS.CREATE);
+  const canUpdate = canDo(RESOURCES.VACCINES, ACTIONS.UPDATE);
+
+  const startEditing = (vaccine?: PortalDataRow) => {
+    setEditingId(vaccine ? text(vaccine.id) : "new");
+    setDraft({
+      species: text(vaccine?.species),
+      name: text(vaccine?.name),
+      description: text(vaccine?.description),
+      booster_interval_days: text(vaccine?.booster_interval_days),
+    });
+  };
 
   return (
-    <form
-      className="portal-card-form"
-      aria-label={`Registrar seguimiento de la adopción ${adoptionId}`}
-      onSubmit={submit(async () => {
-        const saved = await send(
-          "/api/v1/follow-ups/",
-          "POST",
-          { adoption: Number(adoptionId), date, wellbeing, observations },
-          "Seguimiento registrado.",
-        );
-        if (saved !== false) {
-          setDate(currentDate());
-          setWellbeing("bueno");
-          setObservations("");
-        }
-      })}
-    >
-      <h3>Nuevo seguimiento</h3>
-      <Field
-        label="Fecha del seguimiento"
-        name={`follow-up-date-${adoptionId}`}
-        type="date"
-        value={date}
-        onChange={(_name, value) => setDate(value)}
-        required
+    <>
+      <SectionTitle
+        eyebrow="Atención veterinaria"
+        title="Catálogo de vacunas"
+        description="Administra las vacunas disponibles para registrar en las mascotas."
       />
-      <Field
-        label="Bienestar"
-        name={`follow-up-wellbeing-${adoptionId}`}
-        value={wellbeing}
-        onChange={(_name, value) => setWellbeing(value)}
-        options={[
-          { value: "excelente", label: "Excelente" },
-          { value: "bueno", label: "Bueno" },
-          { value: "regular", label: "Regular" },
-          { value: "preocupante", label: "Requiere atención" },
-        ]}
-      />
-      <Field
-        label="Observaciones del seguimiento"
-        name={`follow-up-observations-${adoptionId}`}
-        value={observations}
-        onChange={(_name, value) => setObservations(value)}
-        multiline
-      />
-      <button className="portal-button" disabled={busy}>
-        Guardar seguimiento
-      </button>
-    </form>
+      {canCreate && !editingId && (
+        <button type="button" className="portal-link" onClick={() => startEditing()}>
+          Agregar vacuna
+        </button>
+      )}
+      {editingId && (
+        <form
+          className="portal-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const payload = {
+              species: Number(draft.species),
+              name: draft.name,
+              description: draft.description || null,
+              booster_interval_days: draft.booster_interval_days
+                ? Number(draft.booster_interval_days)
+                : null,
+            };
+            const endpoint = editingId === "new"
+              ? "/api/v1/vaccines/"
+              : `/api/v1/vaccines/${editingId}/`;
+            void send(
+              endpoint,
+              editingId === "new" ? "POST" : "PATCH",
+              payload,
+              editingId === "new" ? "Vacuna agregada." : "Vacuna actualizada.",
+            ).then((saved) => {
+              if (saved) setEditingId("");
+            });
+          }}
+        >
+          <h2>{editingId === "new" ? "Agregar vacuna" : "Editar vacuna"}</h2>
+          <Field
+            label="Especie"
+            name="species"
+            value={draft.species}
+            onChange={(name, value) => setDraft((current) => ({ ...current, [name]: value }))}
+            required
+            options={species.map((item) => ({ value: text(item.id), label: text(item.name) }))}
+          />
+          <Field
+            label="Nombre"
+            name="name"
+            value={draft.name}
+            onChange={(name, value) => setDraft((current) => ({ ...current, [name]: value }))}
+            required
+          />
+          <Field
+            label="Descripción"
+            name="description"
+            value={draft.description}
+            onChange={(name, value) => setDraft((current) => ({ ...current, [name]: value }))}
+            multiline
+          />
+          <Field
+            label="Intervalo de refuerzo (días)"
+            name="booster_interval_days"
+            type="number"
+            value={draft.booster_interval_days}
+            onChange={(name, value) => setDraft((current) => ({ ...current, [name]: value }))}
+          />
+          <button type="submit" disabled={busy}>
+            {busy ? "Guardando…" : "Guardar vacuna"}
+          </button>
+          <button type="button" disabled={busy} onClick={() => setEditingId("")}>
+            Cancelar
+          </button>
+        </form>
+      )}
+      <div className="portal-grid">
+        {vaccines.map((vaccine) => (
+          <DataCard
+            key={text(vaccine.id)}
+            title={text(vaccine.name)}
+            subtitle={text(vaccine.species_name)}
+            actions={(canUpdate || canDo(RESOURCES.VACCINES, ACTIONS.DELETE)) ? (
+              <div className="portal-inline-actions">
+                {canUpdate && (
+                  <button
+                    type="button"
+                    className="portal-link"
+                    onClick={() => startEditing(vaccine)}
+                  >
+                    Editar vacuna
+                  </button>
+                )}
+                {canDo(RESOURCES.VACCINES, ACTIONS.DELETE) && (
+                  <button
+                    type="button"
+                    className="portal-link"
+                    disabled={busy}
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar la vacuna ${text(vaccine.name)}?`)) {
+                        void send(
+                          `/api/v1/vaccines/${text(vaccine.id)}/`,
+                          "DELETE",
+                          undefined,
+                          "Vacuna eliminada.",
+                        );
+                      }
+                    }}
+                  >
+                    Eliminar vacuna
+                  </button>
+                )}
+              </div>
+            ) : undefined}
+          >
+            {Boolean(vaccine.description) && <p>{text(vaccine.description)}</p>}
+            {vaccine.booster_interval_days != null && (
+              <p>Refuerzo cada {text(vaccine.booster_interval_days)} días</p>
+            )}
+          </DataCard>
+        ))}
+      </div>
+      {!loading && vaccines.length === 0 && (
+        <EmptyState>Aún no hay vacunas en el catálogo.</EmptyState>
+      )}
+    </>
   );
 }
 
-function AdoptionReturnAction({
-  adoptionId,
-  submit,
-  send,
-  busy,
+export function VeterinariansSection({
+  veterinarians,
+  loading,
 }: {
-  adoptionId: string;
-  submit: PortalSubmit;
-  send: PortalSender;
-  busy: boolean;
+  veterinarians: PortalDataRow[];
+  loading: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [returnDate, setReturnDate] = useState(currentDate);
-  const [reason, setReason] = useState("");
-
-  if (!isOpen) {
-    return (
-      <button
-        className="portal-button portal-button--secondary"
-        type="button"
-        onClick={() => setIsOpen(true)}
-      >
-        Registrar devolución
-      </button>
-    );
-  }
-
   return (
-    <form
-      className="portal-card-form"
-      aria-label={`Registrar devolución de la adopción ${adoptionId}`}
-      onSubmit={submit(async () => {
-        const returned = await send(
-          `/api/v1/adoptions/${adoptionId}/return/`,
-          "POST",
-          { reason, return_date: returnDate },
-          "Devolución registrada.",
-        );
-        if (returned !== false) {
-          setIsOpen(false);
-          setReason("");
-        }
-      })}
-    >
-      <h3>Registrar devolución</h3>
-      <Field
-        label="Fecha de devolución"
-        name={`return-date-${adoptionId}`}
-        type="date"
-        value={returnDate}
-        onChange={(_name, value) => setReturnDate(value)}
-        required
+    <>
+      <SectionTitle
+        eyebrow="Directorio profesional"
+        title="Perfiles veterinarios"
+        description="Consulta los profesionales veterinarios registrados en Adopkia."
       />
-      <Field
-        label="Motivo de la devolución"
-        name={`return-reason-${adoptionId}`}
-        value={reason}
-        onChange={(_name, value) => setReason(value)}
-        multiline
-        required
-      />
-      <div className="portal-inline-actions">
-        <button className="portal-button" disabled={busy}>
-          Confirmar devolución
-        </button>
-        <button
-          className="portal-button portal-button--secondary"
-          type="button"
-          disabled={busy}
-          onClick={() => setIsOpen(false)}
-        >
-          Cancelar
-        </button>
+      <div className="portal-grid">
+        {veterinarians.map((veterinarian) => (
+          <DataCard
+            key={text(veterinarian.id)}
+            title={text(veterinarian.user_name) || `Cuenta #${text(veterinarian.user)}`}
+            subtitle={`Tarjeta profesional: ${text(veterinarian.professional_card)}`}
+          >
+            {Boolean(veterinarian.clinic) && <p>Clínica: {text(veterinarian.clinic)}</p>}
+            {Boolean(veterinarian.specialty) && (
+              <p>Especialidad: {text(veterinarian.specialty)}</p>
+            )}
+          </DataCard>
+        ))}
       </div>
-    </form>
+      {!loading && veterinarians.length === 0 && (
+        <EmptyState>Aún no hay perfiles veterinarios registrados.</EmptyState>
+      )}
+    </>
   );
 }
 
@@ -194,47 +234,44 @@ export function AdoptionsSection({
   loading: boolean;
   busy: boolean;
 }) {
+  const [editingReminderId, setEditingReminderId] = useState("");
+  const [reminderDraft, setReminderDraft] = useState({
+    scheduled_date: "",
+    notes: "",
+    status: "",
+  });
   return (
     <>
       <SectionTitle eyebrow="Acompañamiento" title="Adopciones y cuidados" description="Consulta adopciones activas, recordatorios y seguimientos de bienestar." />
       <h2 className="portal-subheading">Adopciones</h2>
       <div className="portal-grid">
-        {adoptions.map((item) => {
-          const adoptionId = text(item.id);
-          const active = isActiveAdoption(item);
-          return (
+        {adoptions.map((item) => (
           <DataCard key={text(item.id)} title={text(item.pet_name)} subtitle={`${text(item.applicant)} · desde ${text(item.adoption_date)}`} status={text(item.status)}>
-            {Boolean(item.return_date) && (
+            {isPlatformSuperadmin && Boolean(item.return_date) && (
               <p>
                 <strong>Fecha de devolución:</strong> {text(item.return_date)}
               </p>
             )}
-            {Boolean(item.return_reason) && (
+            {isPlatformSuperadmin && Boolean(item.return_reason) && (
               <p>
                 <strong>Motivo de devolución:</strong> {text(item.return_reason)}
               </p>
             )}
-            {role === ROLES.SHELTER &&
-              active &&
-              canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
-                <FollowUpForm
-                  adoptionId={adoptionId}
-                  submit={submit}
-                  send={send}
-                  busy={busy}
-                />
-              )}
-            {(role === ROLES.SHELTER || role === ROLES.ADMIN) &&
-              active &&
-              canDo(RESOURCES.ADOPTIONS, ACTIONS.RETURN) && (
-                <AdoptionReturnAction
-                  adoptionId={adoptionId}
-                  submit={submit}
-                  send={send}
-                  busy={busy}
-                />
+            {role === ROLES.SHELTER && item.status === "activa" && canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
+              <form className="portal-card-form" onSubmit={submit(async () => {
+                await send("/api/v1/follow-ups/", "POST", {
+                  adoption: Number(item.id),
+                  date: form.date || new Date().toISOString().slice(0, 10),
+                  wellbeing: form.wellbeing || "bueno",
+                  observations: form.observations || "",
+                }, "Seguimiento registrado.");
+              })}>
+                <Field label="Bienestar" name="wellbeing" value={form.wellbeing ?? ""} onChange={setValue} options={[{ value: "excelente", label: "Excelente" }, { value: "bueno", label: "Bueno" }, { value: "regular", label: "Regular" }, { value: "preocupante", label: "Requiere atención" }]} />
+                <Field label="Observaciones" name="observations" value={form.observations ?? ""} onChange={setValue} multiline />
+                <button className="portal-link">Añadir seguimiento</button>
+              </form>
             )}
-            {active &&
+            {item.status === "activa" &&
               role !== ROLES.VETERINARIAN &&
               !isPlatformSuperadmin &&
               canDo(RESOURCES.REMINDERS, ACTIONS.CREATE) && (
@@ -253,8 +290,7 @@ export function AdoptionsSection({
               </form>
             )}
           </DataCard>
-          );
-        })}
+        ))}
       </div>
       <h2 className="portal-subheading">Seguimientos</h2>
       <div className="portal-grid">
@@ -266,12 +302,12 @@ export function AdoptionsSection({
             <DataCard
               key={text(item.id)}
               title={
-                adoption
+                isPlatformSuperadmin && adoption
                   ? `Seguimiento de ${text(adoption.pet_name)}`
                   : `Adopción #${text(item.adoption)}`
               }
               subtitle={
-                adoption
+                isPlatformSuperadmin && adoption
                   ? `${text(adoption.applicant)} · ${text(item.date)}`
                   : text(item.date)
               }
@@ -293,12 +329,112 @@ export function AdoptionsSection({
               key={text(item.id)}
               title={text(item.vaccine_name) || labelStatus(item.reminder_type)}
               subtitle={
-                adoption
+                isPlatformSuperadmin && adoption
                   ? `${text(adoption.pet_name)} · ${text(adoption.applicant)} · ${text(item.scheduled_date)}`
                   : `Mascota #${text(item.pet)} · ${text(item.scheduled_date)}`
               }
               status={text(item.status)}
-            />
+              actions={
+                canDo(RESOURCES.REMINDERS, ACTIONS.UPDATE) ? (
+                  <div className="portal-inline-actions">
+                    {text(item.status) !== "cumplido" && (
+                      <button
+                        className="portal-link"
+                        disabled={busy}
+                        onClick={() =>
+                          void send(
+                            `/api/v1/reminders/${text(item.id)}/`,
+                            "PATCH",
+                            { status: "cumplido" },
+                            "Recordatorio marcado como realizado.",
+                          )
+                        }
+                      >
+                        Marcar realizado
+                      </button>
+                    )}
+                    <button
+                      className="portal-link"
+                      onClick={() => {
+                        setEditingReminderId(text(item.id));
+                        setReminderDraft({
+                          scheduled_date: text(item.scheduled_date),
+                          notes: text(item.notes),
+                          status: text(item.status),
+                        });
+                      }}
+                    >
+                      {editingReminderId === text(item.id) ? "Editando" : "Editar"}
+                    </button>
+                  </div>
+                ) : undefined
+              }
+            >
+              {editingReminderId === text(item.id) ? (
+                <form
+                  className="portal-card-form"
+                  onSubmit={submit(async () => {
+                    const saved = await send(
+                      `/api/v1/reminders/${text(item.id)}/`,
+                      "PATCH",
+                      reminderDraft,
+                      "Recordatorio actualizado.",
+                    );
+                    if (saved !== false) setEditingReminderId("");
+                  })}
+                >
+                  <Field
+                    label="Fecha programada"
+                    name="scheduled_date"
+                    type="date"
+                    value={reminderDraft.scheduled_date}
+                    onChange={(name, value) =>
+                      setReminderDraft((current) => ({ ...current, [name]: value }))
+                    }
+                    required
+                  />
+                  <Field
+                    label="Estado"
+                    name="status"
+                    value={reminderDraft.status}
+                    onChange={(name, value) =>
+                      setReminderDraft((current) => ({ ...current, [name]: value }))
+                    }
+                    options={[
+                      { value: "pendiente", label: "Pendiente" },
+                      { value: "notificado", label: "Notificado" },
+                      { value: "cumplido", label: "Realizado" },
+                      { value: "vencido", label: "Vencido" },
+                      { value: "cancelado", label: "Cancelado" },
+                    ]}
+                  />
+                  <Field
+                    label="Notas"
+                    name="notes"
+                    value={reminderDraft.notes}
+                    onChange={(name, value) =>
+                      setReminderDraft((current) => ({ ...current, [name]: value }))
+                    }
+                    multiline
+                  />
+                  <div className="portal-inline-actions">
+                    <button className="portal-button" disabled={busy}>
+                      Guardar cambios
+                    </button>
+                    <button
+                      className="portal-button portal-button--secondary"
+                      type="button"
+                      onClick={() => setEditingReminderId("")}
+                      disabled={busy}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                Boolean(item.notes) && <p>{text(item.notes)}</p>
+              )}
+            </DataCard>
           );
         })}
       </div>
@@ -424,6 +560,14 @@ export function RecordsSection({
   busy: boolean;
 }) {
   const myProfile = veterinarians.find((item) => text(item.user) === text(userId));
+  const [editingRecordId, setEditingRecordId] = useState("");
+  const [recordDraft, setRecordDraft] = useState({
+    pet: "",
+    date: "",
+    record_type: "",
+    vaccine: "",
+    description: "",
+  });
   return (
     <>
       <SectionTitle eyebrow="Salud animal" title="Atención veterinaria" description="Completa tu perfil profesional y registra atenciones clínicas para las mascotas." />
@@ -476,7 +620,166 @@ export function RecordsSection({
       )}
       <h2 className="portal-subheading">Historial reciente</h2>
       <div className="portal-grid">
-        {records.map((item) => <DataCard key={text(item.id)} title={labelStatus(item.record_type)} subtitle={`Mascota #${text(item.pet)} · ${text(item.date)}`}>{Boolean(item.description) && <p>{text(item.description)}</p>}{Boolean(item.veterinarian_name) && <small>Atendió: {text(item.veterinarian_name)}</small>}</DataCard>)}
+        {records.map((item) => (
+          <DataCard
+            key={text(item.id)}
+            title={labelStatus(item.record_type)}
+            subtitle={`${text(item.pet_name) || `Mascota #${text(item.pet)}`} · ${text(item.date)}`}
+            actions={
+              !isPlatformSuperadmin &&
+              (canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.UPDATE) ||
+                canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.DELETE)) ? (
+                <div className="portal-inline-actions">
+                  {canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.UPDATE) && (
+                    <button
+                      className="portal-link"
+                      onClick={() => {
+                        setEditingRecordId(text(item.id));
+                        setRecordDraft({
+                          pet: text(item.pet),
+                          date: text(item.date),
+                          record_type: text(item.record_type),
+                          vaccine: text(item.vaccine),
+                          description: text(item.description),
+                        });
+                      }}
+                    >
+                      Editar atención
+                    </button>
+                  )}
+                  {canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.DELETE) && (
+                    <button
+                      className="portal-link portal-link--danger"
+                      onClick={() => {
+                        if (window.confirm("¿Eliminar este registro del historial médico?")) {
+                          void send(
+                            `/api/v1/medical-records/${text(item.id)}/`,
+                            "DELETE",
+                            undefined,
+                            "Registro médico eliminado.",
+                          );
+                        }
+                      }}
+                    >
+                      Eliminar atención
+                    </button>
+                  )}
+                </div>
+              ) : undefined
+            }
+          >
+            {editingRecordId === text(item.id) ? (
+              <form
+                className="portal-card-form"
+                onSubmit={submit(async () => {
+                  const saved = await send(
+                    `/api/v1/medical-records/${text(item.id)}/`,
+                    "PATCH",
+                    {
+                      pet: Number(recordDraft.pet),
+                      date: recordDraft.date,
+                      record_type: recordDraft.record_type,
+                      vaccine: recordDraft.vaccine
+                        ? Number(recordDraft.vaccine)
+                        : null,
+                      description: recordDraft.description,
+                    },
+                    "Atención actualizada.",
+                  );
+                  if (saved !== false) setEditingRecordId("");
+                })}
+              >
+                <Field
+                  label="Mascota"
+                  name="pet"
+                  value={recordDraft.pet}
+                  onChange={(name, value) =>
+                    setRecordDraft((current) => ({ ...current, [name]: value }))
+                  }
+                  required
+                  options={pets.map((pet) => ({
+                    value: text(pet.id),
+                    label: `${text(pet.name)} · ${text(pet.species)}`,
+                  }))}
+                />
+                <Field
+                  label="Tipo de atención"
+                  name="record_type"
+                  value={recordDraft.record_type}
+                  onChange={(name, value) =>
+                    setRecordDraft((current) => ({
+                      ...current,
+                      record_type: value,
+                      vaccine: value === "vacunacion" ? current.vaccine : "",
+                    }))
+                  }
+                  required
+                  options={[
+                    { value: "consulta", label: "Consulta" },
+                    { value: "vacunacion", label: "Vacunación" },
+                    { value: "desparasitacion", label: "Desparasitación" },
+                    { value: "cirugia", label: "Cirugía" },
+                    { value: "control", label: "Control" },
+                    { value: "otro", label: "Otro" },
+                  ]}
+                />
+                <Field
+                  label="Fecha"
+                  name="date"
+                  type="date"
+                  value={recordDraft.date}
+                  onChange={(name, value) =>
+                    setRecordDraft((current) => ({ ...current, [name]: value }))
+                  }
+                  required
+                />
+                {recordDraft.record_type === "vacunacion" && (
+                  <Field
+                    label="Vacuna (opcional)"
+                    name="vaccine"
+                    value={recordDraft.vaccine}
+                    onChange={(name, value) =>
+                      setRecordDraft((current) => ({ ...current, [name]: value }))
+                    }
+                    options={vaccines.map((vaccine) => ({
+                      value: text(vaccine.id),
+                      label: text(vaccine.name),
+                    }))}
+                  />
+                )}
+                <Field
+                  label="Descripción y recomendaciones"
+                  name="description"
+                  value={recordDraft.description}
+                  onChange={(name, value) =>
+                    setRecordDraft((current) => ({ ...current, [name]: value }))
+                  }
+                  multiline
+                />
+                <div className="portal-inline-actions">
+                  <button className="portal-button" disabled={busy}>
+                    Guardar cambios
+                  </button>
+                  <button
+                    className="portal-button portal-button--secondary"
+                    type="button"
+                    onClick={() => setEditingRecordId("")}
+                    disabled={busy}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                {Boolean(item.description) && <p>{text(item.description)}</p>}
+                {Boolean(item.veterinarian_name) && (
+                  <small>Atendió: {text(item.veterinarian_name)}</small>
+                )}
+              </>
+            )}
+          </DataCard>
+        ))}
       </div>
       {!loading && records.length === 0 && <EmptyState>No hay registros médicos disponibles.</EmptyState>}
     </>

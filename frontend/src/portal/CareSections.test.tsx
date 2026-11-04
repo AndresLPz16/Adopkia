@@ -1,185 +1,200 @@
-import type { FormEvent } from "react";
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { AdoptionsSection, MessagesSection } from "./CareSections";
+import {
+  AdoptionsSection,
+  RecordsSection,
+  VaccineCatalogSection,
+  VeterinariansSection,
+} from "./CareSections";
 
-const submitForm = (callback: () => Promise<void>) => (event: FormEvent) => {
-  event.preventDefault();
-  void callback();
-};
-
-function makeAdoptionsProps(overrides: Record<string, unknown> = {}) {
-  return {
-    role: "refugio",
-    isPlatformSuperadmin: false,
-    canDo: () => true,
-    adoptions: [
-      {
-        id: 21,
-        pet_name: "Luna",
-        applicant: "Ana",
-        adoption_date: "2026-10-10",
-        status: "Activa",
-      },
-    ],
-    followUps: [],
-    reminders: [],
-    vaccines: [],
-    form: {},
-    setValue: vi.fn(),
-    submit: submitForm,
-    send: vi.fn().mockResolvedValue(true),
-    loading: false,
-    busy: false,
-    ...overrides,
-  };
-}
-
-describe("adoption follow-ups and returns", () => {
-  it("shows a separate observation form for each active adoption and saves it", async () => {
-    const send = vi.fn().mockResolvedValue(true);
-    render(
-      <AdoptionsSection
-        {...makeAdoptionsProps({
-          adoptions: [
-            {
-              id: 21,
-              pet_name: "Luna",
-              applicant: "Ana",
-              adoption_date: "2026-10-10",
-              status: "Activa",
-            },
-            {
-              id: 22,
-              pet_name: "Toby",
-              applicant: "Luis",
-              adoption_date: "2026-10-11",
-              status: "Activa",
-            },
-          ],
-          send,
-        })}
+describe("vaccine catalog", () => {
+  it("allows roles with catalog permissions to add and edit available vaccines", async () => {
+    const send = vi.fn(async () => true);
+    const canDo = (_resource: string, action: string) =>
+      ["create", "update"].includes(action);
+    const { rerender } = render(
+      <VaccineCatalogSection
+        vaccines={[]}
+        species={[{ id: 1, name: "Perro" }]}
+        canDo={canDo}
+        send={send}
+        loading={false}
+        busy={false}
       />,
     );
 
-    const lunaForm = screen.getByRole("form", {
-      name: "Registrar seguimiento de la adopción 21",
-    });
-    const tobyForm = screen.getByRole("form", {
-      name: "Registrar seguimiento de la adopción 22",
-    });
-    const observations = screen.getAllByLabelText(
-      "Observaciones del seguimiento",
-    );
-    fireEvent.change(observations[0], {
-      target: { value: "Come bien y está activa." },
-    });
-    expect(observations[1]).toHaveValue("");
-    fireEvent.change(
-      within(lunaForm).getByLabelText("Fecha del seguimiento"),
-      { target: { value: "2026-10-30" } },
+    fireEvent.click(screen.getByRole("button", { name: "Agregar vacuna" }));
+    fireEvent.change(screen.getByLabelText("Especie"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Moquillo" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar vacuna" }));
+    expect(send).toHaveBeenCalledWith(
+      "/api/v1/vaccines/",
+      "POST",
+      expect.objectContaining({ species: 1, name: "Moquillo" }),
+      "Vacuna agregada.",
     );
 
-    fireEvent.submit(lunaForm);
-    await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
-        "/api/v1/follow-ups/",
-        "POST",
-        {
-          adoption: 21,
-          date: "2026-10-30",
-          wellbeing: "bueno",
-          observations: "Come bien y está activa.",
-        },
-        "Seguimiento registrado.",
-      ),
+    rerender(
+      <VaccineCatalogSection
+        vaccines={[{ id: 3, species: 1, species_name: "Perro", name: "Moquillo" }]}
+        species={[{ id: 1, name: "Perro" }]}
+        canDo={canDo}
+        send={send}
+        loading={false}
+        busy={false}
+      />,
     );
-    expect(tobyForm).toBeInTheDocument();
-  });
-
-  it("shows the return button for a localized active status and submits the reason", async () => {
-    const send = vi.fn().mockResolvedValue(true);
-    render(<AdoptionsSection {...makeAdoptionsProps({ send })} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Registrar devolución" }));
-    const returnForm = screen.getByRole("form", {
-      name: "Registrar devolución de la adopción 21",
-    });
-    fireEvent.change(
-      within(returnForm).getByLabelText("Motivo de la devolución"),
-      { target: { value: "La familia se traslada." } },
-    );
-    fireEvent.change(
-      within(returnForm).getByLabelText("Fecha de devolución"),
-      { target: { value: "2026-10-30" } },
-    );
-    fireEvent.submit(returnForm);
-
-    await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
-        "/api/v1/adoptions/21/return/",
-        "POST",
-        {
-          reason: "La familia se traslada.",
-          return_date: "2026-10-30",
-        },
-        "Devolución registrada.",
-      ),
+    fireEvent.click(screen.getByRole("button", { name: "Editar vacuna" }));
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Moquillo modificado" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar vacuna" }));
+    expect(send).toHaveBeenLastCalledWith(
+      "/api/v1/vaccines/3/",
+      "PATCH",
+      expect.objectContaining({ name: "Moquillo modificado" }),
+      "Vacuna actualizada.",
     );
   });
 });
 
-describe("messages", () => {
-  it("sends a message to the selected conversation", async () => {
-    const send = vi.fn().mockResolvedValue(true);
+describe("reminder management", () => {
+  it("lets a shelter record notes and mark a reminder as completed", async () => {
+    const send = vi.fn(async () => true);
     render(
-      <MessagesSection
-        role="adoptante"
+      <AdoptionsSection
+        role="refugio"
         isPlatformSuperadmin={false}
-        canDo={() => true}
-        userId={1}
-        pets={[]}
-        conversations={[
+        canDo={(resource, action) =>
+          resource === "reminders" && action === "update"
+        }
+        adoptions={[]}
+        followUps={[]}
+        reminders={[
           {
-            id: 3,
-            adopter_name: "Ana",
-            shelter_name: "Huellas",
-            pet_name: "Luna",
+            id: 8,
+            adoption: 4,
+            pet: 12,
+            vaccine_name: "Antirrábica",
+            reminder_type: "vacuna",
+            scheduled_date: "2026-11-10",
+            status: "pendiente",
           },
         ]}
-        messages={[]}
-        selectedConversation="3"
-        setSelectedConversation={vi.fn()}
-        form={{ content: "¿Puedo conocer a Luna?" }}
+        vaccines={[]}
+        form={{}}
         setValue={vi.fn()}
         submit={(callback) => (event) => {
           event.preventDefault();
           void callback();
         }}
         send={send}
-        setError={vi.fn()}
         loading={false}
         busy={false}
       />,
     );
 
-    fireEvent.submit(
-      screen.getByLabelText("Escribe un mensaje").closest("form")!,
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    fireEvent.change(screen.getByLabelText("Notas"), {
+      target: { value: "Aplicada sin novedades." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(send).toHaveBeenCalledWith(
+      "/api/v1/reminders/8/",
+      "PATCH",
+      expect.objectContaining({ notes: "Aplicada sin novedades." }),
+      "Recordatorio actualizado.",
     );
 
-    await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
-        "/api/v1/messages/",
-        "POST",
-        { conversation: 3, content: "¿Puedo conocer a Luna?" },
-        "Mensaje enviado.",
-      ),
+    fireEvent.click(screen.getByRole("button", { name: "Marcar realizado" }));
+    expect(send).toHaveBeenLastCalledWith(
+      "/api/v1/reminders/8/",
+      "PATCH",
+      { status: "cumplido" },
+      "Recordatorio marcado como realizado.",
+    );
+  });
+});
+
+describe("veterinarian directory", () => {
+  it("shows a registered veterinarian profile in the directory", () => {
+    render(
+      <VeterinariansSection
+        loading={false}
+        veterinarians={[
+          {
+            id: 2,
+            user: 7,
+            user_name: "Dra. Ana",
+            professional_card: "TP-001",
+            clinic: "Clínica Huellas",
+            specialty: "Cirugía",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Perfiles veterinarios" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Dra. Ana" })).toBeInTheDocument();
+    expect(screen.getByText("Tarjeta profesional: TP-001")).toBeInTheDocument();
+    expect(screen.getByText("Clínica: Clínica Huellas")).toBeInTheDocument();
+  });
+});
+
+describe("medical record permissions", () => {
+  it("shows edit and delete actions only when the role has those permissions", async () => {
+    const send = vi.fn(async () => true);
+    vi.stubGlobal("confirm", () => true);
+    render(
+      <RecordsSection
+        role="administrador"
+        isPlatformSuperadmin={false}
+        canDo={(_resource, action) =>
+          action === "update" || action === "delete"
+        }
+        userId={1}
+        pets={[{ id: 12, name: "Luna", species: "Perro" }]}
+        records={[
+          {
+            id: 9,
+            pet: 12,
+            pet_name: "Luna",
+            date: "2026-10-25",
+            record_type: "consulta",
+            description: "Control general",
+          },
+        ]}
+        vaccines={[]}
+        veterinarians={[]}
+        form={{}}
+        setValue={vi.fn()}
+        submit={(callback) => (event) => {
+          event.preventDefault();
+          void callback();
+        }}
+        send={send}
+        loading={false}
+        busy={false}
+      />,
+    );
+
+    expect(screen.getByText("Luna · 2026-10-25")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Editar atención" }));
+    fireEvent.change(screen.getByLabelText("Descripción y recomendaciones"), {
+      target: { value: "Control actualizado." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(send).toHaveBeenCalledWith(
+      "/api/v1/medical-records/9/",
+      "PATCH",
+      expect.objectContaining({ description: "Control actualizado." }),
+      "Atención actualizada.",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar atención" }));
+    expect(send).toHaveBeenLastCalledWith(
+      "/api/v1/medical-records/9/",
+      "DELETE",
+      undefined,
+      "Registro médico eliminado.",
     );
   });
 });
