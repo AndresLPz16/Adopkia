@@ -9,11 +9,20 @@ from drf_spectacular.utils import OpenApiTypes, extend_schema
 
 from myproject.permissions import IsAdminRole, RolePermissionRequired
 
-from .models import EmailVerificationCode, LoginMathChallenge, Role, RolePermission, User
-from .rbac import ACTIONS, RESOURCES, get_permission_catalog
+from .models import (
+    EmailVerificationCode,
+    LoginMathChallenge,
+    PermissionResource,
+    PortalSettings,
+    Role,
+    RolePermission,
+    User,
+)
+from .rbac import get_permission_catalog
 from .serializers import (
     RoleDefinitionSerializer,
     RolePermissionSerializer,
+    PermissionResourceSerializer,
     UserAdminSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
@@ -155,10 +164,115 @@ class RolePermissionsView(APIView):
         return Response(get_permission_catalog())
 
 
+class PermissionResourceListCreateView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    rbac_resource = "rolePermissions"
+    rbac_required_action = "create"
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            self.rbac_required_action = "read"
+        return [RolePermissionRequired()]
+
+    @extend_schema(
+        responses=PermissionResourceSerializer(many=True),
+        operation_id="permission_resources_list",
+    )
+    def get(self, request):
+        return Response(PermissionResourceSerializer(
+            PermissionResource.objects.all(), many=True
+        ).data)
+
+    @extend_schema(
+        request=PermissionResourceSerializer,
+        responses=OpenApiTypes.OBJECT,
+        operation_id="create_permission_resource",
+    )
+    def post(self, request):
+        serializer = PermissionResourceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resource = serializer.validated_data["key"]
+        if PermissionResource.objects.filter(pk=resource).exists():
+            raise ValidationError({"key": "Ya existe un recurso con esta clave."})
+        if RolePermission.objects.filter(resource=resource).exists():
+            raise ValidationError(
+                {"key": "La clave ya está usada por permisos existentes."}
+            )
+        serializer.save()
+        return Response(get_permission_catalog(), status=status.HTTP_201_CREATED)
+
+
+SIDEBAR_DEFAULT_LABELS = {
+    "dashboard": "Inicio",
+    "profile": "Mi perfil",
+    "pets": "Mascotas",
+    "vaccines": "Catálogo de vacunas",
+    "requests": "Solicitudes",
+    "adoptions": "Adopciones y cuidados",
+    "messages": "Mensajes",
+    "records": "Atención veterinaria",
+    "veterinarians": "Perfiles veterinarios",
+    "shelters": "Refugios y equipo",
+    "notifications": "Notificaciones",
+    "users": "Usuarios",
+    "statistics": "Estadísticas",
+    "permissions": "Permisos",
+}
+
+
+class SidebarLabelsSerializer(serializers.Serializer):
+    labels = serializers.DictField(
+        child=serializers.CharField(max_length=60, allow_blank=False, trim_whitespace=True)
+    )
+
+    def validate_labels(self, labels):
+        unknown = set(labels) - set(SIDEBAR_DEFAULT_LABELS)
+        if unknown:
+            raise serializers.ValidationError(
+                f"Vistas desconocidas: {', '.join(sorted(unknown))}."
+            )
+        return {key: value.strip() for key, value in labels.items()}
+
+
+class SidebarLabelsView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_permissions(self):
+        if self.request.method == "PUT":
+            return [IsAdminRole()]
+        return super().get_permissions()
+
+    @extend_schema(responses=OpenApiTypes.OBJECT, operation_id="sidebar_labels")
+    def get(self, request):
+        settings = PortalSettings.objects.filter(pk=1).first()
+        return Response(
+            {
+                "defaults": SIDEBAR_DEFAULT_LABELS,
+                "labels": {
+                    **SIDEBAR_DEFAULT_LABELS,
+                    **(settings.sidebar_labels if settings else {}),
+                },
+            }
+        )
+
+    @extend_schema(
+        request=SidebarLabelsSerializer,
+        responses=OpenApiTypes.OBJECT,
+        operation_id="update_sidebar_labels",
+    )
+    def put(self, request):
+        serializer = SidebarLabelsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        settings, _ = PortalSettings.objects.get_or_create(pk=1)
+        settings.sidebar_labels = serializer.validated_data["labels"]
+        settings.save(update_fields=("sidebar_labels",))
+        return self.get(request)
+
+
 class RolePermissionUpdateView(APIView):
-    permission_classes = (IsAdminRole, RolePermissionRequired)
-    rbac_resource = "users"
-    rbac_required_action = "manage"
+    permission_classes = (RolePermissionRequired,)
+    rbac_resource = "rolePermissions"
+    rbac_required_action = "update"
 
     @extend_schema(
         request=RolePermissionSerializer(many=True),
@@ -187,17 +301,20 @@ class RolePermissionUpdateView(APIView):
                 {"permissions": "No se permiten permisos duplicados."}
             )
 
-        valid_resources = {resource for resource, _label in RESOURCES}
-        valid_actions = {action for action, _label in ACTIONS}
+        resource_actions = {
+            resource["key"]: {action["key"] for action in resource["actions"]}
+            for resource in get_permission_catalog()["resources"]
+        }
         if any(
-            item["resource"] not in valid_resources
-            or item["action"] not in valid_actions
+            item["resource"] not in resource_actions
+            or item["action"] not in resource_actions[item["resource"]]
             for item in permissions_data
         ):
             raise ValidationError({"permissions": "Recurso o acción desconocidos."})
         required_admin_permissions = {
             ("users", "manage"),
             ("shelters", "verify"),
+            ("rolePermissions", "manage"),
         }
         missing_admin_permissions = (
             required_admin_permissions.difference(pairs)
@@ -228,13 +345,13 @@ class RolePermissionUpdateView(APIView):
 
 class RoleListCreateView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
-    rbac_resource = "users"
-    rbac_required_action = "manage"
+    rbac_resource = "rolePermissions"
+    rbac_required_action = "create"
 
     def get_permissions(self):
         if self.request.method == "GET":
             return [permissions.IsAuthenticated()]
-        return [permission() for permission in (IsAdminRole, RolePermissionRequired)]
+        return [RolePermissionRequired()]
 
     @extend_schema(responses=RoleDefinitionSerializer(many=True), operation_id="roles_list")
     def get(self, request):
@@ -257,9 +374,8 @@ class RoleListCreateView(APIView):
 
 
 class RoleDetailView(APIView):
-    permission_classes = (IsAdminRole, RolePermissionRequired)
-    rbac_resource = "users"
-    rbac_required_action = "manage"
+    permission_classes = (RolePermissionRequired,)
+    rbac_resource = "rolePermissions"
 
     def get_role(self, pk):
         from django.shortcuts import get_object_or_404
@@ -322,22 +438,6 @@ class UserListCreateView(UserManagementBaseView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        target_role = serializer.validated_data["role"]
-        if (
-            target_role.name == Role.Name.ADMIN
-            and not request.user.is_platform_superadmin
-        ):
-            raise PermissionDenied(
-                "No tienes autorización para crear cuentas de administrador."
-            )
-        if (
-            target_role.name not in (Role.Name.ADOPTER, Role.Name.SHELTER)
-            and request.user.role.name != Role.Name.ADMIN
-            and not request.user.is_platform_superadmin
-        ):
-            raise PermissionDenied(
-                "Solo un administrador puede asignar roles veterinarios, administrativos o personalizados."
-            )
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -359,8 +459,7 @@ class UserDetailView(UserManagementBaseView):
         if user.pk == request.user.pk and serializer.validated_data.get("active") is False:
             raise ValidationError({"active": "No puedes desactivar tu propia cuenta."})
         if (
-            (user.is_platform_superadmin or user.role.name == Role.Name.ADMIN
-             or target_role.name == Role.Name.ADMIN)
+            (user.is_platform_superadmin or user.role.name == Role.Name.ADMIN)
             and not request.user.is_platform_superadmin
         ):
             raise PermissionDenied(
@@ -372,14 +471,6 @@ class UserDetailView(UserManagementBaseView):
         ):
             raise ValidationError(
                 {"role": "Esta cuenta está protegida y no puede degradarse ni desactivarse."}
-            )
-        if (
-            target_role.pk != user.role_id
-            and request.user.role.name != Role.Name.ADMIN
-            and not request.user.is_platform_superadmin
-        ):
-            raise PermissionDenied(
-                "Solo un administrador puede cambiar el rol de una cuenta."
             )
         if (
             user.role.name == Role.Name.ADMIN

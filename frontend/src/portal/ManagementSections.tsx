@@ -152,7 +152,6 @@ export function SheltersSection({
 }
 
 export function UsersSection({
-  isAdmin,
   userId,
   isPlatformSuperadmin,
   canDo,
@@ -170,7 +169,6 @@ export function UsersSection({
   busy,
   setError,
 }: {
-  isAdmin: boolean;
   userId: string | number;
   isPlatformSuperadmin: boolean;
   canDo: PermissionCheck;
@@ -194,32 +192,20 @@ export function UsersSection({
   const mayDelete = canDo(RESOURCES.USERS, ACTIONS.DELETE);
   const editingAccount = users.find((account) => text(account.id) === editingUser);
   const editingPlatformSuperadmin = editingAccount?.is_platform_superadmin === true;
-  const assignableRoleRows = isAdmin
-    ? availableRoleRows.filter(
-        (item) => isPlatformSuperadmin || text(item.name) !== ROLES.ADMIN,
-      )
-    : availableRoleRows.filter((item) =>
-        [ROLES.ADOPTER, ROLES.SHELTER].includes(
-          text(item.name) as typeof ROLES.ADOPTER | typeof ROLES.SHELTER,
-        ),
-      );
-  const availableRoles = assignableRoleRows.length
-    ? assignableRoleRows.map((item) => ({
-        value: text(item.name),
-        label: text(item.label) || roleNames[text(item.name)] || text(item.name),
-      }))
-    : [
-        { value: ROLES.ADOPTER, label: "Adoptante" },
-        { value: ROLES.SHELTER, label: "Refugio" },
-        ...(isAdmin
-          ? [
-              { value: ROLES.VETERINARIAN, label: "Veterinario" },
-              ...(isPlatformSuperadmin
-                ? [{ value: ROLES.ADMIN, label: "Administrador" }]
-                : []),
-            ]
-          : []),
-      ];
+  const roleRows = [...availableRoleRows];
+  if (
+    editingAccount &&
+    !roleRows.some((item) => text(item.name) === text(editingAccount.role))
+  ) {
+    roleRows.push({
+      name: text(editingAccount.role),
+      label: roleNames[text(editingAccount.role)] ?? text(editingAccount.role),
+    });
+  }
+  const availableRoles = roleRows.map((item) => ({
+    value: text(item.name),
+    label: text(item.label) || roleNames[text(item.name)] || text(item.name),
+  }));
   const searchTerm = userSearch.trim().toLocaleLowerCase();
   const filteredUsers = users.filter((account) =>
     [
@@ -250,21 +236,21 @@ export function UsersSection({
               <strong>{loading && users.length === 0 ? "…" : users.length}</strong>
             </div>
           </div>
-          <label className="portal-search">
-            <span>Buscar por nombre, usuario, correo o rol</span>
-            <input
-              type="search"
-              value={userSearch}
-              onChange={(event) => setUserSearch(event.target.value)}
-              placeholder="Ej. yoider00, refugio o adoptante"
-            />
-          </label>
-          {searchTerm && (
-            <p className="portal-form-hint">
-              Resultados: {filteredUsers.length} de {users.length} usuarios.
-            </p>
-          )}
         </>
+      )}
+      <label className="portal-search">
+        <span>Buscar por nombre, usuario, correo o rol</span>
+        <input
+          type="search"
+          value={userSearch}
+          onChange={(event) => setUserSearch(event.target.value)}
+          placeholder="Ej. yoider00, refugio o adoptante"
+        />
+      </label>
+      {searchTerm && (
+        <p className="portal-form-hint">
+          Resultados: {filteredUsers.length} de {users.length} usuarios.
+        </p>
       )}
       {(mayCreate || (editingUser && mayUpdate)) && (
         <form className="portal-form" onSubmit={submit(async () => {

@@ -3,8 +3,8 @@ from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import Role, RolePermission, User
-from .rbac import ACTIONS, RESOURCES
+from .models import PermissionResource, Role, RolePermission, User
+from .rbac import ACTIONS, RESOURCES, get_permission_catalog
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -195,7 +195,9 @@ class RolePermissionSerializer(serializers.ModelSerializer):
         fields = ("resource", "action")
 
     def validate_resource(self, resource):
-        if resource not in {key for key, _label in RESOURCES}:
+        if resource not in {
+            item["key"] for item in get_permission_catalog()["resources"]
+        }:
             raise serializers.ValidationError("Recurso desconocido.")
         return resource
 
@@ -203,6 +205,29 @@ class RolePermissionSerializer(serializers.ModelSerializer):
         if action not in {key for key, _label in ACTIONS}:
             raise serializers.ValidationError("Acción desconocida.")
         return action
+
+
+class PermissionResourceSerializer(serializers.ModelSerializer):
+    key = serializers.RegexField(r"^[a-z][A-Za-z0-9]{0,39}$")
+    label = serializers.CharField(max_length=60, trim_whitespace=True)
+    actions = serializers.ListField(
+        child=serializers.ChoiceField(choices=[key for key, _label in ACTIONS]),
+        allow_empty=False,
+    )
+
+    class Meta:
+        model = PermissionResource
+        fields = ("key", "label", "actions")
+
+    def validate_key(self, key):
+        if key in {resource for resource, _label in RESOURCES}:
+            raise serializers.ValidationError("La clave ya pertenece a un recurso del sistema.")
+        return key
+
+    def validate_actions(self, actions):
+        if len(actions) != len(set(actions)):
+            raise serializers.ValidationError("No se permiten acciones duplicadas.")
+        return actions
 
 
 class RoleDefinitionSerializer(serializers.ModelSerializer):

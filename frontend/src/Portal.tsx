@@ -126,14 +126,20 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     vaccines: [["VACCINES", "READ"]],
     requests: [["ADOPTION_REQUESTS", "READ"]],
     adoptions: [["ADOPTIONS", "READ"]],
-    messages: [["CONVERSATIONS", "READ"], ["MESSAGES", "READ"]],
+    messages: [["MESSAGING", "READ"]],
     records: [["MEDICAL_RECORDS", "READ"]],
     veterinarians: [["VETERINARIANS", "READ"]],
     shelters: [["SHELTERS", "READ"]],
     notifications: [["NOTIFICATIONS", "READ"]],
     users: [["USERS", "READ"]],
     statistics: [["STATISTICS", "READ"]],
-    permissions: [["USERS", "MANAGE"]],
+    permissions: [
+      ["ROLE_PERMISSIONS", "READ"],
+      ["ROLE_PERMISSIONS", "CREATE"],
+      ["ROLE_PERMISSIONS", "UPDATE"],
+      ["ROLE_PERMISSIONS", "DELETE"],
+      ["ROLE_PERMISSIONS", "MANAGE"],
+    ],
   };
   const hasAccess = (key: string) => {
     if (key === "requests") {
@@ -144,6 +150,11 @@ function Portal({ onLogout }: { onLogout: () => void }) {
         can(user, RESOURCES.FORM_QUESTIONS, ACTIONS.DELETE, permissions ?? {})
       );
     }
+    if (key === "permissions") {
+      return (sectionAccess.permissions ?? []).some(([resource, action]) =>
+        can(user, RESOURCES[resource], ACTIONS[action], permissions ?? {}),
+      );
+    }
     return (sectionAccess[key] ?? []).every(([resource, action]) =>
       can(user, RESOURCES[resource], ACTIONS[action], permissions ?? {}),
     );
@@ -152,6 +163,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     can(user, resource, action, permissions ?? {});
 
   const [data, setData] = useState<Record<string, unknown>>({});
+  const [customSectionNames, setCustomSectionNames] = useState<Record<string, string>>({});
   const [form, setForm] = useState<Record<string, string>>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [selectedConversation, setSelectedConversation] = useState("");
@@ -231,6 +243,26 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     () => [...new Set([...links, ...allSections.filter(hasAccess)])].filter(hasAccess),
     [links, permissions, user],
   );
+  const sidebarGroups = [
+    { key: "home", label: "General", sections: ["dashboard"] },
+    { key: "adoption", label: "Adopción", sections: ["pets", "requests", "adoptions"] },
+    {
+      key: "care",
+      label: "Atención y seguimiento",
+      sections: ["messages", "records", "veterinarians", "vaccines"],
+    },
+    {
+      key: "management",
+      label: "Gestión",
+      sections: ["shelters", "users", "statistics", "permissions"],
+    },
+    { key: "account", label: "Mi cuenta", sections: ["notifications", "profile"] },
+  ]
+    .map((group) => ({
+      ...group,
+      sections: group.sections.filter((key) => visibleLinks.includes(key)),
+    }))
+    .filter((group) => group.sections.length > 0);
 
   const pathsForSection: Record<string, string[]> = {
     dashboard:
@@ -276,9 +308,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     shelters: ["/api/v1/shelters/", "/api/v1/shelter-members/"],
     notifications: ["/api/v1/notifications/"],
     profile: ["/api/v1/auth/me/"],
-    users: isAdmin
-      ? ["/api/v1/auth/users/", "/api/v1/auth/roles/"]
-      : ["/api/v1/auth/users/"],
+    users: ["/api/v1/auth/users/", "/api/v1/auth/roles/"],
     statistics: ["/api/v1/statistics/adoptions/"],
   };
 
@@ -299,8 +329,8 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       "/api/v1/adoptions/": RESOURCES.ADOPTIONS,
       "/api/v1/follow-ups/": RESOURCES.FOLLOW_UPS,
       "/api/v1/reminders/": RESOURCES.REMINDERS,
-      "/api/v1/conversations/": RESOURCES.CONVERSATIONS,
-      "/api/v1/messages/": RESOURCES.MESSAGES,
+      "/api/v1/conversations/": RESOURCES.MESSAGING,
+      "/api/v1/messages/": RESOURCES.MESSAGING,
       "/api/v1/medical-records/": RESOURCES.MEDICAL_RECORDS,
       "/api/v1/vaccines/": RESOURCES.VACCINES,
       "/api/v1/veterinarians/": RESOURCES.VETERINARIANS,
@@ -360,6 +390,32 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     if (status === "unauthenticated") onLogout();
   }, [status, onLogout]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const controller = new AbortController();
+    void request("/api/v1/auth/sidebar-labels/", { signal: controller.signal })
+      .then(responseData)
+      .then((result) => {
+        if (
+          result &&
+          typeof result === "object" &&
+          "labels" in result &&
+          result.labels &&
+          typeof result.labels === "object"
+        ) {
+          setCustomSectionNames(result.labels as Record<string, string>);
+        } else {
+          throw new Error("La respuesta de nombres del menú tiene un formato inválido.");
+        }
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(caught instanceof Error ? caught.message : "No se pudieron cargar los nombres del menú.");
+        }
+      });
+    return () => controller.abort();
+  }, [request, status]);
 
   useEffect(() => {
     void reload();
@@ -556,6 +612,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const visibleSectionNames = {
     ...sectionNames,
     ...roleSectionNames[role],
+    ...customSectionNames,
   };
 
   useEffect(() => {
@@ -754,7 +811,6 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                         />
                       : section === "users"
                         ? <UsersSection
-                            isAdmin={isAdmin}
                             userId={user.id}
                             isPlatformSuperadmin={isPlatformSuperadmin}
                             canDo={canDo}
@@ -809,11 +865,22 @@ function Portal({ onLogout }: { onLogout: () => void }) {
         <aside className="app-sidebar">
           <p>{sidebarCopy.heading}</p>
           <nav aria-label="Navegación principal">
-            {visibleLinks.map((key) => (
-              <button key={key} className={`app-sidebar__link ${section === key ? "app-sidebar__link--active" : ""}`} type="button" onClick={() => navTo(key)}>
-                <span aria-hidden="true">{({ dashboard: "⌂", pets: "♡", requests: "▤", adoptions: "⌂", messages: "✉", records: "+", shelters: "⌂", notifications: "♧", profile: "◉", statistics: "▥", permissions: "▦" } as Record<string, string>)[key] ?? "›"}</span>
-                {visibleSectionNames[key] ?? "Permisos por rol"}
-              </button>
+            {sidebarGroups.map((group) => (
+              <div className="app-sidebar__group" key={group.key}>
+                <h2 className="app-sidebar__group-title">{group.label}</h2>
+                {group.sections.map((key) => (
+                  <button
+                    key={key}
+                    className={`app-sidebar__link ${section === key ? "app-sidebar__link--active" : ""}`}
+                    type="button"
+                    aria-current={section === key ? "page" : undefined}
+                    onClick={() => navTo(key)}
+                  >
+                    <span aria-hidden="true">{({ dashboard: "⌂", pets: "♡", requests: "▤", adoptions: "⌂", messages: "✉", records: "+", shelters: "⌂", notifications: "♧", profile: "◉", statistics: "▥", permissions: "▦" } as Record<string, string>)[key] ?? "›"}</span>
+                    {visibleSectionNames[key] ?? "Permisos por rol"}
+                  </button>
+                ))}
+              </div>
             ))}
           </nav>
           <div className="app-sidebar__note"><strong>{sidebarCopy.title}</strong><span>{sidebarCopy.description}</span></div>

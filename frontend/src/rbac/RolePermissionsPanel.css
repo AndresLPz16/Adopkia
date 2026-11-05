@@ -19,6 +19,12 @@
   gap: 1.5rem;
 }
 
+.rbac-panel__footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .rbac-panel__header {
   margin-bottom: 1.5rem;
 }
@@ -86,6 +92,31 @@
   gap: 0.35rem;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.rbac-panel__resource-actions {
+  display: flex;
+  min-width: 100%;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+}
+
+.rbac-panel__resource-actions legend {
+  padding: 0 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.rbac-panel__resource-actions label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .rbac-panel__role-form input {
@@ -177,6 +208,75 @@
 .rbac-panel__footer button:disabled {
   cursor: wait;
   opacity: 0.6;
+}
+
+.rbac-panel__footer .rbac-panel__remove-permissions {
+  color: #842c28;
+  background: #fff1ef;
+  border: 1px solid #e8b3ad;
+}
+
+.rbac-panel__sidebar-labels {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.rbac-panel__sidebar-labels h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.rbac-panel__sidebar-labels header > p:last-child {
+  color: var(--text-secondary);
+}
+
+.rbac-panel__labels-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 0.8rem;
+}
+
+.rbac-panel__labels-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.rbac-panel__labels-form input {
+  min-height: 2.5rem;
+  padding: 0 0.65rem;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  font: inherit;
+}
+
+.rbac-panel__labels-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.rbac-panel__labels-actions button {
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  color: #fff;
+  background: var(--brand-primary);
+  border: 0;
+  border-radius: 0.5rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rbac-panel__labels-actions button + button {
+  color: var(--brand-primary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-strong);
 }
 
 .rbac-panel__error,

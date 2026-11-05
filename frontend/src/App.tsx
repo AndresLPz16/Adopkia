@@ -59,7 +59,6 @@ function Landing() {
   const [mathChallenge, setMathChallenge] = useState<LoginMathChallenge | null>(null);
   const [mathAnswer, setMathAnswer] = useState("");
   const [challengeRefresh, setChallengeRefresh] = useState(0);
-  const [challengeError, setChallengeError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -144,7 +143,6 @@ function Landing() {
   const showAuthentication = (nextView: "login" | "register") => {
     setError("");
     setAuthNotice("");
-    setChallengeError("");
     setView(nextView);
   };
 
@@ -152,14 +150,12 @@ function Landing() {
     if (view !== "login") {
       setMathChallenge(null);
       setMathAnswer("");
-      setChallengeError("");
       return;
     }
 
     const controller = new AbortController();
     setMathChallenge(null);
     setMathAnswer("");
-    setChallengeError("");
     void (async () => {
       try {
         const data = await readJson(
@@ -183,7 +179,7 @@ function Landing() {
         });
       } catch (caught) {
         if (!controller.signal.aborted) {
-          setChallengeError(
+          setError(
             caught instanceof Error
               ? caught.message
               : "No se pudo cargar el reto de seguridad.",
@@ -457,20 +453,7 @@ function Landing() {
                     </label>
                   </>
                 ) : (
-                  challengeError ? (
-                    <div>
-                      <p role="alert">{challengeError}</p>
-                      <button
-                        className="portal-link"
-                        type="button"
-                        onClick={() => setChallengeRefresh((current) => current + 1)}
-                      >
-                        Reintentar
-                      </button>
-                    </div>
-                  ) : (
-                    <span role="status">Cargando reto de seguridad…</span>
-                  )
+                  <span role="status">Cargando reto de seguridad…</span>
                 )}
               </div>
             )}

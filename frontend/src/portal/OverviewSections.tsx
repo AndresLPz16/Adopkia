@@ -185,29 +185,168 @@ export function DashboardSection({
   );
 }
 
-export function StatisticsSection({ stats }: { stats?: PortalDataRow }) {
+function statisticsValue(value: unknown): number {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function StatisticsChart({
+  title,
+  values,
+}: {
+  title: string;
+  values: { label: string; value: number }[];
+}) {
+  const width = 600;
+  const height = 250;
+  const chartTop = 28;
+  const chartBottom = 195;
+  const chartHeight = chartBottom - chartTop;
+  const maxValue = Math.max(...values.map((item) => item.value), 1);
+  const barWidth = Math.min(72, 360 / values.length);
+  const gap = (width - 72 - values.length * barWidth) / (values.length + 1);
+
   return (
-    <>
+    <article className="portal-stat-chart">
+      <h2>{title}</h2>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={`${title}: ${values.map((item) => `${item.label} ${item.value}`).join(", ")}`}
+      >
+        {[0, 0.5, 1].map((fraction) => {
+          const y = chartBottom - chartHeight * fraction;
+          return (
+            <g key={fraction}>
+              <line x1="48" x2={width - 16} y1={y} y2={y} className="portal-stat-chart__gridline" />
+              <text x="40" y={y + 4} textAnchor="end" className="portal-stat-chart__axis-label">
+                {Math.round(maxValue * fraction)}
+              </text>
+            </g>
+          );
+        })}
+        {values.map((item, index) => {
+          const barHeight = (item.value / maxValue) * chartHeight;
+          const x = 48 + gap * (index + 1) + barWidth * index;
+          const y = chartBottom - barHeight;
+          return (
+            <g key={item.label}>
+              <rect
+                x={x}
+                y={y}
+                width={barWidth}
+                height={Math.max(barHeight, 1)}
+                rx="6"
+                className="portal-stat-chart__bar"
+              />
+              <text
+                x={x + barWidth / 2}
+                y={Math.max(y - 8, 18)}
+                textAnchor="middle"
+                className="portal-stat-chart__value"
+              >
+                {item.value}
+              </text>
+              <text
+                x={x + barWidth / 2}
+                y={chartBottom + 24}
+                textAnchor="middle"
+                className="portal-stat-chart__label"
+              >
+                {item.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </article>
+  );
+}
+
+export function StatisticsSection({ stats }: { stats?: PortalDataRow }) {
+  const metrics = [
+    { label: "Adopciones", value: statisticsValue(stats?.total_adoptions) },
+    { label: "Adopciones activas", value: statisticsValue(stats?.active_adoptions) },
+    { label: "Mascotas adoptadas", value: statisticsValue(stats?.adopted_pets) },
+    { label: "Devoluciones", value: statisticsValue(stats?.returned_adoptions) },
+    { label: "Mascotas devueltas", value: statisticsValue(stats?.returned_pets) },
+    { label: "Tasa de devolución", value: statisticsValue(stats?.return_rate) },
+  ];
+  const exportCsv = () => {
+    const csvRows = [
+      ["Estadística", "Valor"],
+      ...metrics.map((metric) => [
+        metric.label,
+        metric.label === "Tasa de devolución" ? `${metric.value}%` : String(metric.value),
+      ]),
+    ];
+    const csv = `\uFEFF${csvRows
+      .map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(","))
+      .join("\r\n")}`;
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "estadisticas-adopkia.csv";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="portal-statistics">
       <SectionTitle
         eyebrow="Impacto"
         title="Estadísticas de adopción"
         description="Indicadores generales para supervisar el bienestar y los resultados de la plataforma."
+        action={
+          <div className="portal-statistics__actions">
+            <button type="button" className="portal-button portal-button--secondary" onClick={exportCsv}>
+              Exportar CSV
+            </button>
+            <button type="button" className="portal-button" onClick={() => window.print()}>
+              Exportar informe / PDF
+            </button>
+          </div>
+        }
       />
       <div className="portal-stat-grid">
-        {[
-          ["Adopciones", stats?.total_adoptions],
-          ["Adopciones activas", stats?.active_adoptions],
-          ["Mascotas adoptadas", stats?.adopted_pets],
-          ["Devoluciones", stats?.returned_adoptions],
-          ["Mascotas devueltas", stats?.returned_pets],
-          ["Tasa de devolución", stats ? `${text(stats.return_rate)}%` : "—"],
-        ].map(([label, value]) => (
-          <div className="portal-stat" key={text(label)}>
-            <span>{text(label)}</span>
-            <strong>{value == null ? "—" : text(value)}</strong>
+        {metrics.map((metric) => (
+          <div className="portal-stat" key={metric.label}>
+            <span>{metric.label}</span>
+            <strong>
+              {metric.label === "Tasa de devolución"
+                ? `${text(stats?.return_rate) || "0"}%`
+                : metric.value}
+            </strong>
           </div>
         ))}
       </div>
-    </>
+      <div className="portal-statistics__charts">
+        <StatisticsChart
+          title="Estado de las adopciones"
+          values={[
+            { label: "Activas", value: statisticsValue(stats?.active_adoptions) },
+            { label: "Devueltas", value: statisticsValue(stats?.returned_adoptions) },
+            {
+              label: "Finalizadas",
+              value: Math.max(
+                statisticsValue(stats?.total_adoptions) -
+                  statisticsValue(stats?.active_adoptions) -
+                  statisticsValue(stats?.returned_adoptions),
+                0,
+              ),
+            },
+          ]}
+        />
+        <StatisticsChart
+          title="Estado de las mascotas"
+          values={[
+            { label: "Adoptadas", value: statisticsValue(stats?.adopted_pets) },
+            { label: "Devueltas", value: statisticsValue(stats?.returned_pets) },
+          ]}
+        />
+      </div>
+    </section>
   );
 }

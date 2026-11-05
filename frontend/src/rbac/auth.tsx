@@ -48,6 +48,39 @@ function toAuthUser(profile: BackendUserProfile): AuthUser {
   };
 }
 
+function toPermissionMap(catalog: PermissionCatalog): PermissionMap {
+  if (!catalog || !Array.isArray(catalog.roles)) {
+    throw new Error("La respuesta de permisos tiene un formato inválido.");
+  }
+  const permissionMap: Record<string, RolePermissions> = {};
+  const isAction = (value: string): value is Action =>
+    Object.values(ACTIONS).some((action) => action === value);
+  for (const role of catalog.roles) {
+    if (
+      !role ||
+      typeof role.name !== "string" ||
+      !Array.isArray(role.permissions)
+    ) {
+      throw new Error("La respuesta de permisos tiene un formato inválido.");
+    }
+    const rolePermissions: Record<string, Action[]> = {};
+    for (const permission of role.permissions) {
+      if (
+        typeof permission.resource !== "string" ||
+        typeof permission.action !== "string" ||
+        !isAction(permission.action)
+      ) {
+        throw new Error("La respuesta de permisos tiene un formato inválido.");
+      }
+      const actions = rolePermissions[permission.resource] ?? [];
+      actions.push(permission.action);
+      rolePermissions[permission.resource] = actions;
+    }
+    permissionMap[role.name] = rolePermissions;
+  }
+  return permissionMap;
+}
+
 export function AuthProvider({
   children,
   getAccessToken,
@@ -178,35 +211,7 @@ export function AuthProvider({
         }
         const catalog =
           (await permissionResponse.json()) as PermissionCatalog;
-        if (!catalog || !Array.isArray(catalog.roles)) {
-          throw new Error("La respuesta de permisos tiene un formato inválido.");
-        }
-        const permissionMap: Record<string, RolePermissions> = {};
-        const isAction = (value: string): value is Action =>
-          Object.values(ACTIONS).some((action) => action === value);
-        for (const role of catalog.roles) {
-          if (
-            !role ||
-            typeof role.name !== "string" ||
-            !Array.isArray(role.permissions)
-          ) {
-            throw new Error("La respuesta de permisos tiene un formato inválido.");
-          }
-          const rolePermissions: Record<string, Action[]> = {};
-          for (const permission of role.permissions) {
-            if (
-              typeof permission.resource !== "string" ||
-              typeof permission.action !== "string" ||
-              !isAction(permission.action)
-            ) {
-              throw new Error("La respuesta de permisos tiene un formato inválido.");
-            }
-            const actions = rolePermissions[permission.resource] ?? [];
-            actions.push(permission.action);
-            rolePermissions[permission.resource] = actions;
-          }
-          permissionMap[role.name] = rolePermissions;
-        }
+        const permissionMap = toPermissionMap(catalog);
 
         setUser(toAuthUser(profile));
         setPermissions(permissionMap);
@@ -225,6 +230,55 @@ export function AuthProvider({
     void loadUser();
     return () => controller.abort();
   }, [getAccessToken, profileUrl, reloadKey, request]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let active = true;
+    let syncing = false;
+
+    const syncPermissions = async () => {
+      if (syncing) return;
+      syncing = true;
+      const controller = new AbortController();
+      try {
+        const response = await request("/api/v1/auth/permissions/", {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(
+            `No se pudieron actualizar los permisos (${response.status}).`,
+          );
+        }
+        const catalog = (await response.json()) as PermissionCatalog;
+        const permissionMap = toPermissionMap(catalog);
+        if (active) {
+          setPermissions(permissionMap);
+          setError(null);
+        }
+      } catch (caught) {
+        if (!active || controller.signal.aborted) return;
+        setError(
+          caught instanceof Error
+            ? caught
+            : new Error("No se pudieron actualizar los permisos."),
+        );
+        setStatus("error");
+      } finally {
+        syncing = false;
+      }
+    };
+
+    const syncWhenVisible = () => {
+      if (document.visibilityState === "visible") void syncPermissions();
+    };
+    window.addEventListener("focus", syncWhenVisible);
+    document.addEventListener("visibilitychange", syncWhenVisible);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", syncWhenVisible);
+      document.removeEventListener("visibilitychange", syncWhenVisible);
+    };
+  }, [request, status]);
 
   const value = useMemo(
     () => ({ status, user, error, permissions, request, refresh }),

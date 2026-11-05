@@ -304,6 +304,25 @@ select:focus-visible {
   border-right: 1px solid var(--border);
 }
 
+.app-sidebar nav {
+  display: grid;
+  gap: 1rem;
+}
+
+.app-sidebar__group {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.app-sidebar__group-title {
+  margin: 0 0 0.2rem 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .app-sidebar > p {
   margin: 0 0 0.8rem 0.65rem;
   color: var(--text-secondary);
@@ -1089,21 +1108,16 @@ select:focus-visible {
 }
 
 .portal-request-dialog {
-  display: flex;
+  display: block;
   width: min(100%, 720px);
-  max-height: min(90vh, 760px);
-  max-height: min(90dvh, 760px);
-  flex-direction: column;
-  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .portal-request-dialog .landing-pet-dialog__content {
   align-items: stretch;
-  min-height: 0;
-  max-height: none;
-  flex: 1 1 auto;
+  max-height: min(85vh, 700px);
   overflow-y: auto;
-  padding: 4rem clamp(1.25rem, 4vw, 2rem) 1.5rem;
+  padding-top: 3.25rem;
 }
 
 .portal-request-dialog__metadata {
@@ -1817,6 +1831,58 @@ select:focus-visible {
   line-height: 1;
 }
 
+.portal-statistics__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.portal-statistics__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 1rem;
+}
+
+.portal-stat-chart {
+  min-width: 0;
+  padding: 1.2rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+}
+
+.portal-stat-chart h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.portal-stat-chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.portal-stat-chart__gridline {
+  stroke: var(--border);
+  stroke-dasharray: 4 5;
+}
+
+.portal-stat-chart__axis-label,
+.portal-stat-chart__label {
+  fill: var(--text-secondary);
+  font-size: 12px;
+}
+
+.portal-stat-chart__value {
+  fill: var(--text-primary);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.portal-stat-chart__bar {
+  fill: var(--brand-secondary);
+}
+
 .portal-shortcuts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -2240,10 +2306,22 @@ select:focus-visible {
   .app-sidebar nav {
     display: flex;
     overflow-x: auto;
-    gap: 0.4rem;
+    align-items: flex-start;
+    gap: 1rem;
     padding-bottom: 0.2rem;
     scroll-snap-type: x proximity;
     scrollbar-width: thin;
+  }
+
+  .app-sidebar__group {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .app-sidebar__group-title {
+    display: none;
   }
 
   .app-sidebar__link {
@@ -2332,6 +2410,7 @@ select:focus-visible {
 
   .portal-request-dialog {
     max-width: 520px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .portal-request-dialog__dates {
@@ -2428,5 +2507,54 @@ select:focus-visible {
     min-height: 44px;
     padding: 0 0.8rem;
     font-size: 0.82rem;
+  }
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body,
+  .app-shell,
+  .app-layout,
+  .app-content {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    overflow: visible;
+  }
+
+  .app-header,
+  .app-sidebar,
+  .portal-statistics__actions,
+  .portal-alert,
+  .portal-loading {
+    display: none !important;
+  }
+
+  .portal-statistics {
+    width: 100%;
+    color: #000;
+  }
+
+  .portal-statistics .portal-title {
+    margin-top: 0;
+  }
+
+  .portal-statistics .portal-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portal-stat-chart {
+    break-inside: avoid;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .portal-stat-chart__bar {
+    fill: #7545b8;
   }
 }

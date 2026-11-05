@@ -483,7 +483,7 @@ export function MessagesSection({
   return (
     <>
       <SectionTitle eyebrow="Comunicación directa" title="Mensajes" description="Mantén las conversaciones sobre adopciones organizadas en un solo lugar." />
-      {role === ROLES.ADOPTER && canDo(RESOURCES.CONVERSATIONS, ACTIONS.CREATE) && (
+      {role === ROLES.ADOPTER && canDo(RESOURCES.MESSAGING, ACTIONS.CREATE) && (
         <form className="portal-form portal-form--compact" onSubmit={submit(async () => {
           const pet = pets.find((item) => text(item.id) === form.pet);
           if (!pet) {
@@ -514,7 +514,7 @@ export function MessagesSection({
                 {messages.map((message) => <div key={text(message.id)} className={`portal-message ${text(message.sender) === text(userId) ? "portal-message--mine" : ""}`}><strong>{text(message.sender_name)}</strong><p>{text(message.content)}</p><small>{text(message.sent_at)}</small>{text(message.sender) !== text(userId) && message.is_read !== true && <button className="portal-link" onClick={() => void send(`/api/v1/messages/${text(message.id)}/mark-read/`, "POST", {}, "Mensaje marcado como leído.")}>Marcar como leído</button>}</div>)}
                 {!loading && messages.length === 0 && <EmptyState>Envía el primer mensaje de esta conversación.</EmptyState>}
               </div>
-              {canDo(RESOURCES.MESSAGES, ACTIONS.CREATE) && !isPlatformSuperadmin && <form className="portal-chat__form" onSubmit={submit(async () => {
+              {canDo(RESOURCES.MESSAGING, ACTIONS.CREATE) && !isPlatformSuperadmin && <form className="portal-chat__form" onSubmit={submit(async () => {
                 await send("/api/v1/messages/", "POST", { conversation: Number(activeConversation.id), content: form.content }, "Mensaje enviado.");
               })}>
                 <Field label="Escribe un mensaje" name="content" value={form.content ?? ""} onChange={setValue} required />

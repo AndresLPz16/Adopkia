@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { FormEvent } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -5,7 +6,6 @@ import { SheltersSection, UsersSection } from "./ManagementSections";
 
 function makeProps(isPlatformSuperadmin: boolean) {
   return {
-    isAdmin: true,
     userId: 1,
     isPlatformSuperadmin,
     canDo: () => false,
@@ -27,7 +27,13 @@ function makeProps(isPlatformSuperadmin: boolean) {
         active: true,
       },
     ],
-    availableRoleRows: [],
+    availableRoleRows: [
+      { name: "adoptante", label: "Adoptante" },
+      { name: "refugio", label: "Refugio" },
+      { name: "veterinario", label: "Veterinario" },
+      { name: "administrador", label: "Administrador" },
+      { name: "custom_role", label: "Rol personalizado" },
+    ],
     form: {},
     setForm: vi.fn(),
     setValue: vi.fn(),
@@ -46,6 +52,55 @@ function makeProps(isPlatformSuperadmin: boolean) {
 }
 
 describe("user management search", () => {
+  it("shows all roles and keeps the edited user's current role selected", () => {
+    const props = makeProps(false);
+    const send = vi.fn(async () => {});
+    const editableProps = {
+      ...props,
+      canDo: (_resource: string, action: string) =>
+        action === "update" || action === "manage",
+      send,
+      editingUser: "1",
+      form: { role: "adoptante" },
+    };
+
+    function EditableUsersSection() {
+      const [form, setForm] = useState<Record<string, string>>(
+        editableProps.form,
+      );
+      return (
+        <UsersSection
+          {...editableProps}
+          form={form}
+          setForm={setForm}
+          setValue={(name, value) =>
+            setForm((current) => ({ ...current, [name]: value }))
+          }
+        />
+      );
+    }
+
+    render(<EditableUsersSection />);
+
+    const roleSelect = screen.getByRole("combobox", { name: "Rol" });
+    expect(roleSelect).toHaveValue("adoptante");
+    expect(screen.getByRole("option", { name: "Veterinario" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Administrador" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Rol personalizado" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
+
+    fireEvent.change(roleSelect, { target: { value: "administrador" } });
+    const form = screen.getByRole("button", { name: "Guardar cambios" }).closest("form");
+    expect(form).not.toBeNull();
+    fireEvent.submit(form!);
+    expect(send).toHaveBeenCalledWith(
+      "/api/v1/auth/users/1/",
+      "PATCH",
+      expect.objectContaining({ role: "administrador" }),
+      "Cuenta actualizada.",
+    );
+  });
+
   it("filters accounts by username, email, name, or role for the platform superadmin", () => {
     render(<UsersSection {...makeProps(true)} />);
 
@@ -121,13 +176,15 @@ describe("user management search", () => {
     expect(screen.queryByRole("heading", { name: "Esperanza Animal" })).not.toBeInTheDocument();
   });
 
-  it("does not expose the search field to other administrators", () => {
+  it("allows other administrators to search accounts without exposing the superadmin count", () => {
     render(<UsersSection {...makeProps(false)} />);
 
-    expect(
-      screen.queryByRole("searchbox", {
+    expect(screen.queryByText("Usuarios registrados")).not.toBeInTheDocument();
+    const search = screen.getByRole("searchbox", {
         name: "Buscar por nombre, usuario, correo o rol",
-      }),
-    ).not.toBeInTheDocument();
+      });
+    fireEvent.change(search, { target: { value: "esperanza_org" } });
+    expect(screen.getByRole("heading", { name: "Esperanza Animal" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ana López" })).not.toBeInTheDocument();
   });
 });
