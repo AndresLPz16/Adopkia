@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./rbac/auth";
@@ -8,6 +8,7 @@ import { ACTIONS, RESOURCES, ROLES } from "./rbac/types";
 import type { Action, Resource } from "./rbac/types";
 import {
   isAvailablePet,
+  labelStatus,
   responseData,
   rows,
   text,
@@ -267,7 +268,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const pathsForSection: Record<string, string[]> = {
     dashboard:
       role === ROLES.ADMIN
-        ? ["/api/v1/shelters/", "/api/v1/statistics/adoptions/"]
+        ? ["/api/v1/shelters/", "/api/v1/statistics/adoptions/", "/api/v1/notifications/"]
         : role === ROLES.VETERINARIAN
           ? [
               "/api/v1/medical-records/",
@@ -628,6 +629,33 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const navTo = (key: string) =>
     navigate(key === "permissions" ? "/admin/permissions" : `/app/${key}`);
 
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  const unreadNotifications = useMemo(
+    () => notifications.filter((item) => item.is_read !== true),
+    [notifications],
+  );
+  const unreadNotificationsCount = unreadNotifications.length;
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [notificationsOpen]);
+
   if (status === "error") {
     return (
       <main className="login">
@@ -849,6 +877,17 @@ function Portal({ onLogout }: { onLogout: () => void }) {
                             navTo={navTo}
                           />;
 
+  const markAllNotificationsAsRead = async () => {
+    for (const item of unreadNotifications) {
+      await send(
+        `/api/v1/notifications/${text(item.id)}/`,
+        "PATCH",
+        { is_read: true },
+      );
+    }
+    setNotice("Todas las notificaciones fueron marcadas como leídas.");
+  };
+
   return (
     <div className="app-shell" data-role={role}>
       <header className="app-header">
@@ -856,9 +895,126 @@ function Portal({ onLogout }: { onLogout: () => void }) {
           <img className="app-header__logo" src="/logo-adopkia-mark.png" alt="" />
           <span>Adopkia <small>{roleNames[role] ?? "Mi espacio"}</small></span>
         </button>
-        <div className="app-header__account">
-          <div><strong>{user.name}</strong><span>{roleNames[role] ?? role}</span></div>
-          <button type="button" onClick={onLogout}>Cerrar sesión</button>
+        <div className="app-header__actions">
+          {canDo(RESOURCES.NOTIFICATIONS, ACTIONS.READ) && (
+            <div className="app-header__notifications" ref={bellRef}>
+              <button
+                className={`app-header__bell ${unreadNotificationsCount > 0 ? "has-unread" : ""}`}
+                type="button"
+                aria-label={
+                  unreadNotificationsCount > 0
+                    ? `Notificaciones: ${unreadNotificationsCount} sin leer`
+                    : "Notificaciones"
+                }
+                aria-expanded={notificationsOpen}
+                onClick={() => setNotificationsOpen((prev) => !prev)}
+              >
+                <span className="app-header__bell-icon" aria-hidden="true">🔔</span>
+                {unreadNotificationsCount > 0 && (
+                  <span className="app-header__bell-badge" aria-hidden="true">
+                    {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div
+                  className="app-header__notifications-popover"
+                  role="dialog"
+                  aria-label="Panel de notificaciones"
+                >
+                  <div className="app-header__notifications-header">
+                    <div>
+                      <strong>Notificaciones</strong>
+                      {unreadNotificationsCount > 0 && (
+                        <span className="app-header__notifications-count">
+                          {unreadNotificationsCount} nueva{unreadNotificationsCount === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </div>
+                    {unreadNotificationsCount > 0 && (
+                      <button
+                        type="button"
+                        className="app-header__notifications-mark-all"
+                        onClick={() => void markAllNotificationsAsRead()}
+                      >
+                        Marcar todas leídas
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="app-header__notifications-list">
+                    {notifications.length === 0 ? (
+                      <div className="app-header__notifications-empty">
+                        <span aria-hidden="true">🔕</span>
+                        <p>No tienes notificaciones pendientes.</p>
+                      </div>
+                    ) : (
+                      notifications.slice(0, 6).map((item) => (
+                        <div
+                          key={text(item.id)}
+                          className={`app-header__notification-item ${item.is_read ? "is-read" : "is-unread"}`}
+                        >
+                          <span className="app-header__notification-icon" aria-hidden="true">
+                            {item.notification_type === "mensaje"
+                              ? "✉️"
+                              : item.notification_type === "solicitud"
+                                ? "📋"
+                                : item.notification_type === "recordatorio"
+                                  ? "⏰"
+                                  : "🐾"}
+                          </span>
+                          <div className="app-header__notification-body">
+                            <p className="app-header__notification-message">{text(item.message)}</p>
+                            <div className="app-header__notification-meta">
+                              <small>{labelStatus(item.notification_type)}</small>
+                              {Boolean(item.sent_at) && <small>{text(item.sent_at)}</small>}
+                            </div>
+                          </div>
+                          {!item.is_read && (
+                            <button
+                              type="button"
+                              className="app-header__notification-action"
+                              title="Marcar como leída"
+                              aria-label={`Marcar como leída: ${text(item.message)}`}
+                              onClick={() =>
+                                void send(
+                                  `/api/v1/notifications/${text(item.id)}/`,
+                                  "PATCH",
+                                  { is_read: true },
+                                  "Notificación leída.",
+                                )
+                              }
+                            >
+                              ✓
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="app-header__notifications-footer">
+                    <button
+                      type="button"
+                      className="portal-button portal-button--secondary"
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        navTo("notifications");
+                      }}
+                    >
+                      Ver todas las notificaciones
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="app-header__account">
+            <div><strong>{user.name}</strong><span>{roleNames[role] ?? role}</span></div>
+            <button type="button" onClick={onLogout}>Cerrar sesión</button>
+          </div>
         </div>
       </header>
       <div className="app-layout">
