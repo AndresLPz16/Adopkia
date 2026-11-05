@@ -116,16 +116,27 @@ export function DashboardSection({
   return (
     <div className="portal-dashboard" data-role={role}>
       <div className="portal-dashboard__hero">
-        <SectionTitle
-          eyebrow={`Hola, ${userName}`}
-          title={copy.title}
-          description={copy.description}
-        />
-        {visibleLinks.includes(copy.section) && (
-          <button className="portal-button" onClick={() => navTo(copy.section)}>
-            {copy.action}
-          </button>
-        )}
+        <div className="portal-dashboard__hero-info">
+          <SectionTitle
+            eyebrow={`Hola, ${userName}`}
+            title={copy.title}
+            description={copy.description}
+          />
+          {visibleLinks.includes(copy.section) && (
+            <button className="portal-button" onClick={() => navTo(copy.section)}>
+              {copy.action}
+            </button>
+          )}
+        </div>
+        <div className="portal-dashboard__hero-3d" aria-hidden="true">
+          <div className="portal-dashboard__hero-emblem">
+            <span className="portal-dashboard__hero-icon">
+              {role === ROLES.ADOPTER ? "🐾" : role === ROLES.SHELTER ? "🏡" : role === ROLES.VETERINARIAN ? "🩺" : "🛡️"}
+            </span>
+            <span className="portal-dashboard__hero-sparkle portal-dashboard__hero-sparkle--1">✨</span>
+            <span className="portal-dashboard__hero-sparkle portal-dashboard__hero-sparkle--2">💫</span>
+          </div>
+        </div>
       </div>
       <div className="portal-stat-grid">
         {(statsByRole[role] ?? []).map((stat) => (

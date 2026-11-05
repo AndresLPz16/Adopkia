@@ -1,16 +1,26 @@
 :root {
-  --brand-primary: #7545b8;
-  --brand-secondary: #875bc4;
-  --brand-deep: #5c358f;
-  --brand-coral: #e65262;
-  --brand-coral-soft: #f3a087;
-  --text-primary: #352c42;
-  --text-secondary: #6f6878;
-  --surface-muted: #f7f4fa;
-  --surface-tint: #f0e9f7;
-  --border: #e4dceb;
-  --border-strong: #d5c8e3;
-  --focus: #b79bda;
+  --brand-primary: #7c3aed;
+  --brand-secondary: #8b5cf6;
+  --brand-deep: #5b21b6;
+  --brand-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #f43f5e 100%);
+  --brand-coral: #f43f5e;
+  --brand-coral-soft: #fda4af;
+  --brand-emerald: #10b981;
+  --brand-emerald-soft: #a7f3d0;
+  --brand-amber: #f59e0b;
+  --brand-sky: #0ea5e9;
+  --text-primary: #1e1b4b;
+  --text-secondary: #64748b;
+  --surface-muted: #f8fafc;
+  --surface-tint: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --focus: rgba(124, 58, 237, 0.45);
+  --shadow-sm: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 10px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 10px -4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 20px 35px -5px rgba(15, 23, 42, 0.1), 0 8px 16px -6px rgba(15, 23, 42, 0.05);
+  --shadow-3d: 0 20px 40px -15px rgba(124, 58, 237, 0.25), 0 8px 16px -6px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 25px rgba(124, 58, 237, 0.35);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   color: var(--text-primary);
@@ -142,23 +152,31 @@ select:focus-visible {
 }
 
 .app-shell[data-role="adoptante"] {
-  --role-accent: #bb5c48;
-  --role-tint: #fff0e9;
+  --role-accent: #e11d48;
+  --role-tint: #fff1f2;
+  --role-glow: rgba(225, 29, 72, 0.35);
+  --role-gradient: linear-gradient(135deg, #e11d48, #f43f5e, #fb7185);
 }
 
 .app-shell[data-role="refugio"] {
-  --role-accent: #24766d;
-  --role-tint: #e8f5f1;
+  --role-accent: #059669;
+  --role-tint: #ecfdf5;
+  --role-glow: rgba(5, 150, 105, 0.35);
+  --role-gradient: linear-gradient(135deg, #059669, #10b981, #34d399);
 }
 
 .app-shell[data-role="veterinario"] {
-  --role-accent: #4267a4;
-  --role-tint: #edf2fb;
+  --role-accent: #2563eb;
+  --role-tint: #eff6ff;
+  --role-glow: rgba(37, 99, 235, 0.35);
+  --role-gradient: linear-gradient(135deg, #2563eb, #3b82f6, #60a5fa);
 }
 
 .app-shell[data-role="administrador"] {
-  --role-accent: #7250a0;
-  --role-tint: #f2ecf9;
+  --role-accent: #7c3aed;
+  --role-tint: #f5f3ff;
+  --role-glow: rgba(124, 58, 237, 0.35);
+  --role-gradient: linear-gradient(135deg, #7c3aed, #8b5cf6, #c084fc);
 }
 
 .app-shell[data-role] .app-header {
@@ -2557,4 +2575,808 @@ select:focus-visible {
   .portal-stat-chart__bar {
     fill: #7545b8;
   }
+}
+
+
+/* ==========================================================================
+   ENHANCED VISUAL SYSTEM & ANIMATIONS (Buttons, Views, 3D Effects, Dashboard)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL BUTTON MICRO-INTERACTIONS & ANIMATIONS
+   -------------------------------------------------------------------------- */
+button {
+  font: inherit;
+  transition: all 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform, box-shadow;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1.5px) scale(0.97) !important;
+}
+
+/* Primary Button Upgrades with 3D Depth & Light Shimmer */
+.portal-button,
+.landing-search button,
+.landing-auth button[type="submit"],
+.landing-auth > button,
+.login form button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.portal-button::before,
+.landing-search button::before,
+.landing-auth button[type="submit"]::before,
+.landing-auth > button::before,
+.login form button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 100%
+  );
+  transition: left 0.65s ease;
+  pointer-events: none;
+}
+
+.portal-button:hover:not(:disabled)::before,
+.landing-search button:hover:not(:disabled)::before,
+.landing-auth button[type="submit"]:hover:not(:disabled)::before,
+.landing-auth > button:hover:not(:disabled)::before,
+.login form button:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.portal-button:hover:not(:disabled) {
+  transform: translateY(-2.5px) scale(1.02);
+  box-shadow: 0 10px 24px -2px var(--role-glow, rgba(124, 58, 237, 0.45)), 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.portal-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* Secondary Button Enhancements */
+.portal-button--secondary {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+.portal-button--secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--role-accent, var(--brand-secondary));
+  background: #ffffff;
+  box-shadow: 0 8px 20px -3px rgba(15, 23, 42, 0.12);
+}
+
+/* Link buttons with subtle slide/glow */
+.portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.portal-link:hover {
+  transform: translateX(3px);
+  color: var(--brand-deep);
+  text-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+}
+
+/* Landing Header Action Buttons */
+.landing-header__login {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 0.55rem;
+}
+
+.landing-header__login:hover {
+  transform: translateY(-2px);
+  color: var(--brand-primary);
+  background: var(--surface-tint);
+}
+
+/* Carousel Control Buttons */
+.landing-carousel__controls button {
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+.landing-carousel__controls button:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 8px 20px -2px rgba(124, 58, 237, 0.35);
+}
+
+.landing-carousel__controls button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.94);
+}
+
+/* Like Heart Button */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.45) rotate(-12deg); }
+  70% { transform: scale(0.9) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.landing-pet__heart button {
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 50%;
+}
+
+.landing-pet__heart button:hover {
+  transform: scale(1.22) rotate(-8deg);
+  background: #fff1f2;
+}
+
+.landing-pet__heart button:active {
+  animation: heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --------------------------------------------------------------------------
+   2. VIEW TRANSITIONS & PAGE ENTRANCES
+   -------------------------------------------------------------------------- */
+@keyframes view-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.app-content {
+  animation: view-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.portal-dashboard {
+  animation: view-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-pets {
+  animation: view-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-auth-screen {
+  animation: view-enter 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.portal-card {
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease, border-color 0.32s ease;
+}
+
+.portal-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--role-accent, var(--border)) 35%, white);
+}
+
+/* --------------------------------------------------------------------------
+   3. DASHBOARD VISUALS & 3D FLOATING EMBLEM
+   -------------------------------------------------------------------------- */
+.portal-dashboard__hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  transition: all 0.35s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.portal-dashboard__hero::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -15%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--role-accent, var(--brand-primary)) 20%, transparent) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: hero-ambient-glow 7s ease-in-out infinite alternate;
+}
+
+@keyframes hero-ambient-glow {
+  0% { transform: scale(0.92) translate(0, 0); opacity: 0.55; }
+  100% { transform: scale(1.18) translate(-25px, 20px); opacity: 0.95; }
+}
+
+.portal-dashboard__hero-info {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3D Floating Emblem in Dashboard Hero */
+.portal-dashboard__hero-3d {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 105px;
+  height: 105px;
+  flex: 0 0 auto;
+  perspective: 800px;
+  z-index: 1;
+}
+
+.portal-dashboard__hero-emblem {
+  position: relative;
+  display: grid;
+  width: 90px;
+  height: 90px;
+  background: #ffffff;
+  border: 2px solid color-mix(in srgb, var(--role-accent, var(--brand-primary)) 28%, white);
+  border-radius: 1.4rem;
+  box-shadow: 0 18px 36px -6px color-mix(in srgb, var(--role-accent, var(--brand-primary)) 35%, transparent),
+              0 0 0 6px color-mix(in srgb, var(--role-accent, var(--brand-primary)) 12%, transparent);
+  place-items: center;
+  transform-style: preserve-3d;
+  animation: float-emblem-3d 5.5s ease-in-out infinite;
+}
+
+@keyframes float-emblem-3d {
+  0% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  50% { transform: translateY(-10px) rotateX(8deg) rotateY(-8deg); }
+  100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+}
+
+.portal-dashboard__hero-icon {
+  font-size: 2.7rem;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.15));
+  transform: translateZ(16px);
+}
+
+.portal-dashboard__hero-sparkle {
+  position: absolute;
+  font-size: 1.15rem;
+  pointer-events: none;
+  animation: sparkle-float 3s ease-in-out infinite alternate;
+}
+
+.portal-dashboard__hero-sparkle--1 {
+  top: -8px;
+  right: -8px;
+}
+
+.portal-dashboard__hero-sparkle--2 {
+  bottom: -8px;
+  left: -8px;
+  animation-delay: 1.5s;
+}
+
+@keyframes sparkle-float {
+  0% { transform: scale(0.8) translateY(0); opacity: 0.5; }
+  100% { transform: scale(1.3) translateY(-8px); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   4. 3D STAT CARDS & SHORTCUTS
+   -------------------------------------------------------------------------- */
+.portal-stat-grid {
+  perspective: 1200px;
+}
+
+.portal-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transform-style: preserve-3d;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.32s ease, border-color 0.32s ease;
+}
+
+.portal-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--role-gradient, var(--brand-gradient));
+  transition: height 0.25s ease;
+}
+
+.portal-stat:hover {
+  transform: translateY(-6px) rotateX(3deg) rotateY(-2deg) scale(1.02);
+  box-shadow: var(--shadow-3d);
+  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, white);
+}
+
+.portal-stat:hover::before {
+  height: 6px;
+}
+
+.portal-stat strong {
+  background: var(--role-gradient, var(--brand-gradient));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.portal-stat:hover strong {
+  transform: scale(1.08) translateZ(12px);
+}
+
+/* 3D Shortcuts */
+.portal-shortcuts {
+  perspective: 1200px;
+}
+
+.portal-shortcut {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transform-style: preserve-3d;
+  transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.portal-shortcut:hover {
+  transform: translateY(-7px) rotateX(4deg) translateZ(12px);
+  box-shadow: var(--shadow-3d);
+  border-color: var(--role-accent, var(--focus));
+}
+
+.portal-shortcut > span {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.portal-shortcut:hover > span {
+  transform: translateY(-4px) scale(1.22) rotate(6deg);
+  color: var(--role-accent, var(--brand-secondary));
+}
+
+/* Statistics Charts Bar Animation */
+@keyframes stat-bar-grow {
+  0% { transform: scaleY(0); transform-origin: bottom; }
+  100% { transform: scaleY(1); transform-origin: bottom; }
+}
+
+.portal-stat-chart__bar {
+  animation: stat-bar-grow 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: fill 0.25s ease, filter 0.25s ease;
+}
+
+.portal-stat-chart__bar:hover {
+  filter: brightness(1.15) drop-shadow(0 4px 8px rgba(124, 58, 237, 0.4));
+}
+
+/* --------------------------------------------------------------------------
+   5. 3D PET CARDS & PARALLAX HOVER
+   -------------------------------------------------------------------------- */
+.landing-carousel__track {
+  perspective: 1200px;
+}
+
+.landing-pet {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  border-radius: 1.2rem;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.landing-pet:hover {
+  transform: translateY(-8px) rotateX(3deg) rotateY(-2deg) scale(1.015);
+  box-shadow: 0 24px 44px -10px rgba(53, 44, 66, 0.18), 0 8px 18px -4px rgba(53, 44, 66, 0.08);
+}
+
+.landing-pet__photo-open > img {
+  transition: transform 0.48s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-pet:hover .landing-pet__photo-open > img {
+  transform: scale(1.08) translateZ(12px);
+}
+
+.landing-pet__badge {
+  transform: translateZ(24px);
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.landing-pet:hover .landing-pet__badge {
+  transform: translateZ(32px) scale(1.06);
+}
+
+/* Portal Pet Carousel Track 3D Cards */
+.portal-pet-carousel__track {
+  perspective: 1200px;
+}
+
+.portal-pet-carousel__track > .portal-card {
+  transform-style: preserve-3d;
+  border-radius: 1.15rem;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.portal-pet-carousel__track > .portal-card:hover {
+  transform: translateY(-8px) rotateX(2.5deg) rotateY(-2deg);
+  box-shadow: var(--shadow-3d);
+  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, white);
+}
+
+/* --------------------------------------------------------------------------
+   6. 3D FLOATING HERO ELEMENTS (Landing Page)
+   -------------------------------------------------------------------------- */
+@keyframes float-hero-3d {
+  0% {
+    transform: perspective(1000px) translateY(0) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: perspective(1000px) translateY(-14px) rotateX(3deg) rotateY(-3deg);
+  }
+  100% {
+    transform: perspective(1000px) translateY(0) rotateX(0deg) rotateY(0deg);
+  }
+}
+
+@keyframes float-note-3d {
+  0% {
+    transform: perspective(800px) translateY(0) rotate(-2deg) translateZ(10px);
+  }
+  50% {
+    transform: perspective(800px) translateY(-10px) rotate(1deg) translateZ(26px);
+  }
+  100% {
+    transform: perspective(800px) translateY(0) rotate(-2deg) translateZ(10px);
+  }
+}
+
+.landing-hero__photo {
+  animation: float-hero-3d 6s ease-in-out infinite;
+}
+
+.landing-hero__note {
+  animation: float-note-3d 5s ease-in-out infinite 0.5s;
+  box-shadow: var(--shadow-lg);
+}
+
+@keyframes spark-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+  50% { transform: scale(1.35) rotate(180deg); opacity: 1; }
+}
+
+.landing-hero__spark {
+  animation: spark-twinkle 4s ease-in-out infinite;
+}
+
+.landing-hero__spark--two {
+  animation-delay: 2s;
+}
+
+/* --------------------------------------------------------------------------
+   7. 3D MODALS & DIALOGS
+   -------------------------------------------------------------------------- */
+@keyframes dialog-3d-in {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) scale(0.9) translateY(24px) rotateX(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) scale(1) translateY(0) rotateX(0deg);
+  }
+}
+
+.landing-pet-dialog__content,
+.login__card {
+  animation: dialog-3d-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 25px 60px -15px rgba(53, 44, 66, 0.22);
+}
+
+.landing-pet-dialog {
+  backdrop-filter: blur(8px);
+  background: rgba(30, 27, 75, 0.45);
+}
+
+/* --------------------------------------------------------------------------
+   8. SIDEBAR INTERACTIVE ENHANCEMENTS
+   -------------------------------------------------------------------------- */
+.app-sidebar__link {
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-sidebar__link:hover {
+  transform: translateX(4px);
+}
+
+.app-sidebar__link--active {
+  transform: translateX(4px);
+  box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--role-accent, var(--brand-primary)) 24%, transparent);
+}
+
+
+/* ==========================================================================
+   NOTIFICATION BELL & POPOVER
+   ========================================================================== */
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.app-header__notifications {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.app-header__bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-header__bell:hover {
+  transform: translateY(-2px) scale(1.05);
+  background: #ffffff;
+  border-color: var(--role-accent, var(--brand-primary));
+  box-shadow: 0 6px 18px -3px var(--role-glow, rgba(124, 58, 237, 0.25));
+}
+
+.app-header__bell:active {
+  transform: translateY(1px) scale(0.95);
+}
+
+@keyframes bell-ring {
+  0% { transform: rotate(0); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-14deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(6deg); }
+  60% { transform: rotate(-6deg); }
+  70% { transform: rotate(2deg); }
+  100% { transform: rotate(0); }
+}
+
+.app-header__bell.has-unread .app-header__bell-icon {
+  display: inline-block;
+  transform-origin: top center;
+  animation: bell-ring 3.5s ease-in-out infinite;
+}
+
+.app-header__bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--brand-coral, #f43f5e);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 850;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
+  animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+  70% { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+/* Notification Popover Dropdown */
+@keyframes popover-3d-in {
+  0% {
+    opacity: 0;
+    transform: perspective(600px) translateY(-10px) rotateX(-6deg) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(600px) translateY(0) rotateX(0deg) scale(1);
+  }
+}
+
+.app-header__notifications-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 380px;
+  max-width: min(92vw, 420px);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 1.15rem;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  z-index: 1000;
+  overflow: hidden;
+  animation: popover-3d-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  backdrop-filter: blur(16px);
+}
+
+.app-header__notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.95rem 1.15rem;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header__notifications-header strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.app-header__notifications-count {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 750;
+  border-radius: 999px;
+  background: var(--brand-coral-soft, #fda4af);
+  color: #9f1239;
+}
+
+.app-header__notifications-mark-all {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--role-accent, var(--brand-primary));
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-header__notifications-mark-all:hover {
+  background: #ffffff;
+  text-decoration: underline;
+}
+
+.app-header__notifications-list {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app-header__notifications-empty {
+  display: grid;
+  place-items: center;
+  padding: 2.2rem 1.5rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.app-header__notifications-empty span {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.app-header__notifications-empty p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.app-header__notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid var(--surface-tint);
+  transition: background 0.2s ease;
+}
+
+.app-header__notification-item:last-child {
+  border-bottom: 0;
+}
+
+.app-header__notification-item.is-unread {
+  background: color-mix(in srgb, var(--role-tint, var(--surface-tint)) 45%, #ffffff);
+}
+
+.app-header__notification-item:hover {
+  background: var(--surface-muted);
+}
+
+.app-header__notification-icon {
+  font-size: 1.25rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+}
+
+.app-header__notification-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.app-header__notification-message {
+  margin: 0 0 0.3rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.app-header__notification-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.app-header__notification-action {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--brand-emerald, #10b981);
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-header__notification-action:hover {
+  transform: scale(1.15);
+  background: var(--brand-emerald, #10b981);
+  color: #ffffff;
+  border-color: var(--brand-emerald, #10b981);
+}
+
+.app-header__notifications-footer {
+  padding: 0.75rem 1.15rem;
+  background: var(--surface-muted);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.app-header__notifications-footer .portal-button {
+  width: 100%;
+  min-height: 2.35rem;
+  font-size: 0.82rem;
 }
