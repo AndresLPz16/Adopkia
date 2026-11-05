@@ -83,6 +83,25 @@ CREATE TABLE permiso_rol (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
+-- 0.15 RECURSO_PERMISO (recursos adicionales configurables)
+-- ---------------------------------------------------------------------
+CREATE TABLE recurso_permiso (
+  clave VARCHAR(40) NOT NULL,
+  etiqueta VARCHAR(60) NOT NULL,
+  acciones JSON NOT NULL,
+  PRIMARY KEY (clave)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- 0.2 CONFIGURACION_PORTAL (personalización global del menú)
+-- ---------------------------------------------------------------------
+CREATE TABLE configuracion_portal (
+  id SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  etiquetas_menu_lateral JSON NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- 1. USUARIO
 -- ---------------------------------------------------------------------
 CREATE TABLE usuario (

@@ -221,11 +221,11 @@ class RolePermissionApiTests(APITestCase):
                 "medicalRecords",
                 "vaccines",
                 "reminders",
-                "conversations",
-                "messages",
+                "messaging",
                 "notifications",
                 "users",
                 "statistics",
+                "rolePermissions",
             },
         )
         adopter_data = next(
@@ -241,6 +241,18 @@ class RolePermissionApiTests(APITestCase):
         self.assertIn(
             {"resource": "vaccines", "action": "manage"},
             admin_data["permissions"],
+        )
+        self.assertIn(
+            {"resource": "messaging", "action": "create"},
+            adopter_data["permissions"],
+        )
+        self.assertNotIn(
+            "conversations",
+            {permission["resource"] for permission in adopter_data["permissions"]},
+        )
+        self.assertNotIn(
+            "messages",
+            {permission["resource"] for permission in adopter_data["permissions"]},
         )
 
     def test_only_administrator_can_replace_role_permissions(self):
@@ -356,10 +368,10 @@ class RolePermissionApiTests(APITestCase):
             ).exists()
         )
 
-    def test_role_matrix_management_requires_users_manage_grant(self):
+    def test_role_matrix_management_requires_role_permissions_grant(self):
         RolePermission.objects.filter(
             role=self.admin.role,
-            resource="users",
+            resource="rolePermissions",
             action="manage",
         ).delete()
         self.client.force_authenticate(self.admin)
@@ -373,6 +385,204 @@ class RolePermissionApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_role_permissions_manager_can_manage_roles_without_admin_role(self):
+        manager = User.objects.create_user(
+            email="role-permissions-manager@example.com",
+            password="RoleManager-Test-2026!",
+            name="Role Permissions Manager",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="rolePermissions",
+            action="manage",
+        )
+        self.client.force_authenticate(manager)
+
+        updated = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.SHELTER},
+            ),
+            [{"resource": "pets", "action": "read"}],
+            format="json",
+        )
+        self.assertEqual(updated.status_code, 200)
+
+        created = self.client.post(
+            reverse("role-list"),
+            {"name": "limited_manager", "label": "Gestor limitado"},
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+
+        protected = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADMIN},
+            ),
+            [{"resource": "dashboard", "action": "read"}],
+            format="json",
+        )
+        self.assertEqual(protected.status_code, 403)
+
+    def test_admin_can_grant_role_panel_access_to_another_role(self):
+        self.client.force_authenticate(self.admin)
+        grant = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.ADOPTER},
+            ),
+            [
+                {"resource": "pets", "action": "read"},
+                {"resource": "rolePermissions", "action": "manage"},
+            ],
+            format="json",
+        )
+        self.assertEqual(grant.status_code, 200)
+        self.assertTrue(
+            RolePermission.objects.filter(
+                role=self.adopter_role,
+                resource="rolePermissions",
+                action="manage",
+            ).exists()
+        )
+
+        adopter = User.objects.create_user(
+            email="role-panel-adopter@example.com",
+            password="RolePanel-Test-2026!",
+            name="Role Panel Adopter",
+        )
+        self.client.force_authenticate(adopter)
+        delegated = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.SHELTER},
+            ),
+            [{"resource": "pets", "action": "read"}],
+            format="json",
+        )
+        self.assertEqual(delegated.status_code, 200)
+
+    def test_role_permissions_actions_are_enforced_independently(self):
+        manager = User.objects.create_user(
+            email="granular-role-manager@example.com",
+            password="Granular-Role-Test-2026!",
+            name="Granular Role Manager",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="rolePermissions",
+            action="read",
+        )
+        self.client.force_authenticate(manager)
+
+        self.assertEqual(
+            self.client.get(reverse("role-permissions")).status_code,
+            200,
+        )
+        self.assertEqual(self.client.get(reverse("role-list")).status_code, 200)
+        permission_update_url = reverse(
+            "role-permissions-update",
+            kwargs={"role_name": Role.Name.SHELTER},
+        )
+        payload = [{"resource": "pets", "action": "read"}]
+        self.assertEqual(
+            self.client.put(permission_update_url, payload, format="json").status_code,
+            403,
+        )
+
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="rolePermissions",
+            action="create",
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("role-list"),
+                {"name": "creator_role", "label": "Rol creador"},
+                format="json",
+            ).status_code,
+            201,
+        )
+        self.assertEqual(
+            self.client.put(permission_update_url, payload, format="json").status_code,
+            403,
+        )
+
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="rolePermissions",
+            action="update",
+        )
+        self.assertEqual(
+            self.client.put(permission_update_url, payload, format="json").status_code,
+            200,
+        )
+
+    def test_role_permission_manager_can_create_and_assign_dynamic_resource(self):
+        manager = User.objects.create_user(
+            email="resource-manager@example.com",
+            password="Resource-Manager-Test-2026!",
+            name="Resource Manager",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="rolePermissions",
+            action="manage",
+        )
+        self.client.force_authenticate(manager)
+
+        created = self.client.post(
+            reverse("permission-resource-list"),
+            {
+                "key": "adoptionReports",
+                "label": "Informes de adopción",
+                "actions": ["read", "create"],
+            },
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        resource_row = next(
+            resource
+            for resource in created.data["resources"]
+            if resource["key"] == "adoptionReports"
+        )
+        self.assertEqual(
+            {action["key"] for action in resource_row["actions"]},
+            {"read", "create"},
+        )
+
+        invalid_action = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.SHELTER},
+            ),
+            [{"resource": "adoptionReports", "action": "delete"}],
+            format="json",
+        )
+        self.assertEqual(invalid_action.status_code, 400)
+
+        assigned = self.client.put(
+            reverse(
+                "role-permissions-update",
+                kwargs={"role_name": Role.Name.SHELTER},
+            ),
+            [{"resource": "adoptionReports", "action": "create"}],
+            format="json",
+        )
+        self.assertEqual(assigned.status_code, 200)
+
+        denied_duplicate = self.client.post(
+            reverse("permission-resource-list"),
+            {
+                "key": "adoptionReports",
+                "label": "Duplicado",
+                "actions": ["read"],
+            },
+            format="json",
+        )
+        self.assertEqual(denied_duplicate.status_code, 400)
+
     def test_role_permission_changes_take_effect_on_api_access(self):
         adopter = User.objects.create_user(
             email="dynamic-permission-adopter@example.com",
@@ -383,14 +593,18 @@ class RolePermissionApiTests(APITestCase):
 
         allowed = self.client.get("/api/v1/messages/")
         self.assertEqual(allowed.status_code, 200)
+        allowed_conversations = self.client.get("/api/v1/conversations/")
+        self.assertEqual(allowed_conversations.status_code, 200)
 
         RolePermission.objects.filter(
             role=adopter.role,
-            resource="messages",
+            resource="messaging",
             action="read",
         ).delete()
         denied = self.client.get("/api/v1/messages/")
         self.assertEqual(denied.status_code, 403)
+        denied_conversations = self.client.get("/api/v1/conversations/")
+        self.assertEqual(denied_conversations.status_code, 403)
         index = self.client.get(reverse("api-root"))
         self.assertNotIn(
             "messages",
@@ -399,11 +613,13 @@ class RolePermissionApiTests(APITestCase):
 
         RolePermission.objects.create(
             role=adopter.role,
-            resource="messages",
+            resource="messaging",
             action="read",
         )
         restored = self.client.get("/api/v1/messages/")
         self.assertEqual(restored.status_code, 200)
+        restored_conversations = self.client.get("/api/v1/conversations/")
+        self.assertEqual(restored_conversations.status_code, 200)
 
     def test_user_management_is_role_gated_and_never_returns_password(self):
         adopter = User.objects.create_user(
@@ -452,6 +668,52 @@ class RolePermissionApiTests(APITestCase):
         self.assertEqual(updated.status_code, 200)
         user.refresh_from_db()
         self.assertFalse(user.active)
+
+    def test_delegated_user_manager_can_assign_any_existing_role(self):
+        manager = User.objects.create_user(
+            email="all-role-manager@example.com",
+            password="AllRoles-Test-2026!",
+            name="All Role Manager",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="users",
+            action="manage",
+        )
+        custom_role = Role.objects.create(
+            name="custom_operator",
+            label="Operador personalizado",
+        )
+        self.client.force_authenticate(manager)
+
+        created_admin = self.client.post(
+            reverse("user-list"),
+            {
+                "email": "delegated-admin@example.com",
+                "password": "Delegated-Admin-Test-2026!",
+                "name": "Delegated Admin",
+                "role": Role.Name.ADMIN,
+            },
+            format="json",
+        )
+        self.assertEqual(created_admin.status_code, 201)
+        self.assertNotIn("is_platform_superadmin", created_admin.data)
+        self.assertFalse(
+            User.objects.get(email="delegated-admin@example.com").is_platform_superadmin
+        )
+
+        adopter = User.objects.create_user(
+            email="promoted-user@example.com",
+            password="PromotedUser-Test-2026!",
+            name="Promoted User",
+        )
+        promoted = self.client.patch(
+            reverse("user-detail", kwargs={"pk": adopter.pk}),
+            {"role": custom_role.name},
+            format="json",
+        )
+        self.assertEqual(promoted.status_code, 200)
+        self.assertEqual(promoted.data["role"], custom_role.name)
 
     def test_custom_role_permissions_control_api_access_and_can_be_assigned(self):
         self.client.force_authenticate(self.admin)
@@ -551,7 +813,11 @@ class RolePermissionApiTests(APITestCase):
             },
             format="json",
         )
-        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(denied.status_code, 201)
+        self.assertEqual(
+            User.objects.get(email="unauthorized-custom@example.com").role,
+            custom_role,
+        )
 
     def test_only_platform_superadmin_can_manage_administrator_accounts(self):
         ordinary_admin = User.objects.create_user(
@@ -589,7 +855,7 @@ class RolePermissionApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(created.status_code, 403)
+        self.assertEqual(created.status_code, 201)
         self.assertEqual(updated.status_code, 403)
         self.assertEqual(deleted.status_code, 403)
         self.assertEqual(permission_update.status_code, 403)
@@ -632,6 +898,7 @@ class RolePermissionApiTests(APITestCase):
             [
                 {"resource": "users", "action": "manage"},
                 {"resource": "shelters", "action": "verify"},
+                {"resource": "rolePermissions", "action": "manage"},
                 {"resource": "dashboard", "action": "read"},
             ],
             format="json",
@@ -685,7 +952,7 @@ class RolePermissionApiTests(APITestCase):
         account = User.objects.get(email="not-superadmin@example.com")
         self.assertFalse(account.is_platform_superadmin)
 
-    def test_non_admin_cannot_assign_privileged_role_and_last_admin_is_protected(self):
+    def test_user_manager_can_assign_privileged_role_and_last_admin_is_protected(self):
         manager = User.objects.create_user(
             email="user-manager@example.com",
             password="SafePass!2026",
@@ -698,7 +965,7 @@ class RolePermissionApiTests(APITestCase):
         )
         veterinarian_role = Role.objects.get(name=Role.Name.VETERINARIAN)
         self.client.force_authenticate(manager)
-        denied = self.client.post(
+        assigned = self.client.post(
             reverse("user-list"),
             {
                 "email": "unapproved-vet@example.com",
@@ -708,7 +975,11 @@ class RolePermissionApiTests(APITestCase):
             },
             format="json",
         )
-        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(assigned.status_code, 201)
+        self.assertEqual(
+            User.objects.get(email="unapproved-vet@example.com").role,
+            veterinarian_role,
+        )
 
         RolePermission.objects.filter(role=self.admin.role).delete()
         RolePermission.objects.create(
@@ -723,6 +994,61 @@ class RolePermissionApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(last_admin.status_code, 400)
+
+
+class SidebarLabelsApiTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            email="sidebar-admin@example.com",
+            password="test-" + "password",
+            name="Sidebar Admin",
+        )
+        self.adopter = User.objects.create_user(
+            email="sidebar-adopter@example.com",
+            password="test-" + "password",
+            name="Sidebar Adopter",
+        )
+
+    def test_sidebar_labels_are_global_and_only_admins_can_update_them(self):
+        self.client.force_authenticate(self.adopter)
+        default_response = self.client.get(reverse("sidebar-labels"))
+        self.assertEqual(default_response.status_code, 200)
+        self.assertEqual(default_response.data["labels"]["messages"], "Mensajes")
+
+        denied = self.client.put(
+            reverse("sidebar-labels"),
+            {"labels": {"messages": "Conversaciones"}},
+            format="json",
+        )
+        self.assertEqual(denied.status_code, 403)
+
+        self.client.force_authenticate(self.admin)
+        updated = self.client.put(
+            reverse("sidebar-labels"),
+            {"labels": {"messages": "Conversaciones"}},
+            format="json",
+        )
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.data["labels"]["messages"], "Conversaciones")
+
+        self.client.force_authenticate(self.adopter)
+        shared = self.client.get(reverse("sidebar-labels"))
+        self.assertEqual(shared.status_code, 200)
+        self.assertEqual(shared.data["labels"]["messages"], "Conversaciones")
+
+    def test_sidebar_labels_reject_unknown_keys_and_blank_values(self):
+        self.client.force_authenticate(self.admin)
+        for labels in (
+            {"unknown_view": "Otro nombre"},
+            {"messages": "   "},
+        ):
+            with self.subTest(labels=labels):
+                response = self.client.put(
+                    reverse("sidebar-labels"),
+                    {"labels": labels},
+                    format="json",
+                )
+                self.assertEqual(response.status_code, 400)
 
 
 class SeedDataCommandTests(APITestCase):

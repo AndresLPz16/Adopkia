@@ -1,4 +1,4 @@
-from users.models import Role
+from users.models import PermissionResource, Role
 
 
 RESOURCES = (
@@ -16,11 +16,11 @@ RESOURCES = (
     ("medicalRecords", "Historiales médicos"),
     ("vaccines", "Catálogo de vacunas"),
     ("reminders", "Recordatorios"),
-    ("conversations", "Conversaciones"),
-    ("messages", "Mensajes"),
+    ("messaging", "Conversaciones y mensajes"),
     ("notifications", "Notificaciones"),
     ("users", "Usuarios"),
     ("statistics", "Estadísticas"),
+    ("rolePermissions", "Permisos por rol"),
 )
 
 ACTIONS = (
@@ -57,12 +57,10 @@ DEFAULT_PERMISSIONS = {
         ("followUps", "read"),
         ("medicalRecords", "read"),
         ("vaccines", "read"),
-        ("conversations", "read"),
-        ("conversations", "create"),
-        ("messages", "read"),
-        ("messages", "create"),
-        ("messages", "update"),
-        ("messages", "delete"),
+        ("messaging", "read"),
+        ("messaging", "create"),
+        ("messaging", "update"),
+        ("messaging", "delete"),
         ("notifications", "read"),
         ("notifications", "update"),
     ),
@@ -106,12 +104,10 @@ DEFAULT_PERMISSIONS = {
         ("reminders", "create"),
         ("reminders", "update"),
         ("reminders", "delete"),
-        ("conversations", "read"),
-        ("conversations", "create"),
-        ("messages", "read"),
-        ("messages", "create"),
-        ("messages", "update"),
-        ("messages", "delete"),
+        ("messaging", "read"),
+        ("messaging", "create"),
+        ("messaging", "update"),
+        ("messaging", "delete"),
         ("notifications", "read"),
         ("notifications", "update"),
     ),
@@ -142,23 +138,40 @@ DEFAULT_PERMISSIONS = {
             else ((resource, "manage"),)
         )
     )
-    + (("shelters", "verify"),),
+    + (
+        ("shelters", "verify"),
+        ("rolePermissions", "manage"),
+    ),
 }
 
 
 def get_permission_catalog():
+    action_labels = dict(ACTIONS)
+    resources = [
+        {
+            "key": resource,
+            "label": label,
+            "actions": [
+                {"key": action, "label": action_label}
+                for action, action_label in ACTIONS
+            ],
+        }
+        for resource, label in RESOURCES
+    ]
+    resources.extend(
+        {
+            "key": resource.key,
+            "label": resource.label,
+            "actions": [
+                {"key": action, "label": action_labels[action]}
+                for action in resource.actions
+                if action in action_labels
+            ],
+        }
+        for resource in PermissionResource.objects.all()
+    )
     return {
-        "resources": [
-            {
-                "key": resource,
-                "label": label,
-                "actions": [
-                    {"key": action, "label": action_label}
-                    for action, action_label in ACTIONS
-                ],
-            }
-            for resource, label in RESOURCES
-        ],
+        "resources": resources,
         "roles": [
             {
                 "id": role.pk,

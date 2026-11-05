@@ -56,6 +56,27 @@ class RolePermission(models.Model):
         return f"{self.role.name}:{self.resource}:{self.action}"
 
 
+class PermissionResource(models.Model):
+    key = models.CharField(max_length=40, primary_key=True, db_column="clave")
+    label = models.CharField(max_length=60, db_column="etiqueta")
+    actions = models.JSONField(default=list, db_column="acciones")
+
+    class Meta:
+        db_table = "recurso_permiso"
+        ordering = ("label", "key")
+
+    def __str__(self):
+        return self.label
+
+
+class PortalSettings(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1)
+    sidebar_labels = models.JSONField(default=dict, db_column="etiquetas_menu_lateral")
+
+    class Meta:
+        db_table = "configuracion_portal"
+
+
 class UserManager(BaseUserManager):
     use_in_migrations = True
 

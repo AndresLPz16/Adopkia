@@ -5,11 +5,13 @@ from .views import (
     RegisterView,
     EmailVerificationView,
     LoginMathChallengeView,
+    PermissionResourceListCreateView,
     ResendEmailVerificationView,
     RoleDetailView,
     RoleListCreateView,
     RolePermissionUpdateView,
     RolePermissionsView,
+    SidebarLabelsView,
     UserDetailView,
     UserListCreateView,
 )
@@ -29,6 +31,12 @@ urlpatterns = [
     path("roles/", RoleListCreateView.as_view(), name="role-list"),
     path("roles/<int:pk>/", RoleDetailView.as_view(), name="role-detail"),
     path("permissions/", RolePermissionsView.as_view(), name="role-permissions"),
+    path(
+        "resources/",
+        PermissionResourceListCreateView.as_view(),
+        name="permission-resource-list",
+    ),
+    path("sidebar-labels/", SidebarLabelsView.as_view(), name="sidebar-labels"),
     path(
         "permissions/<str:role_name>/",
         RolePermissionUpdateView.as_view(),

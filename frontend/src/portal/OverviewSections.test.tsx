@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ROLES } from "../rbac/types";
-import { DashboardSection } from "./OverviewSections";
+import { DashboardSection, StatisticsSection } from "./OverviewSections";
 
 function makeProps(role: string) {
   return {
@@ -38,6 +38,56 @@ describe("role-specific dashboard", () => {
     expect(screen.getByText("Mascotas disponibles")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Explorar mascotas" }));
     expect(props.navTo).toHaveBeenCalledWith("pets");
+  });
+
+  describe("adoption statistics", () => {
+    it("shows charts and exports the complete report for printing", () => {
+      const print = vi.fn();
+      vi.stubGlobal("print", print);
+      render(
+        <StatisticsSection
+          stats={{
+            total_adoptions: 12,
+            active_adoptions: 5,
+            adopted_pets: 7,
+            returned_adoptions: 2,
+            returned_pets: 2,
+            return_rate: 16.67,
+          }}
+        />,
+      );
+
+      expect(screen.getByRole("img", { name: /Estado de las adopciones/ })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: /Estado de las mascotas/ })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Exportar informe / PDF" }));
+      expect(print).toHaveBeenCalledOnce();
+    });
+
+    it("exports all statistics as CSV", () => {
+      const createObjectURL = vi.fn(() => "blob:statistics");
+      const revokeObjectURL = vi.fn();
+      vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL });
+      const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+      render(
+        <StatisticsSection
+          stats={{
+            total_adoptions: 12,
+            active_adoptions: 5,
+            adopted_pets: 7,
+            returned_adoptions: 2,
+            returned_pets: 2,
+            return_rate: 16.67,
+          }}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Exportar CSV" }));
+
+      expect(createObjectURL).toHaveBeenCalledOnce();
+      expect(click).toHaveBeenCalledOnce();
+      expect(revokeObjectURL).toHaveBeenCalledWith("blob:statistics");
+      expect(document.querySelector('a[download="estadisticas-adopkia.csv"]')).toBeNull();
+    });
   });
 
   it("prioritizes medical records and vaccines for veterinarians", () => {

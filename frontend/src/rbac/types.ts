@@ -22,14 +22,14 @@ export const RESOURCES = {
   MEDICAL_RECORDS: "medicalRecords",
   VACCINES: "vaccines",
   REMINDERS: "reminders",
-  CONVERSATIONS: "conversations",
-  MESSAGES: "messages",
+  MESSAGING: "messaging",
   NOTIFICATIONS: "notifications",
   USERS: "users",
   STATISTICS: "statistics",
+  ROLE_PERMISSIONS: "rolePermissions",
 } as const;
 
-export type Resource = (typeof RESOURCES)[keyof typeof RESOURCES];
+export type Resource = string;
 
 export const ACTIONS = {
   READ: "read",

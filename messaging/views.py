@@ -20,7 +20,7 @@ from .serializers import (
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
-    rbac_resource = "conversations"
+    rbac_resource = "messaging"
     permission_classes = (RolePermissionRequired,)
     filterset_fields = ("shelter", "pet")
     search_fields = ("shelter__name", "pet__name", "adopter__name")
@@ -51,7 +51,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 
 class MessageViewSet(viewsets.ModelViewSet):
-    rbac_resource = "messages"
+    rbac_resource = "messaging"
     permission_classes = (RolePermissionRequired,)
     filterset_fields = ("conversation", "is_read")
     search_fields = ("content", "sender__name")

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./auth";
 import type { PermissionCatalog, PermissionRole } from "./types";
-import { ROLES } from "./types";
+import { ACTIONS, RESOURCES, ROLES } from "./types";
+import { can } from "./permissions";
+import { SidebarLabelsEditor } from "./SidebarLabelsEditor";
 import "./RolePermissionsPanel.css";
 
 function rolePermissionsToPayload(role: PermissionRole) {
@@ -9,7 +11,7 @@ function rolePermissionsToPayload(role: PermissionRole) {
 }
 
 export function RolePermissionsPanel() {
-  const { user, request, refresh } = useAuth();
+  const { user, permissions, request, refresh } = useAuth();
   const [catalog, setCatalog] = useState<PermissionCatalog | null>(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,12 @@ export function RolePermissionsPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [roleFormMode, setRoleFormMode] = useState<"create" | "edit" | null>(null);
   const [roleForm, setRoleForm] = useState({ name: "", label: "", description: "" });
+  const [resourceFormOpen, setResourceFormOpen] = useState(false);
+  const [resourceForm, setResourceForm] = useState({
+    key: "",
+    label: "",
+    actions: ["read"],
+  });
 
   const loadCatalog = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -61,6 +69,51 @@ export function RolePermissionsPanel() {
   );
   const canEditCurrentRole =
     currentRole?.name !== ROLES.ADMIN || user?.isPlatformSuperadmin === true;
+  const canViewPanel = [
+    ACTIONS.READ,
+    ACTIONS.CREATE,
+    ACTIONS.UPDATE,
+    ACTIONS.DELETE,
+    ACTIONS.MANAGE,
+  ].some((action) =>
+    can(user, RESOURCES.ROLE_PERMISSIONS, action, permissions ?? {}),
+  );
+  const canCreateRole = can(
+    user,
+    RESOURCES.ROLE_PERMISSIONS,
+    ACTIONS.CREATE,
+    permissions ?? {},
+  );
+  const canUpdatePermissions = can(
+    user,
+    RESOURCES.ROLE_PERMISSIONS,
+    ACTIONS.UPDATE,
+    permissions ?? {},
+  );
+  const canEditRoles = canUpdatePermissions;
+  const canDeleteRoles = can(
+    user,
+    RESOURCES.ROLE_PERMISSIONS,
+    ACTIONS.DELETE,
+    permissions ?? {},
+  );
+  const canCreateResource = can(
+    user,
+    RESOURCES.ROLE_PERMISSIONS,
+    ACTIONS.CREATE,
+    permissions ?? {},
+  );
+  const matrixActions =
+    catalog?.resources.reduce<
+      PermissionCatalog["resources"][number]["actions"]
+    >((actions, resource) => {
+      for (const action of resource.actions) {
+        if (!actions.some((existing) => existing.key === action.key)) {
+          actions.push(action);
+        }
+      }
+      return actions;
+    }, []) ?? [];
 
   const togglePermission = (resource: string, action: string) => {
     if (!catalog || !currentRole) return;
@@ -118,7 +171,7 @@ export function RolePermissionsPanel() {
   };
 
   const save = async () => {
-    if (!currentRole || !canEditCurrentRole) return;
+    if (!currentRole || !canEditCurrentRole || !canUpdatePermissions) return;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -153,8 +206,64 @@ export function RolePermissionsPanel() {
     }
   };
 
+  const removePermissions = async () => {
+    if (!currentRole || !canEditCurrentRole || !canUpdatePermissions) return;
+    if (
+      !window.confirm(
+        `¿Quitar los permisos asignados a ${currentRole.label}? Esta acción se guardará de inmediato.`,
+      )
+    ) {
+      return;
+    }
+
+    const requiredAdminPermissions =
+      currentRole.name === ROLES.ADMIN
+        ? [
+            { resource: "users", action: "manage" },
+            { resource: "shelters", action: "verify" },
+            { resource: "rolePermissions", action: "manage" },
+          ]
+        : [];
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await request(
+        `/api/v1/auth/permissions/${encodeURIComponent(currentRole.name)}/`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requiredAdminPermissions),
+        },
+      );
+      if (!response.ok) {
+        const details = await response.json().catch(() => null);
+        throw new Error(
+          details?.detail ??
+            `No se pudieron quitar los permisos (${response.status}).`,
+        );
+      }
+      const updatedCatalog = (await response.json()) as PermissionCatalog;
+      setCatalog(updatedCatalog);
+      setNotice(`Se quitaron los permisos de ${currentRole.label}.`);
+      await refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudieron quitar los permisos.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveRole = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (
+      (roleFormMode === "create" && !canCreateRole) ||
+      (roleFormMode === "edit" && !canEditRoles)
+    ) return;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -197,7 +306,11 @@ export function RolePermissionsPanel() {
   };
 
   const deleteRole = async () => {
-    if (!currentRole || !window.confirm(`¿Eliminar el rol ${currentRole.label}?`)) return;
+    if (
+      !currentRole ||
+      !canDeleteRoles ||
+      !window.confirm(`¿Eliminar el rol ${currentRole.label}?`)
+    ) return;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -224,11 +337,49 @@ export function RolePermissionsPanel() {
     }
   };
 
-  if (!user?.roles.includes(ROLES.ADMIN)) {
+  const createResource = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canCreateResource) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await request("/api/v1/auth/resources/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resourceForm),
+      });
+      if (!response.ok) {
+        const details = await response.json().catch(() => null);
+        const message =
+          details && typeof details === "object"
+            ? Object.values(details).flat().find((item) => typeof item === "string")
+            : null;
+        throw new Error(
+          (typeof message === "string" && message) ||
+            `No se pudo crear el recurso (${response.status}).`,
+        );
+      }
+      const updatedCatalog = (await response.json()) as PermissionCatalog;
+      if (!Array.isArray(updatedCatalog.resources)) {
+        throw new Error("La respuesta del catálogo tiene un formato inválido.");
+      }
+      setCatalog(updatedCatalog);
+      setResourceForm({ key: "", label: "", actions: ["read"] });
+      setResourceFormOpen(false);
+      setNotice("Recurso agregado a la matriz de permisos.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "No se pudo crear el recurso.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!canViewPanel) {
     return (
       <section className="rbac-panel" aria-labelledby="rbac-title">
         <h1 id="rbac-title">Permisos por rol</h1>
-        <p role="alert">Solo un administrador puede gestionar permisos.</p>
+        <p role="alert">Tu rol no tiene permiso para gestionar el panel de permisos por rol.</p>
       </section>
     );
   }
@@ -259,21 +410,28 @@ export function RolePermissionsPanel() {
           </select>
         </label>
         <div className="rbac-panel__role-actions">
-          <button type="button" disabled={saving || loading} onClick={() => {
+          {canCreateResource && <button
+            type="button"
+            disabled={saving || loading}
+            onClick={() => setResourceFormOpen((open) => !open)}
+          >
+            {resourceFormOpen ? "Cancelar recurso" : "Crear recurso"}
+          </button>}
+          {canCreateRole && <button type="button" disabled={saving || loading} onClick={() => {
             setRoleForm({ name: "", label: "", description: "" });
             setRoleFormMode("create");
-          }}>Crear rol</button>
+          }}>Crear rol</button>}
           {currentRole && !Object.values(ROLES).includes(currentRole.name as typeof ROLES[keyof typeof ROLES]) && (
             <>
-              <button type="button" disabled={saving} onClick={() => {
+              {canEditRoles && <button type="button" disabled={saving} onClick={() => {
                 setRoleForm({
                   name: currentRole.name,
                   label: currentRole.label,
                   description: currentRole.description ?? "",
                 });
                 setRoleFormMode("edit");
-              }}>Editar rol</button>
-              <button type="button" disabled={saving} onClick={() => void deleteRole()}>Eliminar rol</button>
+              }}>Editar rol</button>}
+              {canDeleteRoles && <button type="button" disabled={saving} onClick={() => void deleteRole()}>Eliminar rol</button>}
             </>
           )}
         </div>
@@ -281,6 +439,67 @@ export function RolePermissionsPanel() {
 
       {error && <p className="rbac-panel__error" role="alert">{error}</p>}
       {notice && <p className="rbac-panel__notice" role="status">{notice}</p>}
+      {resourceFormOpen && canCreateResource && (
+        <form className="rbac-panel__role-form" onSubmit={(event) => void createResource(event)}>
+          <label>
+            Clave del recurso
+            <input
+              value={resourceForm.key}
+              onChange={(event) =>
+                setResourceForm({ ...resourceForm, key: event.target.value })
+              }
+              required
+              maxLength={40}
+              pattern="[a-z][A-Za-z0-9]*"
+              placeholder="ej. adoptionReports"
+            />
+          </label>
+          <label>
+            Nombre visible
+            <input
+              value={resourceForm.label}
+              onChange={(event) =>
+                setResourceForm({ ...resourceForm, label: event.target.value })
+              }
+              required
+              maxLength={60}
+              placeholder="ej. Informes de adopción"
+            />
+          </label>
+          <fieldset className="rbac-panel__resource-actions">
+            <legend>Acciones disponibles</legend>
+            {matrixActions.map((action) => (
+              <label key={action.key}>
+                <input
+                  type="checkbox"
+                  checked={resourceForm.actions.includes(action.key)}
+                  onChange={() =>
+                    setResourceForm((current) => ({
+                      ...current,
+                      actions: current.actions.includes(action.key)
+                        ? current.actions.filter((item) => item !== action.key)
+                        : [...current.actions, action.key],
+                    }))
+                  }
+                />
+                {action.label}
+              </label>
+            ))}
+          </fieldset>
+          <p className="rbac-panel__description">
+            Al crear la vista/API, asígnale esta clave como recurso RBAC para que
+            estos permisos se apliquen también en el backend.
+          </p>
+          <div className="rbac-panel__role-actions">
+            <button type="submit" disabled={saving || resourceForm.actions.length === 0}>
+              {saving ? "Guardando…" : "Guardar recurso"}
+            </button>
+            <button type="button" disabled={saving} onClick={() => setResourceFormOpen(false)}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
       {!canEditCurrentRole && (
         <p role="status">
           No tienes autorización para modificar los permisos de este rol.
@@ -330,7 +549,7 @@ export function RolePermissionsPanel() {
               <thead>
                 <tr>
                   <th scope="col">Recurso</th>
-                  {catalog?.resources[0]?.actions.map((action) => (
+                  {matrixActions.map((action) => (
                     <th scope="col" key={action.key}>{action.label}</th>
                   ))}
                 </tr>
@@ -339,7 +558,10 @@ export function RolePermissionsPanel() {
                 {catalog?.resources.map((resource) => (
                   <tr key={resource.key}>
                     <th scope="row">{resource.label}</th>
-                    {resource.actions.map((action) => {
+                    {matrixActions.map((action) => {
+                      if (!resource.actions.some((item) => item.key === action.key)) {
+                        return <td key={action.key} aria-label="No disponible" />;
+                      }
                       const hasManage = currentRole?.permissions.some(
                         (permission) =>
                           permission.resource === resource.key &&
@@ -353,8 +575,9 @@ export function RolePermissionsPanel() {
                         ) || Boolean(hasManage);
                       const isAdminRecoveryPermission =
                         currentRole?.name === ROLES.ADMIN &&
-                        resource.key === "users" &&
-                        action.key === "manage";
+                        ((resource.key === "users" && action.key === "manage") ||
+                          (resource.key === "shelters" && action.key === "verify") ||
+                          (resource.key === "rolePermissions" && action.key === "manage"));
                       return (
                         <td key={action.key}>
                           <input
@@ -363,6 +586,7 @@ export function RolePermissionsPanel() {
                             checked={Boolean(checked)}
                             disabled={
                               saving ||
+                              !canUpdatePermissions ||
                               !canEditCurrentRole ||
                               Boolean(isAdminRecoveryPermission)
                             }
@@ -383,14 +607,25 @@ export function RolePermissionsPanel() {
               Los cambios se aplican de inmediato en las solicitudes protegidas
               del backend. Los límites de propiedad y pertenencia siguen vigentes.
             </p>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={saving || !currentRole || !canEditCurrentRole}
-            >
-              {saving ? "Guardando…" : "Guardar cambios"}
-            </button>
+            <div className="rbac-panel__footer-actions">
+              <button
+                type="button"
+                className="rbac-panel__remove-permissions"
+                onClick={() => void removePermissions()}
+                disabled={saving || !currentRole || !canUpdatePermissions || !canEditCurrentRole}
+              >
+                Quitar permisos
+              </button>
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={saving || !currentRole || !canUpdatePermissions || !canEditCurrentRole}
+              >
+                {saving ? "Guardando…" : "Guardar cambios"}
+              </button>
+            </div>
           </footer>
+          <SidebarLabelsEditor />
         </>
       )}
     </main>

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 
-from users.models import Role, RolePermission
+from users.models import RolePermission
 from users.rbac import DEFAULT_PERMISSIONS
 
 
@@ -29,6 +29,8 @@ PUBLIC_RESOURCES = (
 AUTHENTICATED_RESOURCES = (
     "profile",
     "role_permissions",
+    "permission_resources",
+    "sidebar_labels",
     "users",
     "shelter_members",
     "pet_photos",
@@ -55,6 +57,8 @@ RESOURCE_DEFINITIONS = {
     "refresh": ("Renovar token", "/api/v1/auth/refresh/"),
     "profile": ("Mi perfil", "/api/v1/auth/me/"),
     "role_permissions": ("Permisos por rol", "/api/v1/auth/permissions/"),
+    "permission_resources": ("Recursos de permisos", "/api/v1/auth/resources/"),
+    "sidebar_labels": ("Nombres del menú lateral", "/api/v1/auth/sidebar-labels/"),
     "users": ("Administración de usuarios", "/api/v1/auth/users/"),
     "verified_shelters": ("Refugios verificados", "/api/v1/shelters/"),
     "shelter_members": ("Integrantes de refugios", "/api/v1/shelter-members/"),
@@ -99,15 +103,24 @@ API_RESOURCE_PERMISSION_KEYS = {
     "medical_records": "medicalRecords",
     "vaccines": "vaccines",
     "reminders": "reminders",
-    "conversations": "conversations",
-    "messages": "messages",
+    "conversations": "messaging",
+    "messages": "messaging",
     "notifications": "notifications",
     "adoption_statistics": "statistics",
 }
 
 ROLE_RESOURCES = {
     role: frozenset(
-        (*PUBLIC_RESOURCES, "role_permissions")
+        (*PUBLIC_RESOURCES, "role_permissions", "sidebar_labels")
+        + (
+            ("permission_resources",)
+            if any(
+                resource == "rolePermissions"
+                and action in ("read", "create", "manage")
+                for resource, action in role_permissions
+            )
+            else ()
+        )
         + tuple(
             key
             for key, permission_resource in API_RESOURCE_PERMISSION_KEYS.items()
@@ -138,7 +151,13 @@ class ApiIndexView(APIView):
             grants = RolePermission.objects.filter(role_id=request.user.role_id)
             allowed = set(grants.values_list("resource", "action"))
             resource_keys = set(PUBLIC_RESOURCES)
-            resource_keys.add("role_permissions")
+            resource_keys.update(("role_permissions", "sidebar_labels"))
+            if any(
+                resource == "rolePermissions"
+                and action in ("read", "create", "manage")
+                for resource, action in allowed
+            ):
+                resource_keys.add("permission_resources")
             resource_keys.update(
                 key
                 for key, permission_resource in API_RESOURCE_PERMISSION_KEYS.items()
