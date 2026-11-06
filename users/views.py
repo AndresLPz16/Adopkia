@@ -202,6 +202,48 @@ class PermissionResourceListCreateView(APIView):
         return Response(get_permission_catalog(), status=status.HTTP_201_CREATED)
 
 
+class PermissionResourceDetailView(APIView):
+    permission_classes = (RolePermissionRequired,)
+    rbac_resource = "rolePermissions"
+
+    def get_resource(self, key):
+        from django.shortcuts import get_object_or_404
+
+        return get_object_or_404(PermissionResource.objects.select_for_update(), pk=key)
+
+    @extend_schema(
+        request=PermissionResourceSerializer,
+        responses=OpenApiTypes.OBJECT,
+        operation_id="update_permission_resource",
+    )
+    @transaction.atomic
+    def patch(self, request, key):
+        resource = self.get_resource(key)
+        serializer = PermissionResourceSerializer(
+            resource,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        updated_resource = serializer.save()
+        if "actions" in serializer.validated_data:
+            RolePermission.objects.filter(resource=key).exclude(
+                action__in=updated_resource.actions
+            ).delete()
+        return Response(get_permission_catalog())
+
+    @extend_schema(
+        responses=OpenApiTypes.OBJECT,
+        operation_id="delete_permission_resource",
+    )
+    @transaction.atomic
+    def delete(self, request, key):
+        resource = self.get_resource(key)
+        RolePermission.objects.filter(resource=key).delete()
+        resource.delete()
+        return Response(get_permission_catalog())
+
+
 SIDEBAR_DEFAULT_LABELS = {
     "dashboard": "Inicio",
     "profile": "Mi perfil",

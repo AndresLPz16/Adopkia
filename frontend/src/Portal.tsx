@@ -114,9 +114,14 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const role = user?.roles[0] ?? "";
   const isAdmin = role === ROLES.ADMIN;
   const isPlatformSuperadmin = user?.isPlatformSuperadmin === true;
-  const section = location.pathname.startsWith("/admin/permissions")
-    ? "permissions"
-    : location.pathname.split("/")[2] || "dashboard";
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const dynamicResourceKey =
+    pathSegments[1] === "resources" ? pathSegments[2] ?? "" : "";
+  const section = dynamicResourceKey
+    ? `resource:${dynamicResourceKey}`
+    : location.pathname.startsWith("/admin/permissions")
+      ? "permissions"
+      : pathSegments[1] || "dashboard";
   const sectionAccess: Record<
     string,
     [keyof typeof RESOURCES, keyof typeof ACTIONS][]
@@ -143,6 +148,13 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     ],
   };
   const hasAccess = (key: string) => {
+    if (key.startsWith("resource:")) {
+      const resource = key.slice("resource:".length);
+      return (
+        can(user, resource, ACTIONS.READ, permissions ?? {}) ||
+        can(user, RESOURCES.ROLE_PERMISSIONS, ACTIONS.MANAGE, permissions ?? {})
+      );
+    }
     if (key === "requests") {
       return (
         can(user, RESOURCES.ADOPTION_REQUESTS, ACTIONS.READ, permissions ?? {}) ||
@@ -165,6 +177,9 @@ function Portal({ onLogout }: { onLogout: () => void }) {
 
   const [data, setData] = useState<Record<string, unknown>>({});
   const [customSectionNames, setCustomSectionNames] = useState<Record<string, string>>({});
+  const [dynamicResources, setDynamicResources] = useState<
+    { key: string; label: string }[]
+  >([]);
   const [form, setForm] = useState<Record<string, string>>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [selectedConversation, setSelectedConversation] = useState("");
@@ -177,6 +192,9 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const dynamicResourceSections = dynamicResources.map(
+    (resource) => `resource:${resource.key}`,
+  );
 
   const links = useMemo(() => {
     if (role === ROLES.ADOPTER) {
@@ -241,8 +259,14 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     "permissions",
   ];
   const visibleLinks = useMemo(
-    () => [...new Set([...links, ...allSections.filter(hasAccess)])].filter(hasAccess),
-    [links, permissions, user],
+    () => [
+      ...new Set([
+        ...links,
+        ...allSections.filter(hasAccess),
+        ...dynamicResourceSections.filter(hasAccess),
+      ]),
+    ].filter(hasAccess),
+    [dynamicResources, links, permissions, user],
   );
   const sidebarGroups = [
     { key: "home", label: "General", sections: ["dashboard"] },
@@ -264,6 +288,18 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       sections: group.sections.filter((key) => visibleLinks.includes(key)),
     }))
     .filter((group) => group.sections.length > 0);
+  const visibleDynamicResources = dynamicResources.filter((resource) =>
+    visibleLinks.includes(`resource:${resource.key}`),
+  );
+  if (visibleDynamicResources.length > 0) {
+    sidebarGroups.push({
+      key: "custom-resources",
+      label: "Recursos",
+      sections: visibleDynamicResources.map(
+        (resource) => `resource:${resource.key}`,
+      ),
+    });
+  }
 
   const pathsForSection: Record<string, string[]> = {
     dashboard:
@@ -413,6 +449,47 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       .catch((caught: unknown) => {
         if (!controller.signal.aborted) {
           setError(caught instanceof Error ? caught.message : "No se pudieron cargar los nombres del menú.");
+        }
+      });
+    return () => controller.abort();
+  }, [request, status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const controller = new AbortController();
+    void request("/api/v1/auth/permissions/", { signal: controller.signal })
+      .then(responseData)
+      .then((result) => {
+        if (
+          !result ||
+          typeof result !== "object" ||
+          !("resources" in result) ||
+          !Array.isArray(result.resources)
+        ) {
+          throw new Error("La respuesta de recursos tiene un formato inválido.");
+        }
+        const staticResources = new Set(Object.values(RESOURCES));
+        const resources = result.resources.filter(
+          (resource): resource is { key: string; label: string } =>
+            Boolean(
+              resource &&
+                typeof resource === "object" &&
+                "key" in resource &&
+                typeof resource.key === "string" &&
+                !staticResources.has(resource.key) &&
+                "label" in resource &&
+                typeof resource.label === "string",
+            ),
+        );
+        setDynamicResources(resources);
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "No se pudieron cargar los recursos dinámicos.",
+          );
         }
       });
     return () => controller.abort();
@@ -614,6 +691,12 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     ...sectionNames,
     ...roleSectionNames[role],
     ...customSectionNames,
+    ...Object.fromEntries(
+      dynamicResources.map((resource) => [
+        `resource:${resource.key}`,
+        resource.label,
+      ]),
+    ),
   };
 
   useEffect(() => {
@@ -627,7 +710,13 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   }, [conversations, section, selectedConversation]);
 
   const navTo = (key: string) =>
-    navigate(key === "permissions" ? "/admin/permissions" : `/app/${key}`);
+    navigate(
+      key === "permissions"
+        ? "/admin/permissions"
+        : key.startsWith("resource:")
+          ? `/app/resources/${encodeURIComponent(key.slice("resource:".length))}`
+          : `/app/${key}`,
+    );
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -674,8 +763,27 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   }
 
   const stats = data["/api/v1/statistics/adoptions/"] as PortalDataRow | undefined;
-  const content = section === "permissions"
-    ? <RolePermissionsPanel />
+  const activeDynamicResource = dynamicResources.find(
+    (resource) => resource.key === dynamicResourceKey,
+  );
+  const content = activeDynamicResource
+    ? (
+      <section className="portal-section" aria-labelledby="dynamic-resource-title">
+        <p className="portal-eyebrow">Recurso RBAC</p>
+        <h1 id="dynamic-resource-title">{activeDynamicResource.label}</h1>
+        <p>
+          Este recurso ya está disponible en la matriz de permisos. Su vista y
+          funcionalidad específica todavía deben implementarse.
+        </p>
+      </section>
+    )
+    : section === "permissions"
+    ? (
+      <RolePermissionsPanel
+        onSidebarLabelsChange={setCustomSectionNames}
+        onResourcesChange={setDynamicResources}
+      />
+    )
     : section === "dashboard"
       ? <DashboardSection
           userName={user.name}
