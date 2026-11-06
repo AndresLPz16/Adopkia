@@ -5,6 +5,7 @@ from .views import (
     RegisterView,
     EmailVerificationView,
     LoginMathChallengeView,
+    PermissionResourceDetailView,
     PermissionResourceListCreateView,
     ResendEmailVerificationView,
     RoleDetailView,
@@ -35,6 +36,11 @@ urlpatterns = [
         "resources/",
         PermissionResourceListCreateView.as_view(),
         name="permission-resource-list",
+    ),
+    path(
+        "resources/<str:key>/",
+        PermissionResourceDetailView.as_view(),
+        name="permission-resource-detail",
     ),
     path("sidebar-labels/", SidebarLabelsView.as_view(), name="sidebar-labels"),
     path(

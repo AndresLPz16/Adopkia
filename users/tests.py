@@ -14,7 +14,7 @@ from myproject.admin import ReadOnlyModelAdmin
 from medical.models import Vaccine
 from notifications.models import Notification
 from pets.models import Breed, Species
-from users.models import Role, RolePermission, User
+from users.models import PermissionResource, Role, RolePermission, User
 
 
 class DjangoAdminLoginTests(TestCase):
@@ -582,6 +582,81 @@ class RolePermissionApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(denied_duplicate.status_code, 400)
+
+        updated = self.client.patch(
+            reverse(
+                "permission-resource-detail",
+                kwargs={"key": "adoptionReports"},
+            ),
+            {"label": "Reportes de adopción", "actions": ["read"]},
+            format="json",
+        )
+        self.assertEqual(updated.status_code, 200)
+        updated_resource = next(
+            resource
+            for resource in updated.data["resources"]
+            if resource["key"] == "adoptionReports"
+        )
+        self.assertEqual(updated_resource["label"], "Reportes de adopción")
+        self.assertEqual(
+            {action["key"] for action in updated_resource["actions"]},
+            {"read"},
+        )
+        self.assertFalse(
+            RolePermission.objects.filter(
+                role__name=Role.Name.SHELTER,
+                resource="adoptionReports",
+                action="create",
+            ).exists()
+        )
+
+        RolePermission.objects.create(
+            role=self.adopter_role,
+            resource="adoptionReports",
+            action="read",
+        )
+        deleted = self.client.delete(
+            reverse(
+                "permission-resource-detail",
+                kwargs={"key": "adoptionReports"},
+            )
+        )
+        self.assertEqual(deleted.status_code, 200)
+        self.assertNotIn(
+            "adoptionReports",
+            {resource["key"] for resource in deleted.data["resources"]},
+        )
+        self.assertFalse(
+            RolePermission.objects.filter(resource="adoptionReports").exists()
+        )
+
+    def test_dynamic_resource_edit_and_delete_require_matching_actions(self):
+        manager = User.objects.create_user(
+            email="resource-reader@example.com",
+            password="TemporaryTestPassword!2026",
+            name="Resource Reader",
+        )
+        RolePermission.objects.create(
+            role=manager.role,
+            resource="rolePermissions",
+            action="read",
+        )
+        resource = PermissionResource.objects.create(
+            key="extraCatalog",
+            label="Catálogo extra",
+            actions=["read"],
+        )
+        self.client.force_authenticate(manager)
+
+        url = reverse(
+            "permission-resource-detail",
+            kwargs={"key": resource.key},
+        )
+        self.assertEqual(
+            self.client.patch(url, {"label": "Otro nombre"}, format="json").status_code,
+            403,
+        )
+        self.assertEqual(self.client.delete(url).status_code, 403)
 
     def test_role_permission_changes_take_effect_on_api_access(self):
         adopter = User.objects.create_user(

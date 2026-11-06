@@ -6,13 +6,42 @@ import { can } from "./permissions";
 import { SidebarLabelsEditor } from "./SidebarLabelsEditor";
 import "./RolePermissionsPanel.css";
 
+const sidebarSectionByResource: Record<string, string> = {
+  dashboard: "dashboard",
+  profile: "profile",
+  pets: "pets",
+  vaccines: "vaccines",
+  adoptionRequests: "requests",
+  adoptions: "adoptions",
+  messaging: "messages",
+  medicalRecords: "records",
+  veterinarians: "veterinarians",
+  shelters: "shelters",
+  notifications: "notifications",
+  users: "users",
+  statistics: "statistics",
+  rolePermissions: "permissions",
+};
+const systemResourceKeys = new Set<string>(Object.values(RESOURCES));
+
 function rolePermissionsToPayload(role: PermissionRole) {
   return role.permissions.map(({ resource, action }) => ({ resource, action }));
 }
 
-export function RolePermissionsPanel() {
+interface RolePermissionsPanelProps {
+  onSidebarLabelsChange?: (labels: Record<string, string>) => void;
+  onResourcesChange?: (
+    resources: PermissionCatalog["resources"],
+  ) => void;
+}
+
+export function RolePermissionsPanel({
+  onSidebarLabelsChange,
+  onResourcesChange,
+}: RolePermissionsPanelProps) {
   const { user, permissions, request, refresh } = useAuth();
   const [catalog, setCatalog] = useState<PermissionCatalog | null>(null);
+  const [sidebarLabels, setSidebarLabels] = useState<Record<string, string>>({});
   const [selectedRole, setSelectedRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -21,11 +50,29 @@ export function RolePermissionsPanel() {
   const [roleFormMode, setRoleFormMode] = useState<"create" | "edit" | null>(null);
   const [roleForm, setRoleForm] = useState({ name: "", label: "", description: "" });
   const [resourceFormOpen, setResourceFormOpen] = useState(false);
+  const [editingResourceKey, setEditingResourceKey] = useState<string | null>(null);
   const [resourceForm, setResourceForm] = useState({
     key: "",
     label: "",
     actions: ["read"],
   });
+  const handleSidebarLabelsChange = useCallback(
+    (labels: Record<string, string>) => {
+      setSidebarLabels(labels);
+      onSidebarLabelsChange?.(labels);
+    },
+    [onSidebarLabelsChange],
+  );
+  const handleResourcesChange = useCallback(
+    (resources: PermissionCatalog["resources"]) => {
+      onResourcesChange?.(
+        resources.filter(
+          (resource) => !systemResourceKeys.has(resource.key),
+        ),
+      );
+    },
+    [onResourcesChange],
+  );
 
   const loadCatalog = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -40,6 +87,7 @@ export function RolePermissionsPanel() {
         throw new Error("La respuesta de permisos tiene un formato inválido.");
       }
       setCatalog(result);
+      handleResourcesChange(result.resources);
       setSelectedRole((current) =>
         result.roles.some((role) => role.name === current)
           ? current
@@ -55,7 +103,7 @@ export function RolePermissionsPanel() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [request]);
+  }, [handleResourcesChange, request]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -114,6 +162,8 @@ export function RolePermissionsPanel() {
       }
       return actions;
     }, []) ?? [];
+  const getResourceLabel = (resource: PermissionCatalog["resources"][number]) =>
+    sidebarLabels[sidebarSectionByResource[resource.key]] || resource.label;
 
   const togglePermission = (resource: string, action: string) => {
     if (!catalog || !currentRole) return;
@@ -337,17 +387,26 @@ export function RolePermissionsPanel() {
     }
   };
 
-  const createResource = async (event: React.FormEvent) => {
+  const saveResource = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canCreateResource) return;
+    if (editingResourceKey ? !canUpdatePermissions : !canCreateResource) return;
     setSaving(true);
     setError(null);
     setNotice(null);
     try {
-      const response = await request("/api/v1/auth/resources/", {
-        method: "POST",
+      const editing = editingResourceKey !== null;
+      const response = await request(
+        editing
+          ? `/api/v1/auth/resources/${encodeURIComponent(editingResourceKey)}/`
+          : "/api/v1/auth/resources/",
+        {
+        method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(resourceForm),
+        body: JSON.stringify(
+          editing
+            ? { label: resourceForm.label, actions: resourceForm.actions }
+            : resourceForm,
+        ),
       });
       if (!response.ok) {
         const details = await response.json().catch(() => null);
@@ -365,11 +424,69 @@ export function RolePermissionsPanel() {
         throw new Error("La respuesta del catálogo tiene un formato inválido.");
       }
       setCatalog(updatedCatalog);
+      handleResourcesChange(updatedCatalog.resources);
       setResourceForm({ key: "", label: "", actions: ["read"] });
       setResourceFormOpen(false);
-      setNotice("Recurso agregado a la matriz de permisos.");
+      setEditingResourceKey(null);
+      setNotice(editing ? "Recurso actualizado." : "Recurso agregado a la matriz de permisos.");
+      if (editing) await refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo crear el recurso.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const editResource = (
+    resource: PermissionCatalog["resources"][number],
+  ) => {
+    setEditingResourceKey(resource.key);
+    setResourceForm({
+      key: resource.key,
+      label: resource.label,
+      actions: resource.actions.map((action) => action.key),
+    });
+    setResourceFormOpen(true);
+    setError(null);
+    setNotice(null);
+  };
+
+  const deleteResource = async (
+    resource: PermissionCatalog["resources"][number],
+  ) => {
+    if (
+      !canDeleteRoles ||
+      !window.confirm(
+        `¿Eliminar el recurso "${resource.label}" y quitar sus permisos de todos los roles?`,
+      )
+    ) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await request(
+        `/api/v1/auth/resources/${encodeURIComponent(resource.key)}/`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        const details = await response.json().catch(() => null);
+        throw new Error(
+          details?.detail ?? `No se pudo eliminar el recurso (${response.status}).`,
+        );
+      }
+      const updatedCatalog = (await response.json()) as PermissionCatalog;
+      if (
+        !Array.isArray(updatedCatalog.resources) ||
+        !Array.isArray(updatedCatalog.roles)
+      ) {
+        throw new Error("La respuesta del catálogo tiene un formato inválido.");
+      }
+      setCatalog(updatedCatalog);
+      handleResourcesChange(updatedCatalog.resources);
+      setNotice(`Se eliminó el recurso "${resource.label}" y sus permisos asignados.`);
+      await refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "No se pudo eliminar el recurso.");
     } finally {
       setSaving(false);
     }
@@ -413,9 +530,13 @@ export function RolePermissionsPanel() {
           {canCreateResource && <button
             type="button"
             disabled={saving || loading}
-            onClick={() => setResourceFormOpen((open) => !open)}
+            onClick={() => {
+              setEditingResourceKey(null);
+              setResourceForm({ key: "", label: "", actions: ["read"] });
+              setResourceFormOpen((open) => !open);
+            }}
           >
-            {resourceFormOpen ? "Cancelar recurso" : "Crear recurso"}
+            {resourceFormOpen && !editingResourceKey ? "Cancelar recurso" : "Crear recurso"}
           </button>}
           {canCreateRole && <button type="button" disabled={saving || loading} onClick={() => {
             setRoleForm({ name: "", label: "", description: "" });
@@ -439,8 +560,8 @@ export function RolePermissionsPanel() {
 
       {error && <p className="rbac-panel__error" role="alert">{error}</p>}
       {notice && <p className="rbac-panel__notice" role="status">{notice}</p>}
-      {resourceFormOpen && canCreateResource && (
-        <form className="rbac-panel__role-form" onSubmit={(event) => void createResource(event)}>
+      {resourceFormOpen && (editingResourceKey ? canUpdatePermissions : canCreateResource) && (
+        <form className="rbac-panel__role-form" onSubmit={(event) => void saveResource(event)}>
           <label>
             Clave del recurso
             <input
@@ -452,6 +573,7 @@ export function RolePermissionsPanel() {
               maxLength={40}
               pattern="[a-z][A-Za-z0-9]*"
               placeholder="ej. adoptionReports"
+              disabled={editingResourceKey !== null}
             />
           </label>
           <label>
@@ -492,9 +614,20 @@ export function RolePermissionsPanel() {
           </p>
           <div className="rbac-panel__role-actions">
             <button type="submit" disabled={saving || resourceForm.actions.length === 0}>
-              {saving ? "Guardando…" : "Guardar recurso"}
+              {saving
+                ? "Guardando…"
+                : editingResourceKey
+                  ? "Guardar recurso"
+                  : "Crear recurso"}
             </button>
-            <button type="button" disabled={saving} onClick={() => setResourceFormOpen(false)}>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                setResourceFormOpen(false);
+                setEditingResourceKey(null);
+              }}
+            >
               Cancelar
             </button>
           </div>
@@ -557,7 +690,33 @@ export function RolePermissionsPanel() {
               <tbody>
                 {catalog?.resources.map((resource) => (
                   <tr key={resource.key}>
-                    <th scope="row">{resource.label}</th>
+                    <th scope="row">
+                      <div className="rbac-panel__resource-cell">
+                        <span>{getResourceLabel(resource)}</span>
+                        {!systemResourceKeys.has(resource.key) && (
+                          <span className="rbac-panel__resource-controls">
+                            {canUpdatePermissions && (
+                              <button
+                                type="button"
+                                disabled={saving}
+                                onClick={() => editResource(resource)}
+                              >
+                                Editar
+                              </button>
+                            )}
+                            {canDeleteRoles && (
+                              <button
+                                type="button"
+                                disabled={saving}
+                                onClick={() => void deleteResource(resource)}
+                              >
+                                Eliminar
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     {matrixActions.map((action) => {
                       if (!resource.actions.some((item) => item.key === action.key)) {
                         return <td key={action.key} aria-label="No disponible" />;
@@ -582,7 +741,7 @@ export function RolePermissionsPanel() {
                         <td key={action.key}>
                           <input
                             type="checkbox"
-                            aria-label={`${resource.label}: ${action.label}`}
+                            aria-label={`${getResourceLabel(resource)}: ${action.label}`}
                             checked={Boolean(checked)}
                             disabled={
                               saving ||
@@ -625,7 +784,7 @@ export function RolePermissionsPanel() {
               </button>
             </div>
           </footer>
-          <SidebarLabelsEditor />
+          <SidebarLabelsEditor onLabelsChange={handleSidebarLabelsChange} />
         </>
       )}
     </main>

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "./auth";
@@ -156,12 +156,141 @@ describe("RolePermissionsPanel", () => {
     await user.click(screen.getByRole("button", { name: "Crear recurso" }));
     await user.type(screen.getByLabelText("Clave del recurso"), "adoptionReports");
     await user.type(screen.getByLabelText("Nombre visible"), "Informes de adopción");
-    await user.click(screen.getByRole("button", { name: "Guardar recurso" }));
+    await user.click(screen.getByRole("button", { name: "Crear recurso" }));
 
     expect(await screen.findByRole("row", { name: /Informes de adopción/ })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/auth/resources/",
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("edits a dynamic resource and removes it and its role grants", async () => {
+    let catalog: PermissionCatalog = {
+      ...permissionCatalog,
+      resources: [
+        ...permissionCatalog.resources,
+        {
+          key: "locoMedio",
+          label: "LOCO y Medio",
+          actions: [
+            { key: "read", label: "Consultar" },
+            { key: "create", label: "Crear" },
+          ],
+        },
+      ],
+      roles: permissionCatalog.roles.map((role) =>
+        role.name === "adoptante"
+          ? {
+              ...role,
+              permissions: [
+                ...role.permissions,
+                { resource: "locoMedio", action: "read" },
+              ],
+            }
+          : role,
+      ),
+    };
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/me/")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              id: 1,
+              name: "Admin",
+              email: "admin@example.test",
+              role: "administrador",
+            }),
+          };
+        }
+        if (url.includes("/sidebar-labels/")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ defaults: {}, labels: {} }),
+          };
+        }
+        if (url.includes("/resources/locoMedio/") && init?.method === "PATCH") {
+          const body = JSON.parse(String(init.body)) as {
+            label: string;
+            actions: string[];
+          };
+          catalog = {
+            ...catalog,
+            resources: catalog.resources.map((resource) =>
+              resource.key === "locoMedio"
+                ? {
+                    ...resource,
+                    label: body.label,
+                    actions: body.actions.map((key) => ({
+                      key,
+                      label: key === "read" ? "Consultar" : "Crear",
+                    })),
+                  }
+                : resource,
+            ),
+          };
+        } else if (
+          url.includes("/resources/locoMedio/") &&
+          init?.method === "DELETE"
+        ) {
+          catalog = {
+            ...catalog,
+            resources: catalog.resources.filter(
+              (resource) => resource.key !== "locoMedio",
+            ),
+            roles: catalog.roles.map((role) => ({
+              ...role,
+              permissions: role.permissions.filter(
+                (permission) => permission.resource !== "locoMedio",
+              ),
+            })),
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => catalog,
+        };
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider getAccessToken={() => "access-token"}>
+        <RolePermissionsPanel />
+      </AuthProvider>,
+    );
+
+    const row = await screen.findByRole("row", { name: /LOCO y Medio/ });
+    await user.click(within(row).getByRole("button", { name: "Editar" }));
+    const labelInput = screen.getByLabelText("Nombre visible");
+    await user.clear(labelInput);
+    await user.type(labelInput, "Pepe");
+    await user.click(screen.getByRole("button", { name: "Guardar recurso" }));
+
+    const renamedRow = await screen.findByRole("row", { name: /Pepe/ });
+    expect(
+      within(renamedRow).getByRole("checkbox", { name: "Pepe: Consultar" }),
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/auth/resources/locoMedio/",
+      expect.objectContaining({ method: "PATCH" }),
+    );
+
+    await user.click(within(renamedRow).getByRole("button", { name: "Eliminar" }));
+    expect(await screen.findByText(/Se eliminó el recurso "Pepe"/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("row", { name: /Pepe/ }),
+    ).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/auth/resources/locoMedio/",
+      expect.objectContaining({ method: "DELETE" }),
     );
   });
 
@@ -313,6 +442,72 @@ describe("RolePermissionsPanel", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Nombres del menú actualizados para todos los usuarios.",
     );
+  });
+
+  it("updates matching permission matrix resource labels when sidebar labels change", async () => {
+    const sidebarDefaults = { shelters: "Refugios y equipo" };
+    const dynamicCatalog: PermissionCatalog = {
+      ...permissionCatalog,
+      resources: [
+        ...permissionCatalog.resources,
+        {
+          key: "shelters",
+          label: "Refugios",
+          actions: [{ key: "read", label: "Consultar" }],
+        },
+      ],
+    };
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const body =
+          init?.method === "PUT"
+            ? JSON.parse(String(init.body)) as { labels: Record<string, string> }
+            : null;
+        const result = url.includes("/me/")
+          ? {
+              id: 1,
+              name: "Admin",
+              email: "admin@example.test",
+              role: "administrador",
+              is_platform_superadmin: true,
+            }
+          : url.includes("/sidebar-labels/")
+            ? {
+                defaults: sidebarDefaults,
+                labels: body?.labels ?? sidebarDefaults,
+              }
+            : dynamicCatalog;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => result,
+        };
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider getAccessToken={() => "access-token"}>
+        <RolePermissionsPanel />
+      </AuthProvider>,
+    );
+
+    expect(
+      await screen.findByRole("checkbox", {
+        name: "Refugios y equipo: Consultar",
+      }),
+    ).toBeInTheDocument();
+    const labelInput = await screen.findByLabelText("Refugios y equipo");
+    await user.clear(labelInput);
+    await user.type(labelInput, "Pepe");
+    await user.click(screen.getByRole("button", { name: "Guardar nombres" }));
+
+    expect(
+      await screen.findByRole("checkbox", { name: "Pepe: Consultar" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /Pepe/ })).toBeInTheDocument();
   });
 
   it("allows an administrator to edit and persist a role permission", async () => {
