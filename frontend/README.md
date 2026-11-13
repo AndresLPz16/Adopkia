@@ -28,6 +28,21 @@ administrator account first. Then open
 `http://localhost:5173/admin/permissions`, sign in with that account, and the
 matrix appears. Vite proxies `/api` requests to the local Django server.
 
+## Source layout
+
+- `src/App.tsx` chooses between the public landing page and the authenticated portal.
+- `src/landing/` holds the public site: `Landing.tsx` composes the page from
+  `useAuthFlow` (register, email verification, login) and `usePetCatalog`
+  (loading, filters, carousel, selected pet) plus one component per page area.
+- `src/Portal.tsx` owns the portal's data loading and shared form state.
+  `src/portal/navigation.ts` has the section, role and endpoint tables;
+  `PortalHeader`, `PortalSidebar` and `SectionContent` render the shell.
+- `src/portal/pets/` and `src/portal/requests/` contain the pet and adoption
+  request sections; `src/portal/PetSections.tsx` re-exports them.
+- `src/styles/index.css` imports the stylesheets in a fixed order. Later files
+  override earlier ones, so keep that order.
+- `src/rbac/` is the permission layer described below.
+
 ## Use in an application
 
 Provide a function that reads the current access token from the application's

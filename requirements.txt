@@ -8,3 +8,6 @@ python-dotenv>=1.1,<2
 PyMySQL>=1.1,<2
 Pillow>=11,<13
 gunicorn>=23,<24
+whitenoise>=6.9,<7
+django-storages[azure]>=1.14,<2
+azure-identity>=1.19,<2

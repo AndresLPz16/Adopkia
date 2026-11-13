@@ -4,6 +4,48 @@
 **Target**: `C:\Users\yoide\OneDrive\Desktop\Adopkia`
 **Database scope**: MySQL `adopkia`, `test_adopkia` and temporary `adopkia_cmp`, user `adopkia_dev`
 
+## Update 2026-11-12
+
+The sections below record the 2026-10-09 validation cycle and are kept as historical evidence; the counts in them are no longer current. Results of the 2026-11-12 run, in `C:\Users\yoide\OneDrive\Desktop\Adopkia-main`:
+
+| Step | Status | Details |
+|---|---|---|
+| Django system check | PASS | `manage.py check`; no issues |
+| Migration check | PASS | `makemigrations --check --dry-run`; no changes |
+| Django tests (MySQL) | PASS | `manage.py test --noinput`; 100 tests, none skipped |
+| Django tests (SQLite) | PASS | 100 tests, 1 skipped (MySQL-only cases) |
+| Schema comparison | PASS | `compare_schema`; 0 differences over 25 tables and 33 FK relationships after updating `database/adopkia_v3.sql`; `adopkia_cmp` absent afterwards |
+| Frontend | PASS | `npm run typecheck` clean; `npm test` 73 tests in 15 files |
+| Lint | PASS | `ruff check` |
+| Static files without debug | PASS | `collectstatic` plus a temporary non-debug server returned 200 for admin and browsable-API CSS |
+
+Not re-run in this cycle: `pytest`, the HTTP E2E runner (`run_tests_e2e.py`), the OpenAPI validation and any Azure deployment. The Azure Blob Storage path for uploaded photos has not been exercised against a real storage account.
+
+Findings corrected in this cycle:
+
+- `database/adopkia_v3.sql` had drifted from the migrations (12 differences: missing `codigo_verificacion_correo` and `reto_matematico_login`, missing `usuario.nombre_usuario` and `usuario.correo_verificado`, and mismatches in `permiso_rol`, `configuracion_portal` and `recordatorio.notas`). The reference DDL and `adopkia_v3_pruebas.sql` were updated; migrations were not changed.
+- `compare_schema` never dropped `adopkia_cmp` because its pattern did not match the `CREATE DATABASE ... CHARACTER SET` statement; a copy from 2026-10-14 was still present. The pattern was fixed.
+- Public authentication endpoints and the session login forms had no rate limits; they now return 429 beyond the configured rates (`users/test_throttling.py`).
+- `Dockerfile.azure` did not collect or serve static files; WhiteNoise and `collectstatic` were added.
+
+## Update 2026-11-13
+
+Frontend only; the backend was not re-run in this update, so the 2026-11-12 backend results above still stand as last recorded.
+
+| Step | Status | Details |
+|---|---|---|
+| Frontend typecheck | PASS | `npm run typecheck`; no errors |
+| Frontend tests | PASS | `npm test`; 83 tests in 17 files (was 73 in 15) |
+
+Changes covered by the new tests:
+
+- `frontend/src/portal/loadAllPages.ts` follows the `next` link of paginated responses until every record is loaded. It rejects a `next` that points to another path, stops on a repeated page and caps a list at 500 pages (`loadAllPages.test.ts`).
+- After a write, the portal reloads only the lists that the action can change, using `endpointsAffectedBy` in `frontend/src/portal/navigation.ts`; an unknown resource still reloads everything. Marking all notifications as read triggers a single reload (`PortalReload.test.tsx`).
+
+The project was placed under Git on this date (initial commit `8c0905e`, branch `main`, no remote).
+
+Still not re-run: `pytest`, the HTTP E2E runner (`run_tests_e2e.py`), the OpenAPI validation and any Azure deployment. The Azure Blob Storage path for uploaded photos remains unexercised against a real storage account.
+
 ## Summary
 
 | Step | Status | Exit Code | Details |

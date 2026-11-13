@@ -38,6 +38,25 @@ describe("role-specific dashboard", () => {
     expect(screen.getByText("Mascotas disponibles")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Explorar mascotas" }));
     expect(props.navTo).toHaveBeenCalledWith("pets");
+    expect(screen.getByText("Tienes 1 solicitud pendiente.")).toBeInTheDocument();
+    expect(screen.getByText("1 adopción activa en seguimiento.")).toBeInTheDocument();
+  });
+
+  it("shows actionable shelter workload and links to the requested section", () => {
+    const props = {
+      ...makeProps(ROLES.SHELTER),
+      visibleLinks: ["dashboard", "pets", "requests", "adoptions", "messages", "shelters"],
+      shelters: [{ verification_status: "verificado" }],
+      managedPets: [{ status: "disponible" }, { status: "adoptada" }],
+      requests: [{ status_code: "pendiente" }, { status_code: "pendiente" }],
+      adoptions: [{ status_code: "activa" }],
+    };
+    render(<DashboardSection {...props} />);
+
+    expect(screen.getByText("2 solicitudes esperan respuesta.")).toBeInTheDocument();
+    expect(screen.getByText("2 mascotas a tu cuidado; 1 disponibles.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Solicitudes de adopción/ }));
+    expect(props.navTo).toHaveBeenCalledWith("requests");
   });
 
   describe("adoption statistics", () => {

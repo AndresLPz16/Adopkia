@@ -1,0 +1,13 @@
+/*
+  Estilos de Adopkia divididos por área. El orden de estos @import es parte
+  del diseño: los archivos posteriores sobrescriben reglas de los anteriores,
+  así que no deben reordenarse.
+*/
+@import "./01-base.css"; /* Variables de diseño, estilos globales e inicio de sesión */
+@import "./02-app-shell.css"; /* Estructura del portal: cabecera, menú lateral y contenido */
+@import "./03-landing.css"; /* Página pública: cabecera, portada, catálogo, destacado, proceso y preguntas */
+@import "./04-dialogs.css"; /* Diálogos de solicitud y de mascota, pantalla de acceso y pie de la página pública */
+@import "./05-portal.css"; /* Componentes del portal: tarjetas, formularios, botones, paginación y gráficas */
+@import "./06-portal-pets-messages.css"; /* Portal: fotos y detalle de mascotas, carrusel, conversaciones y mensajes */
+@import "./07-interactions.css"; /* Microinteracciones, transiciones y efectos 3D */
+@import "./08-notifications.css"; /* Campana y panel de notificaciones */

@@ -1,6 +1,6 @@
-# Adopkia — Backend
+# Adopkia
 
-API REST de adopción responsable y seguimiento post-adopción. Las migraciones de Django son el camino oficial para crear y actualizar el esquema; [database/adopkia_v3.sql](./database/adopkia_v3.sql) es la referencia del modelo físico para el DER, MySQL Workbench y `compare_schema`. Las tablas y columnas usan los nombres españoles del SQL; los modelos, atributos Python y rutas API se mantienen en inglés.
+Plataforma de adopción responsable y seguimiento post-adopción: API REST en Django y portal web en React (`frontend/`, con su propio [README](./frontend/README.md)). Las migraciones de Django son el camino oficial para crear y actualizar el esquema; [database/adopkia_v3.sql](./database/adopkia_v3.sql) es la referencia del modelo físico para el DER, MySQL Workbench y `compare_schema`. Las tablas y columnas usan los nombres españoles del SQL; los modelos, atributos Python y rutas API se mantienen en inglés.
 
 ## Estructura del proyecto
 
@@ -10,6 +10,9 @@ API REST de adopción responsable y seguimiento post-adopción. Las migraciones 
 - `locale/` contiene los catálogos español e inglés (`.po` y `.mo`).
 - `database/` contiene el DDL de referencia y sus casos SQL de prueba.
 - `docs/` contiene los informes y documentos del proyecto.
+- `frontend/` contiene el portal React + TypeScript (Vite): catálogo público, registro e inicio de sesión, portal por rol y panel de permisos.
+- `infra/` contiene las plantillas Bicep del despliegue en Azure.
+- `tests_e2e/` y `run_tests_e2e.py` contienen las pruebas HTTP de extremo a extremo.
 - `_no_subir/` se reserva para datos locales y artefactos excluidos de Git.
 
 ## Requisitos e instalación
@@ -18,9 +21,13 @@ API REST de adopción responsable y seguimiento post-adopción. Las migraciones 
 - Django 5.2 y sus dependencias requieren una versión de Python compatible; se recomienda usar Python 3.12.
 - MySQL 8.0.16+ para validar el esquema completo, incluidos `CHECK`, columnas generadas, rutinas, triggers y vistas.
 
-El proyecto y los valores de `.env.example` son para desarrollo local, no una configuración lista para producción. En producción usa `DJANGO_DEBUG=false`, una `DJANGO_SECRET_KEY` aleatoria y secreta, `DJANGO_ALLOWED_HOSTS` limitado a los dominios reales, `DJANGO_CORS_ALLOWED_ORIGINS` limitado a los orígenes autorizados y credenciales de base de datos protegidas. Para MySQL, con `DJANGO_DEBUG=false` el cliente verifica TLS y el nombre del servidor por defecto (`DB_SSL_MODE=verify_identity`); puedes definir `DB_SSL_CA` si necesitas una CA específica. El modo `DB_SSL_MODE=disabled` solo se permite con debug para la base local de desarrollo. Configura HTTPS, HSTS y cookies seguras en el despliegue/servidor; esos ajustes no se habilitan en este proyecto.
+El proyecto y los valores de `.env.example` son para desarrollo local, no una configuración lista para producción. En producción usa `DJANGO_DEBUG=false`, una `DJANGO_SECRET_KEY` aleatoria y secreta, `DJANGO_ALLOWED_HOSTS` limitado a los dominios reales, `DJANGO_CORS_ALLOWED_ORIGINS` limitado a los orígenes autorizados y credenciales de base de datos protegidas. Para MySQL, con `DJANGO_DEBUG=false` el cliente verifica TLS y el nombre del servidor por defecto (`DB_SSL_MODE=verify_identity`); puedes definir `DB_SSL_CA` si necesitas una CA específica. El modo `DB_SSL_MODE=disabled` solo se permite con debug para la base local de desarrollo. Con `DJANGO_DEBUG=false` se activan por defecto las cookies de sesión y CSRF seguras, HSTS y la confianza en la cabecera `X-Forwarded-Proto` del proxy que termina TLS (`DJANGO_HTTPS_ONLY`, `DJANGO_HSTS_SECONDS`); define `DJANGO_CSRF_TRUSTED_ORIGINS` si los formularios de sesión se sirven desde otro origen. La redirección de HTTP a HTTPS se deja al proxy o ingress, y ese proxy debe sobrescribir `X-Forwarded-Proto`. `.env.example` deja vacíos `DJANGO_SECRET_KEY` y `DB_PASSWORD` a propósito: genera y escribe tus propios valores.
 
 Para una imagen de producción en Azure, usa `Dockerfile.azure` en lugar de `Dockerfile`. Esta variante aplica migraciones y catálogos base y sirve Django con Gunicorn; no importa las cuentas demo. Inyecta en el entorno de Azure `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS` y las credenciales/endpoints MySQL reales. El `Dockerfile` y Compose existentes siguen siendo el flujo local de desarrollo.
+
+**Archivos estáticos y fotos en producción.** `Dockerfile.azure` ejecuta `collectstatic` durante el build y WhiteNoise sirve `/static/` (panel de administración y API navegable) desde Gunicorn. Las fotos subidas como archivo se guardan en `MEDIA_ROOT` solo en desarrollo; en producción define `AZURE_STORAGE_ACCOUNT_NAME` (y opcionalmente `AZURE_STORAGE_CONTAINER`, por defecto `media`) para guardarlas en Azure Blob Storage con la identidad administrada indicada en `AZURE_CLIENT_ID`. `foto_mascota.url` almacena entonces la URL absoluta del blob. `infra/modules/storage-account.bicep` crea la cuenta y un contenedor con lectura pública de blobs, y asigna a la aplicación el rol *Storage Blob Data Contributor*. Sin esa variable, las fotos subidas a un contenedor se pierden al reiniciarlo.
+
+**Límites de intentos.** Los endpoints públicos de autenticación limitan las peticiones y responden `429` con `Retry-After`: login JWT 20/min por IP y 10/min por cuenta, reto matemático 60/min, registro 20/hora, verificación de correo 20/min y reenvío de código 10/hora. Los mismos límites de login se aplican a los formularios de sesión `/api-auth/login/` y `/admin/login/`. Las tasas están en `AUTH_THROTTLE_RATES` (`myproject/settings.py`) y se desactivan en las suites de pruebas; `run_tests_e2e.py` las desactiva con `DJANGO_AUTH_THROTTLE_ENABLED=false`. Los contadores usan la caché en memoria de cada proceso, así que con varios workers o réplicas el límite efectivo se multiplica; para un límite global configura una caché compartida en `CACHES`. Detrás de un proxy define `DJANGO_NUM_PROXIES` con el número de proxies de confianza para que el límite por IP use la dirección real del cliente.
 
 Para el desarrollo se recomienda instalar el conjunto de dependencias de desarrollo con el lock probado:
 
@@ -140,6 +147,14 @@ python -W error::DeprecationWarning manage.py test --noinput
 python -m pytest --create-db -W error::DeprecationWarning
 ```
 
+Para el frontend, desde `frontend/`:
+
+```powershell
+npm install
+npm run typecheck
+npm test
+```
+
 En Linux/macOS los mismos comandos se ejecutan en la terminal. Los tests MySQL pueden crear y eliminar únicamente la base de pruebas `test_adopkia`; asegúrate de no guardar datos importantes en ella.
 
 `compare_schema` lee el DDL de referencia, lo ejecuta sobre una base temporal `adopkia_cmp`, compara tablas, columnas, tipos, nulabilidad, claves, checks, funciones, triggers y vistas con `adopkia`, y elimina solo la base temporal que creó. Si `adopkia_cmp` ya existe, el comando se detiene; `--force` la reemplaza de forma explícita. El usuario MySQL debe poder crear/eliminar `adopkia_cmp` y definir tablas, funciones, triggers y vistas.
@@ -168,11 +183,25 @@ Los tests `adoptions.test_mysql_v3_cases` ejercitan casos de integridad MySQL; s
 
 **API navegable de DRF:** la API usa `SessionAuthentication` además de JWT y declara explícitamente `JSONRenderer` y el renderer navegable con formularios. Para iniciar sesión, usa el botón `Log in` de la esquina superior derecha; `/api-auth/login/` autentica con correo y contraseña, y el menú también ofrece `Log out`. Las operaciones con sesión mantienen la protección CSRF de Django/DRF: los POST, PUT, PATCH y DELETE requieren el token CSRF. Los formularios de creación de mascotas se ocultan en el renderer para adoptantes, veterinarios y usuarios de refugio sin membresía, sin cambiar los permisos ni las respuestas de las vistas. Las pruebas cubren registro e inicio JWT anónimos mediante formularios HTML, login de sesión por correo, CSRF, visibilidad por rol y equivalencia de los estados de lectura con JWT.
 
-**Diferencias intencionales:** se permite la diferencia de signo en enteros (signed en Django frente a `UNSIGNED` en el SQL), tal como autorizan los requisitos; el comparador normaliza esa diferencia. Se excluyen de la comparación las tablas internas de Django `django_migrations`, `django_content_type`, `django_admin_log`, `django_session`, `auth_group`, `auth_group_permissions` y `auth_permission`. Estas seis últimas tablas son necesarias para sesiones y el panel; no son tablas de negocio y no cambian las 20 tablas del modelo.
+**Diferencias intencionales:** se permite la diferencia de signo en enteros (signed en Django frente a `UNSIGNED` en el SQL), tal como autorizan los requisitos; el comparador normaliza esa diferencia. Se excluyen de la comparación las tablas internas de Django `django_migrations`, `django_content_type`, `django_admin_log`, `django_session`, `auth_group`, `auth_group_permissions` y `auth_permission`. Estas tablas son necesarias para sesiones y el panel; no son tablas de negocio. El DDL de referencia contiene 25 tablas: las 20 del modelo de adopción y cinco de soporte de la plataforma (`permiso_rol`, `recurso_permiso`, `configuracion_portal`, `codigo_verificacion_correo` y `reto_matematico_login`).
 
 ## API y autenticación
 
-Prefijo funcional: `/api/v1/`. Autenticación JWT: registro `POST /api/v1/auth/register/`, login `POST /api/v1/auth/login/`, refresh `POST /api/v1/auth/refresh/` y perfil propio `/api/v1/auth/me/`. Swagger: `/api/docs/`.
+Prefijo funcional: `/api/v1/`. Swagger: `/api/docs/`. La autenticación es JWT y sigue este flujo:
+
+1. **Registro:** `POST /api/v1/auth/register/` con `email`, `username`, `password`, `name` y, opcionalmente, `phone` y `role` (solo `adoptante` o `refugio`). La cuenta se crea sin verificar y se envía por correo un código de 6 dígitos que vence en 10 minutos. En desarrollo el correo se imprime en la consola del servidor; en producción configura las variables `EMAIL_*`.
+2. **Verificación:** `POST /api/v1/auth/verify-email/` con `email` y `code`. Tras 5 intentos fallidos el código se invalida; `POST /api/v1/auth/resend-email-verification/` envía uno nuevo, como máximo uno por minuto y cuenta.
+3. **Reto de login:** `GET /api/v1/auth/login-challenge/` devuelve `challenge_id` y una suma (`question`). Cada reto vence a los 3 minutos y solo sirve para un intento.
+4. **Login:** `POST /api/v1/auth/login/` con `identifier` (correo o nombre de usuario; también se acepta `email`), `password`, `challenge_id` y `challenge_answer`. Devuelve `access` y `refresh`; una cuenta sin correo verificado no puede iniciar sesión.
+5. **Sesión:** `POST /api/v1/auth/refresh/` renueva el token y `/api/v1/auth/me/` consulta o edita el perfil propio (solo `name` y `phone`).
+
+Las cuentas creadas con `createsuperuser`, por un administrador o por el conjunto de demostración nacen verificadas.
+
+### Roles y permisos configurables
+
+Los permisos de cada rol se guardan en la tabla `permiso_rol` como pares recurso/acción (`read`, `create`, `update`, `delete`, `approve`, `reject`, `verify`, `return` y `manage`, que equivale a todas). Las vistas los exigen con `RolePermissionRequired` y, además, mantienen sus reglas por objeto (dueño, refugio propio, participante): un permiso de rol nunca basta por sí solo para acceder a datos ajenos. Las migraciones siembran la matriz inicial de los cuatro roles del sistema, definida en `users/rbac.py`.
+
+Quien tenga permiso sobre `rolePermissions` puede, desde la API o el panel del frontend, cambiar la matriz de un rol, crear roles personalizados y registrar recursos adicionales. Los cuatro roles del sistema no se pueden renombrar ni eliminar. Solo una cuenta marcada como superadministrador de plataforma (`es_superadministrador`) puede modificar los permisos del rol administrador o administrar otras cuentas administradoras, y esa cuenta no puede degradarse, desactivarse ni eliminarse. Tampoco se puede eliminar ni desactivar al último administrador activo.
 
 El índice `/` presenta los recursos según la sesión y el rol, en español o inglés. El índice anónimo conserva los recursos públicos e informa, en el idioma solicitado, que debe iniciar sesión mediante el enlace `Log in` de la esquina superior derecha para ver los recursos de su rol. Para usuarios autenticados, el índice usa la tabla central `ROLE_RESOURCES`. La presentación de enlaces no concede permisos: cada endpoint conserva su propia autorización.
 
@@ -198,7 +227,7 @@ Se traducen las etiquetas del panel y de los campos de los modelos, los errores 
 | Estadísticas | `GET /api/v1/statistics/adoptions/` |
 | Documentación OpenAPI | `/api/schema/`, `/api/docs/` |
 
-Las mascotas se filtran por especie derivada de raza, raza, ciudad, estado y tamaño. La edad se calcula desde `fecha_nacimiento_aprox`; no se almacena. La foto se registra guardando su URL en `foto_mascota.url`; el backend no almacena el archivo binario. Veterinarios aliados pueden registrar atenciones en cualquier mascota y consultar historiales. Cada mensaje y cada transición de estado de solicitud genera una sola notificación, con `tipo` de los seis valores del DDL.
+Las mascotas se filtran por especie derivada de raza, raza, ciudad, estado y tamaño. La edad se calcula desde `fecha_nacimiento_aprox`; no se almacena. Una foto se registra en `POST /api/v1/pet-photos/` (`multipart/form-data`) con un enlace (`url`) o con un archivo (`image`: JPG, PNG, WEBP o GIF de hasta 10 MB), pero no ambos; el archivo se guarda en el almacenamiento configurado y `foto_mascota.url` conserva su dirección. Veterinarios aliados pueden registrar atenciones en cualquier mascota y consultar historiales. Cada mensaje y cada transición de estado de solicitud genera una sola notificación, con `tipo` de los seis valores del DDL.
 
 ### Inventario de rutas HTTP y permisos
 
@@ -208,10 +237,19 @@ Las rutas siguientes se encuentran bajo `/api/v1/`, salvo `/api/schema/` y `/api
 |---|---|---|---|
 | `/` | `GET` | `ApiIndexView` | Público (`AllowAny`); Api Root estándar de DRF, sin redirección |
 | `/api/v1/` | `GET` | `ApiIndexView` | Público (`AllowAny`); índice de rutas por rol y mensaje de acceso para anónimos |
-| `/auth/register/` | `POST` | `RegisterView` | Público; el serializer no permite asignar roles privilegiados |
-| `/auth/login/` | `POST` | `TokenObtainPairView` | Público; autentica cuentas activas |
+| `/auth/register/` | `POST` | `RegisterView` | Público; solo roles `adoptante` o `refugio`; envía el código de verificación |
+| `/auth/verify-email/` | `POST` | `EmailVerificationView` | Público; código de 6 dígitos, 5 intentos |
+| `/auth/resend-email-verification/` | `POST` | `ResendEmailVerificationView` | Público; respuesta idéntica exista o no la cuenta |
+| `/auth/login-challenge/` | `GET` | `LoginMathChallengeView` | Público; reto matemático de un solo uso |
+| `/auth/login/` | `POST` | `LocalizedTokenObtainPairView` | Público; exige reto resuelto, cuenta activa y correo verificado |
 | `/auth/refresh/` | `POST` | `TokenRefreshView` | Público con refresh token válido |
 | `/auth/me/` | `GET`, `PUT`, `PATCH` | `ProfileView` | Autenticado; solo perfil propio |
+| `/auth/users/`, `/auth/users/{id}/` | `GET`, `POST`; detalle `GET`, `PATCH`, `DELETE` | `UserListCreateView`, `UserDetailView` | Permiso `users`; las cuentas administradoras solo las gestiona el superadministrador |
+| `/auth/roles/`, `/auth/roles/{id}/` | `GET`, `POST`; detalle `PATCH`, `DELETE` | `RoleListCreateView`, `RoleDetailView` | Lectura autenticada; escritura con permiso `rolePermissions`; roles del sistema protegidos |
+| `/auth/permissions/` | `GET` | `RolePermissionsView` | Autenticado; catálogo de recursos, acciones y matriz por rol |
+| `/auth/permissions/{rol}/` | `PUT` | `RolePermissionUpdateView` | Permiso `rolePermissions`; reemplaza la matriz del rol |
+| `/auth/resources/`, `/auth/resources/{clave}/` | `GET`, `POST`; detalle `PATCH`, `DELETE` | `PermissionResourceListCreateView`, `PermissionResourceDetailView` | Permiso `rolePermissions`; recursos adicionales |
+| `/auth/sidebar-labels/` | `GET`, `PUT` | `SidebarLabelsView` | Lectura autenticada; solo administrador modifica las etiquetas del menú |
 | `/shelters/`, `/shelters/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `ShelterViewSet` | Lectura anónima limitada a refugios verificados y a `name`, `city`, `description`; detalles completos solo para administrador o miembro del refugio. Crear como refugio/admin; modificar/eliminar como administrador o integrante autorizado |
 | Nota sobre refugios públicos | — | `PublicShelterSerializer` | `database/adopkia_v3.sql` no define una columna de descripción para refugios; por ello `description` se incluye como `null`. No se añadió columna ni se expusieron datos privados como sustituto |
 | `/shelters/{id}/verify/` | `POST` | `ShelterViewSet.verify` | Administrador |
@@ -221,8 +259,8 @@ Las rutas siguientes se encuentran bajo `/api/v1/`, salvo `/api/schema/` y `/api
 | `/breeds/`, `/breeds/{id}/` | `GET` | `BreedViewSet` | Público; solo lectura |
 | `/pets/`, `/pets/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `PetViewSet` | Lectura pública para refugios verificados; escribir como administrador o integrante del refugio dueño |
 | `/pets/{id}/relist/` | `POST` | `PetViewSet.relist` | Administrador o integrante del refugio dueño; solo mascota devuelta |
-| `/pet-photos/`, `/pet-photos/{id}/` | `GET`, `POST`; detalle `GET`, `DELETE` | `PetPhotoViewSet` | Autenticado; solo administrador o integrante autorizado del refugio dueño para escribir; PUT/PATCH no expuestos |
-| `/form-questions/`, `/form-questions/{id}/` | `GET` | `FormQuestionViewSet` | Público; solo lectura |
+| `/pet-photos/`, `/pet-photos/{id}/` | `GET`, `POST`; detalle `GET`, `DELETE` | `PetPhotoViewSet` | Autenticado; solo administrador o integrante autorizado del refugio dueño para escribir; acepta enlace o archivo; PUT/PATCH no expuestos |
+| `/form-questions/`, `/form-questions/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `FormQuestionViewSet` | Lectura pública de preguntas activas; escritura con permiso `formQuestions`; DELETE solo desactiva la pregunta |
 | `/adoption-requests/` | `GET`, `POST` | `AdoptionRequestViewSet` | Autenticado; crear como adoptante; listados limitados por actor |
 | `/adoption-requests/{id}/` | `GET`, `PATCH` | `AdoptionRequestViewSet` | Autenticado; lectura por ámbito; PATCH solo solicitante y mientras esté pendiente |
 | `/adoption-requests/{id}/approve/`, `/reject/` | `POST` | `AdoptionRequestViewSet` | Administrador o integrante del refugio dueño de la mascota |
@@ -232,7 +270,7 @@ Las rutas siguientes se encuentran bajo `/api/v1/`, salvo `/api/schema/` y `/api
 | `/follow-ups/`, `/follow-ups/{id}/` | `GET`, `POST`; detalle `GET`, `PATCH`, `DELETE` | `FollowUpViewSet` | Autenticado; escritura por administrador o integrante del refugio de la adopción |
 | `/veterinarians/`, `/veterinarians/{id}/` | `GET`, `POST`; detalle `GET`, `PATCH` | `VeterinarianViewSet` | Perfil propio para veterinario; admin/refugio pueden consultar; PUT/DELETE no expuestos |
 | `/medical-records/`, `/medical-records/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `MedicalRecordViewSet` | Autenticado; acceso según veterinario, administrador o refugio dueño |
-| `/vaccines/`, `/vaccines/{id}/` | `GET` | `VaccineViewSet` | Público; solo lectura |
+| `/vaccines/`, `/vaccines/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `VaccineViewSet` | Lectura pública; escritura con permiso `vaccines`; no se elimina una vacuna con historiales o recordatorios |
 | `/reminders/`, `/reminders/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `ReminderViewSet` | Autenticado; adoptante dueño, refugio responsable o administrador |
 | `/conversations/`, `/conversations/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `ConversationViewSet` | Autenticado; crear como adoptante; lectura/escritura según participación; modificar participantes no permitido |
 | `/messages/`, `/messages/{id}/` | `GET`, `POST`, `PATCH`, `DELETE` | `MessageViewSet` | Autenticado; participantes; modificar/eliminar solo mensaje propio no leído; PUT no expuesto |
@@ -248,7 +286,7 @@ La numeración conserva el orden de los requerimientos funcionales del documento
 
 | RF | Funcionalidad | Endpoint | Resultado HTTP |
 |---|---|---|---|
-| RF1 | Registro y autenticación | `POST /api/v1/auth/register/`, `/login/`, `/refresh/`, `GET/PATCH /api/v1/auth/me/` | Pasó: registro, JWT, refresh y perfil de los cuatro roles |
+| RF1 | Registro y autenticación | `POST /api/v1/auth/register/`, `/verify-email/`, `GET /login-challenge/`, `POST /login/`, `/refresh/`, `GET/PATCH /api/v1/auth/me/` | Pasó: registro, JWT, refresh y perfil de los cuatro roles |
 | RF2 | Publicar y mantener mascotas/fotos | CRUD `/api/v1/pets/`, `/api/v1/pet-photos/` | Pasó: publicación, actualización y foto por URL |
 | RF3 | Buscar mascotas por especie, raza, ciudad y estado | `GET /api/v1/pets/?species=&breed=&city=&status=` | Pasó: filtros y paginación |
 | RF4 | Formulario y solicitud | `GET /api/v1/form-questions/`, `POST /api/v1/adoption-requests/` | Pasó: envío, persistencia y duplicado pendiente rechazado |
@@ -292,8 +330,13 @@ python manage.py send_reminders --days 7
 
 | Tabla | Columnas (tipo; claves/restricciones) | Cardinalidad principal |
 |---|---|---|
-| `rol` | `id_rol TINYINT PK`; `nombre VARCHAR(30) UQ`; `descripcion VARCHAR(150)?` | Rol 1:N usuario. |
-| `usuario` | `id_usuario INT PK`; `id_rol TINYINT FK→rol`; `nombre VARCHAR(100)`; `correo VARCHAR(150) UQ`; `contrasena_hash VARCHAR(255)`; `telefono VARCHAR(20)?`; `activo BOOLEAN`; `fecha_registro DATETIME` | Usuario 1:N solicitudes, notificaciones, mensajes y conversaciones; 1:0..1 membresía, veterinario. |
+| `rol` | `id_rol TINYINT PK`; `nombre VARCHAR(30) UQ`; `etiqueta VARCHAR(60)?`; `descripcion VARCHAR(150)?` | Rol 1:N usuario y permisos. |
+| `permiso_rol` | `id_permiso BIGINT PK`; `id_rol TINYINT FK→rol`; `recurso VARCHAR(40)`; `accion VARCHAR(20)`; `UQ(id_rol,recurso,accion)` | Rol 1:N permisos. |
+| `recurso_permiso` | `clave VARCHAR(40) PK`; `etiqueta VARCHAR(60)`; `acciones JSON` | Recursos adicionales del panel de permisos. |
+| `configuracion_portal` | `id SMALLINT PK`; `etiquetas_menu_lateral JSON` | Fila única de configuración. |
+| `usuario` | `id_usuario INT PK`; `id_rol TINYINT FK→rol`; `nombre VARCHAR(100)`; `correo VARCHAR(150) UQ`; `contrasena_hash VARCHAR(255)`; `telefono VARCHAR(20)?`; `activo BOOLEAN`; `fecha_registro DATETIME`; `es_superadministrador BOOLEAN`; `nombre_usuario VARCHAR(30) UQ`; `correo_verificado BOOLEAN` | Usuario 1:N solicitudes, notificaciones, mensajes y conversaciones; 1:0..1 membresía, veterinario, código de verificación. |
+| `codigo_verificacion_correo` | `id BIGINT PK`; `id_usuario INT FK→usuario UQ`; `codigo_hash VARCHAR(64)`; `expira_en DATETIME(6)`; `intentos_fallidos SMALLINT`; `enviado_en DATETIME(6)` | Usuario 1:0..1 código vigente. |
+| `reto_matematico_login` | `id_reto CHAR(32) PK`; `respuesta_hash VARCHAR(64)`; `expira_en DATETIME(6)` | Reto de un solo uso, sin relaciones. |
 | `refugio` | `id_refugio INT PK`; `nombre VARCHAR(120)`; `direccion VARCHAR(200)`; `ciudad VARCHAR(80)`; `telefono_contacto VARCHAR(20)?`; `correo_contacto VARCHAR(150)?`; `estado_verificacion ENUM`; `fecha_verificacion DATETIME?`; `id_admin_verificador INT FK→usuario?`; `fecha_registro DATETIME`; `UQ(nombre,ciudad)`; `CHECK` de verificación | Refugio 1:N miembros, mascotas y conversaciones; validador 0..1 usuario administrador. |
 | `miembro_refugio` | `id_miembro INT PK`; `id_refugio INT FK→refugio CASCADE`; `id_usuario INT FK→usuario CASCADE UQ`; `cargo ENUM(responsable,colaborador)` | Refugio 1:N integrantes; usuario 0..1 refugio. |
 | `veterinario` | `id_veterinario INT PK`; `id_usuario INT FK→usuario CASCADE UQ`; `tarjeta_profesional VARCHAR(30) UQ`; `clinica VARCHAR(120)?`; `especialidad VARCHAR(80)?` | Usuario 1:0..1 ficha veterinaria; veterinario 1:N historial. |
@@ -308,7 +351,7 @@ python manage.py send_reminders --days 7
 | `seguimiento` | `id_seguimiento INT PK`; `id_adopcion INT FK→adopcion CASCADE`; `id_registrado_por INT FK→usuario SET NULL?`; `fecha DATE`; `bienestar ENUM`; `observaciones TEXT?` | Adopción 1:N seguimientos. |
 | `vacuna` | `id_vacuna INT PK`; `id_especie INT FK→especie`; `nombre VARCHAR(100)`; `descripcion VARCHAR(255)?`; `intervalo_refuerzo_dias SMALLINT?`; `UQ(id_especie,nombre)` | Especie 1:N vacunas; vacuna 0..N registros y recordatorios. |
 | `historial_medico` | `id_historial INT PK`; `id_mascota INT FK→mascota CASCADE`; `id_veterinario INT FK→veterinario SET NULL?`; `id_vacuna INT FK→vacuna?`; `fecha DATE`; `tipo ENUM`; `descripcion TEXT?`; `CHECK(id_vacuna IS NULL OR tipo='vacunacion')` | Mascota 1:N atenciones; veterinario/vacuna 0..N atenciones; historial 0..N recordatorios. |
-| `recordatorio` | `id_recordatorio INT PK`; `id_adopcion INT FK→adopcion CASCADE`; `id_vacuna INT FK→vacuna?`; `id_historial INT FK→historial_medico SET NULL?`; `tipo ENUM`; `fecha_programada DATE`; `estado ENUM`; `CHECK` de vacuna | Adopción 1:N recordatorios; recordatorio 0..N notificaciones. |
+| `recordatorio` | `id_recordatorio INT PK`; `id_adopcion INT FK→adopcion CASCADE`; `id_vacuna INT FK→vacuna?`; `id_historial INT FK→historial_medico SET NULL?`; `tipo ENUM`; `fecha_programada DATE`; `notas LONGTEXT`; `estado ENUM`; `CHECK` de vacuna | Adopción 1:N recordatorios; recordatorio 0..N notificaciones. |
 | `notificacion` | `id_notificacion INT PK`; `id_usuario INT FK→usuario CASCADE`; `id_solicitud INT FK→solicitud SET NULL?`; `id_recordatorio INT FK→recordatorio SET NULL?`; `tipo ENUM`; `mensaje VARCHAR(500)`; `fecha_envio DATETIME`; `leida BOOLEAN` | Usuario 1:N notificaciones; solicitud/recordatorio 0..N notificaciones. |
 | `conversacion` | `id_conversacion INT PK`; `id_adoptante INT FK→usuario CASCADE`; `id_refugio INT FK→refugio CASCADE`; `id_mascota INT FK→mascota SET NULL?`; `fecha_inicio DATETIME` | Adoptante/refugio 1:N conversaciones; conversación 1:N mensajes. |
 | `mensaje` | `id_mensaje INT PK`; `id_conversacion INT FK→conversacion CASCADE`; `id_remitente INT FK→usuario`; `contenido TEXT`; `fecha_envio DATETIME`; `leido BOOLEAN` | Conversación y remitente 1:N mensajes. |
@@ -319,5 +362,5 @@ No hay una tabla independiente de asignaciones veterinarias ni una tabla separad
 
 - Aceptada explícitamente: enteros con signo en vez de `UNSIGNED`, cuando corresponda.
 - Infraestructura: las tablas internas de Django (`django_migrations`, `django_content_type`, `django_admin_log`, `django_session`, `auth_group`, `auth_group_permissions` y `auth_permission`) quedan fuera del esquema de negocio y de la comparación.
-- `compare_schema` verificó 20 tablas, 31 relaciones FK, las funciones 2, triggers 13 y vistas 2, sin diferencias en las categorías comparadas; la base de comparación `adopkia_cmp` se eliminó al terminar.
+- `compare_schema` verificó el 12 de noviembre de 2026 las 25 tablas, 33 relaciones FK, 2 funciones, 13 triggers y 2 vistas del DDL de referencia, sin diferencias en las categorías comparadas; la base de comparación `adopkia_cmp` se eliminó al terminar.
 - No se declaran otras diferencias intencionales. Las suites y pruebas HTTP anteriores se ejecutaron contra MySQL; no son resultados simulados.

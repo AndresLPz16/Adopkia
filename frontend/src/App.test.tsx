@@ -96,6 +96,10 @@ describe("public landing page", () => {
     });
     expect(screen.getAllByRole("article")).toHaveLength(7);
     expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    expect(screen.getAllByText("Raza: Mestizo · Refugio: Refugio Huellas", { selector: ".landing-pet__source" })).toHaveLength(7);
+    const firstPet = screen.getAllByRole("article")[0];
+    expect(within(firstPet).getByText("Mediano")).toBeInTheDocument();
+    expect(within(firstPet).getByText(/Cuenta con vacunas al día/)).toBeInTheDocument();
 
     await user.click(nextPage);
     expect(screen.getByText("2 / 2")).toBeInTheDocument();
@@ -106,6 +110,107 @@ describe("public landing page", () => {
     });
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(screen.getByRole("heading", { name: "Mascota 7" })).toBeInTheDocument();
+  });
+
+  it("filters pets by size and sorts them by name or publication date", async () => {
+    const user = userEvent.setup();
+    const catalog = [
+      { ...pets[0], id: 1, name: "Zoe", size: "Pequeño", published_at: "2026-09-01T12:00:00Z" },
+      { ...pets[1], id: 2, name: "Bruno", size: "Grande", published_at: "2026-09-03T12:00:00Z" },
+      { ...pets[2], id: 3, name: "Alma", size: "Pequeño", published_at: "2026-09-02T12:00:00Z" },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ results: catalog, next: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("article")).toHaveLength(3);
+    });
+    const listedPetNames = () =>
+      screen.getAllByRole("article").map((article) =>
+        within(article).getByRole("heading", { level: 3 }).textContent,
+      );
+    expect(listedPetNames())
+      .toEqual(["Bruno", "Alma", "Zoe"]);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Ordenar mascotas" }), "name");
+    expect(listedPetNames())
+      .toEqual(["Alma", "Bruno", "Zoe"]);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Filtrar por tamaño" }), "Pequeño");
+    expect(listedPetNames())
+      .toEqual(["Alma", "Zoe"]);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Ordenar mascotas" }), "oldest");
+    expect(listedPetNames())
+      .toEqual(["Zoe", "Alma"]);
+
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(listedPetNames())
+      .toEqual(["Bruno", "Alma", "Zoe"]);
+    expect(screen.getByRole("combobox", { name: "Filtrar por tamaño" })).toHaveValue("");
+    expect(screen.getByRole("combobox", { name: "Ordenar mascotas" })).toHaveValue("recent");
+  });
+
+  it("explains the adoption flow and links to the available pets", async () => {
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Conoce, conecta y acompaña." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Encuentra una conexión" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Conoce su historia" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Da el siguiente paso" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver mascotas disponibles" })).toHaveAttribute("href", "#mascotas");
+  });
+
+  it("answers adoption questions without promising an approval or response time", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Preguntas frecuentes" })).toBeInTheDocument();
+    const requestQuestion = screen.getByText("¿Enviar la solicitud significa que la adopción ya está aprobada?");
+    await user.click(requestQuestion);
+
+    expect(screen.getByText(/Enviar una solicitud inicia el proceso/)).toBeInTheDocument();
+    expect(screen.getByText("¿Cuánto tarda el refugio en responder?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Preguntas frecuentes" })).toHaveAttribute("href", "#preguntas-frecuentes");
+  });
+
+  it("features a real available pet and uses its published catalog count", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByText("7", { selector: ".landing-spotlight__count strong" })).toBeInTheDocument();
+    expect(screen.getByText("perfiles disponibles ahora")).toBeInTheDocument();
+    expect(screen.getByText("Raza: Mestizo · Refugio: Refugio Huellas", { selector: ".landing-spotlight__source" })).toBeInTheDocument();
+    expect(screen.getByText("2 años · Mediano", { selector: ".landing-spotlight__facts" })).toBeInTheDocument();
+    expect(screen.getByText(/Cuenta con vacunas al día/, { selector: ".landing-spotlight__health" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ver perfil de Mascota 1" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog")).getByRole("heading", { name: "Mascota 1" })).toBeInTheDocument();
+  });
+
+  it("does not show a featured-pet story when the public catalog is empty", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ results: [], next: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+    render(<App />);
+
+    expect(await screen.findByText("Pronto habrá nuevos perfiles")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Cada perfil tiene algo especial." })).not.toBeInTheDocument();
   });
 
   it("opens a pet details dialog from its photo and restores focus when closed", async () => {

@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
+import type { Action, Resource } from "../rbac/types";
 
 export type PortalDataRow = Record<string, unknown>;
 export type FieldOption = { value: string; label: string };
@@ -28,6 +29,7 @@ export type PortalPetSaver = (
   photoFiles: File[],
 ) => Promise<boolean>;
 export type PortalSubmit = (callback: () => Promise<void>) => (event: FormEvent) => void;
+export type PermissionCheck = (resource: Resource, action: Action) => boolean;
 
 export function text(value: unknown): string {
   return value == null ? "" : String(value);
@@ -83,9 +85,105 @@ export function labelStatus(value: unknown): string {
     control: "Control",
     otro: "Otro",
     leido: "Leída",
+    available: "Disponible",
+    in_progress: "En proceso",
+    adopted: "Adoptada",
+    returned: "Devuelta",
+    pending: "Pendiente",
+    approved: "Aprobada",
+    rejected: "Rechazada",
+    cancelled: "Cancelada",
+    notified: "Notificado",
+    completed: "Realizado",
+    fulfilled: "Realizado",
+    overdue: "Vencido",
+    active: "Activa",
+    finished: "Finalizada",
+    verified: "Verificado",
+    read: "Leída",
   };
-  const key = text(value);
-  return labels[key] ?? key.replaceAll("_", " ");
+  const raw = text(value).trim();
+  const key = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .replace(/[\s-]+/g, "_");
+  return labels[key] ?? raw.replaceAll("_", " ");
+}
+
+export function statusTone(value: unknown): string {
+  const key = text(value)
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (
+    [
+      "disponible",
+      "available",
+      "aprobada",
+      "aprobado",
+      "approved",
+      "adoptada",
+      "adoptado",
+      "adopted",
+      "activa",
+      "activo",
+      "active",
+      "verificado",
+      "verificada",
+      "verified",
+      "cumplido",
+      "realizado",
+      "completed",
+      "fulfilled",
+      "leido",
+      "leida",
+      "read",
+    ].includes(key)
+  ) {
+    return "positive";
+  }
+  if (
+    [
+      "pendiente",
+      "pending",
+      "en_proceso",
+      "in_progress",
+      "notificado",
+      "notificada",
+      "notified",
+      "regular",
+      "bueno",
+      "buena",
+      "vencido",
+      "overdue",
+    ].includes(key)
+  ) {
+    return "warning";
+  }
+  if (
+    [
+      "rechazado",
+      "rechazada",
+      "rejected",
+      "cancelado",
+      "cancelada",
+      "cancelled",
+      "canceled",
+      "devuelta",
+      "devuelto",
+      "returned",
+      "preocupante",
+      "finalizada",
+      "finalizado",
+      "finished",
+    ].includes(key)
+  ) {
+    return "negative";
+  }
+  return "neutral";
 }
 
 export function apiErrorMessage(data: unknown, status: number): string {
@@ -237,7 +335,11 @@ export function DataCard({
           <h3>{title || "Registro"}</h3>
           {subtitle && <p>{subtitle}</p>}
         </div>
-        {status && <span className="portal-badge">{labelStatus(status)}</span>}
+        {status && (
+          <span className={`portal-badge portal-badge--${statusTone(status)}`}>
+            {labelStatus(status)}
+          </span>
+        )}
       </div>
       {children && <div className="portal-card__body">{children}</div>}
       {actions && <div className="portal-card__actions">{actions}</div>}

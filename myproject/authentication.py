@@ -4,6 +4,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from myproject.throttling import LoginIdentifierRateThrottle, LoginRateThrottle
 from users.models import User
 from users.security import consume_login_math_challenge
 
@@ -51,3 +52,4 @@ class LocalizedTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class LocalizedTokenObtainPairView(TokenObtainPairView):
     serializer_class = LocalizedTokenObtainPairSerializer
+    throttle_classes = (LoginRateThrottle, LoginIdentifierRateThrottle)

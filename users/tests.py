@@ -342,29 +342,52 @@ class RolePermissionApiTests(APITestCase):
             ).exists()
         )
 
-    def test_administrator_cannot_remove_its_shelter_verification_permission(self):
+    def test_platform_superadmin_can_remove_and_restore_admin_recovery_permissions(self):
         self.admin.is_platform_superadmin = True
         self.admin.save(update_fields=("is_platform_superadmin",))
         self.client.force_authenticate(self.admin)
 
-        response = self.client.put(
-            reverse(
-                "role-permissions-update",
-                kwargs={"role_name": Role.Name.ADMIN},
-            ),
-            [
-                {"resource": "users", "action": "manage"},
-                {"resource": "dashboard", "action": "read"},
-            ],
+        url = reverse(
+            "role-permissions-update",
+            kwargs={"role_name": Role.Name.ADMIN},
+        )
+        removed = self.client.put(
+            url,
+            [{"resource": "dashboard", "action": "read"}],
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(removed.status_code, 200)
+        self.assertFalse(
+            RolePermission.objects.filter(
+                role=self.admin.role,
+                resource="rolePermissions",
+                action="manage",
+            ).exists()
+        )
+
+        restored = self.client.put(
+            url,
+            [
+                {"resource": "users", "action": "manage"},
+                {"resource": "shelters", "action": "verify"},
+                {"resource": "rolePermissions", "action": "manage"},
+            ],
+            format="json",
+        )
+        self.assertEqual(restored.status_code, 200)
         self.assertTrue(
             RolePermission.objects.filter(
                 role=self.admin.role,
                 resource="shelters",
                 action="verify",
+            ).exists()
+        )
+        self.assertTrue(
+            RolePermission.objects.filter(
+                role=self.admin.role,
+                resource="rolePermissions",
+                action="manage",
             ).exists()
         )
 

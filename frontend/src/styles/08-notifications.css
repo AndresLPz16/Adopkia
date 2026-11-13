@@ -1,0 +1,266 @@
+/* ==========================================================================
+   NOTIFICATION BELL & POPOVER
+   ========================================================================== */
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.app-header__notifications {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.app-header__bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-header__bell:hover {
+  transform: translateY(-2px) scale(1.05);
+  background: #ffffff;
+  border-color: var(--role-accent, var(--brand-primary));
+  box-shadow: 0 6px 18px -3px var(--role-glow, rgba(124, 58, 237, 0.25));
+}
+
+.app-header__bell:active {
+  transform: translateY(1px) scale(0.95);
+}
+
+@keyframes bell-ring {
+  0% { transform: rotate(0); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-14deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(6deg); }
+  60% { transform: rotate(-6deg); }
+  70% { transform: rotate(2deg); }
+  100% { transform: rotate(0); }
+}
+
+.app-header__bell.has-unread .app-header__bell-icon {
+  display: inline-block;
+  transform-origin: top center;
+  animation: bell-ring 3.5s ease-in-out infinite;
+}
+
+.app-header__bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--brand-coral, #f43f5e);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 850;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
+  animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+  70% { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+/* Notification Popover Dropdown */
+@keyframes popover-3d-in {
+  0% {
+    opacity: 0;
+    transform: perspective(600px) translateY(-10px) rotateX(-6deg) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(600px) translateY(0) rotateX(0deg) scale(1);
+  }
+}
+
+.app-header__notifications-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 380px;
+  max-width: min(92vw, 420px);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 1.15rem;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  z-index: 1000;
+  overflow: hidden;
+  animation: popover-3d-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  backdrop-filter: blur(16px);
+}
+
+.app-header__notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.95rem 1.15rem;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header__notifications-header strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.app-header__notifications-count {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 750;
+  border-radius: 999px;
+  background: var(--brand-coral-soft, #fda4af);
+  color: #9f1239;
+}
+
+.app-header__notifications-mark-all {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--role-text, var(--brand-primary));
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-header__notifications-mark-all:hover {
+  background: #ffffff;
+  text-decoration: underline;
+}
+
+.app-header__notifications-list {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app-header__notifications-empty {
+  display: grid;
+  place-items: center;
+  padding: 2.2rem 1.5rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.app-header__notifications-empty span {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.app-header__notifications-empty p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.app-header__notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid var(--surface-tint);
+  transition: background 0.2s ease;
+}
+
+.app-header__notification-item:last-child {
+  border-bottom: 0;
+}
+
+.app-header__notification-item.is-unread {
+  background: color-mix(in srgb, var(--role-tint, var(--surface-tint)) 45%, #ffffff);
+}
+
+.app-header__notification-item:hover {
+  background: var(--surface-muted);
+}
+
+.app-header__notification-icon {
+  font-size: 1.25rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+}
+
+.app-header__notification-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.app-header__notification-message {
+  margin: 0 0 0.3rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.app-header__notification-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.app-header__notification-action {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--brand-emerald, #10b981);
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-header__notification-action:hover {
+  transform: scale(1.15);
+  background: var(--brand-emerald, #10b981);
+  color: #ffffff;
+  border-color: var(--brand-emerald, #10b981);
+}
+
+.app-header__notifications-footer {
+  padding: 0.75rem 1.15rem;
+  background: var(--surface-muted);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.app-header__notifications-footer .portal-button {
+  width: 100%;
+  min-height: 2.35rem;
+  font-size: 0.82rem;
+}

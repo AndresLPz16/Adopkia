@@ -38,6 +38,54 @@ function makePetsSectionProps(overrides: Record<string, unknown> = {}) {
 }
 
 describe("pet photo uploads", () => {
+  it("previews selected photos and lets the user remove one before saving", async () => {
+    const createObjectURL = vi.fn(() => "blob:pet-preview");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+    const user = userEvent.setup();
+    const savePet = vi.fn().mockResolvedValue(true);
+    render(
+      <PetsSection
+        {...makePetsSectionProps({
+          role: "refugio",
+          managedShelters: [{ id: 1, name: "Refugio" }],
+          breeds: [{ id: 1, name: "Mestizo" }],
+          form: { shelter: "1", breed: "1", name: "Luna", size: "mediano" },
+          savePet,
+        })}
+      />,
+    );
+
+    await user.upload(
+      screen.getByLabelText("O selecciona fotos desde tu dispositivo"),
+      [
+        new File(["photo one"], "luna-1.jpg", { type: "image/jpeg" }),
+        new File(["photo two"], "luna-2.jpg", { type: "image/jpeg" }),
+      ],
+    );
+
+    expect(await screen.findByAltText("Vista previa de luna-1.jpg")).toHaveAttribute(
+      "src",
+      "blob:pet-preview",
+    );
+    expect(screen.getByAltText("Vista previa de luna-2.jpg")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quitar luna-1.jpg" }));
+    await user.click(screen.getByRole("button", { name: "Publicar mascota" }));
+
+    await waitFor(() => {
+      expect(savePet).toHaveBeenCalledWith(
+        "/api/v1/pets/",
+        "POST",
+        expect.any(Object),
+        [],
+        [expect.objectContaining({ name: "luna-2.jpg" })],
+      );
+    });
+    expect(screen.queryByAltText("Vista previa de luna-1.jpg")).not.toBeInTheDocument();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:pet-preview");
+    vi.unstubAllGlobals();
+  });
+
   it("shows an error when more than ten photos are selected", async () => {
     const user = userEvent.setup();
     const savePet = vi.fn().mockResolvedValue(true);
@@ -352,6 +400,123 @@ describe("adopter pet discovery", () => {
       );
     });
     vi.restoreAllMocks();
+  });
+});
+
+describe("pet management list", () => {
+  it("searches, filters by status and size, and sorts managed pets", () => {
+    render(
+      <PetsSection
+        {...makePetsSectionProps({
+          role: "refugio",
+          visiblePets: [
+            {
+              id: 1,
+              name: "Luna",
+              species: "Gato",
+              city: "Riohacha",
+              shelter_name: "Huellas",
+              status: "Disponible",
+              status_code: "disponible",
+              size: "pequeno",
+            },
+            {
+              id: 2,
+              name: "Max",
+              species: "Perro",
+              city: "Bogotá",
+              shelter_name: "Huellas",
+              status: "En proceso",
+              status_code: "en_proceso",
+              size: "grande",
+            },
+            {
+              id: 3,
+              name: "Nina",
+              species: "Gato",
+              city: "Riohacha",
+              shelter_name: "Huellas",
+              status: "Disponible",
+              status_code: "disponible",
+              size: "mediano",
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Mostrando 1–3 de 3 mascotas")).toBeInTheDocument();
+    fireEvent.change(
+      screen.getByRole("searchbox", {
+        name: "Buscar por nombre, especie, raza, ciudad o refugio",
+      }),
+      { target: { value: "gato" } },
+    );
+    const filters = screen.getByRole("group", { name: "Filtros de mascotas" });
+    fireEvent.change(within(filters).getByRole("combobox", { name: "Estado" }), {
+      target: { value: "disponible" },
+    });
+    fireEvent.change(within(filters).getByRole("combobox", { name: "Tamaño" }), {
+      target: { value: "mediano" },
+    });
+
+    expect(screen.getByRole("heading", { name: "Nina" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Luna" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Max" })).not.toBeInTheDocument();
+    expect(screen.getByText("Mostrando 1–1 de 1 mascotas")).toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByRole("searchbox", {
+        name: "Buscar por nombre, especie, raza, ciudad o refugio",
+      }),
+      { target: { value: "" } },
+    );
+    fireEvent.change(within(filters).getByRole("combobox", { name: "Estado" }), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(filters).getByRole("combobox", { name: "Tamaño" }), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(filters).getByRole("combobox", { name: "Ordenar por" }), {
+      target: { value: "name-desc" },
+    });
+    expect(screen.getAllByRole("article").map((card) =>
+      within(card).getByRole("heading").textContent,
+    )).toEqual(["Nina", "Max", "Luna"]);
+  });
+
+  it("paginates managed pets and returns to the first page when a filter changes", () => {
+    const pets = Array.from({ length: 12 }, (_, index) => ({
+      id: index + 1,
+      name: `Mascota ${String(index + 1).padStart(2, "0")}`,
+      species: "Perro",
+      status: "Disponible",
+      status_code: "disponible",
+      size: "mediano",
+    }));
+    render(
+      <PetsSection
+        {...makePetsSectionProps({
+          role: "administrador",
+          visiblePets: pets,
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Mostrando 1–10 de 12 mascotas")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    expect(screen.getByText("Mostrando 11–12 de 12 mascotas")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mascota 11" })).toBeInTheDocument();
+
+    fireEvent.change(
+      within(screen.getByRole("group", { name: "Filtros de mascotas" }))
+        .getByRole("combobox", { name: "Estado" }),
+      {
+      target: { value: "disponible" },
+      },
+    );
+    expect(screen.getByText("Mostrando 1–10 de 12 mascotas")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mascota 01" })).toBeInTheDocument();
   });
 });
 

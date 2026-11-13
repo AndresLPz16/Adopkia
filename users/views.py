@@ -8,6 +8,12 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 
 from myproject.permissions import IsAdminRole, RolePermissionRequired
+from myproject.throttling import (
+    EmailVerificationRateThrottle,
+    LoginChallengeRateThrottle,
+    RegisterRateThrottle,
+    ResendEmailVerificationRateThrottle,
+)
 
 from .models import (
     EmailVerificationCode,
@@ -41,6 +47,7 @@ class EmailVerificationSerializer(EmailAddressSerializer):
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = (permissions.AllowAny,)
+    throttle_classes = (RegisterRateThrottle,)
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -61,6 +68,7 @@ class RegisterView(generics.CreateAPIView):
 
 class EmailVerificationView(APIView):
     permission_classes = (permissions.AllowAny,)
+    throttle_classes = (EmailVerificationRateThrottle,)
 
     @extend_schema(request=EmailVerificationSerializer, responses=OpenApiTypes.OBJECT)
     def post(self, request):
@@ -110,6 +118,7 @@ class EmailVerificationView(APIView):
 
 class ResendEmailVerificationView(APIView):
     permission_classes = (permissions.AllowAny,)
+    throttle_classes = (ResendEmailVerificationRateThrottle,)
 
     @extend_schema(request=EmailAddressSerializer, responses=OpenApiTypes.OBJECT)
     def post(self, request):
@@ -131,6 +140,7 @@ class ResendEmailVerificationView(APIView):
 
 class LoginMathChallengeView(APIView):
     permission_classes = (permissions.AllowAny,)
+    throttle_classes = (LoginChallengeRateThrottle,)
 
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
@@ -361,6 +371,7 @@ class RolePermissionUpdateView(APIView):
         missing_admin_permissions = (
             required_admin_permissions.difference(pairs)
             if role.name == Role.Name.ADMIN
+            and not request.user.is_platform_superadmin
             else set()
         )
         if missing_admin_permissions:

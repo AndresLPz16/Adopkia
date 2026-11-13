@@ -12,6 +12,9 @@ param mysqlApplicationLogin string
 param djangoAllowedHosts string
 param corsAllowedOrigins string
 param appInsightsConnectionString string
+param appIdentityClientId string
+param mediaStorageAccountName string
+param mediaStorageContainerName string
 param tags object
 
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -121,6 +124,22 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
               {
                 name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
                 value: appInsightsConnectionString
+              }
+              {
+                name: 'AZURE_CLIENT_ID'
+                value: appIdentityClientId
+              }
+              {
+                name: 'AZURE_STORAGE_ACCOUNT_NAME'
+                value: mediaStorageAccountName
+              }
+              {
+                name: 'AZURE_STORAGE_CONTAINER'
+                value: mediaStorageContainerName
+              }
+              {
+                name: 'DJANGO_NUM_PROXIES'
+                value: '1'
               }
             ],
             isPlaceholder

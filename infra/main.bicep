@@ -44,6 +44,7 @@ var resourceNames = {
   logAnalytics: 'log-adopkia-prod-0b3d'
   appInsights: 'appi-adopkia-prod-0b3d'
   managedIdentity: 'id-adopkia-prod-0b3d'
+  mediaStorage: 'stadopkiaprod0b3d'
 }
 
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
@@ -109,6 +110,16 @@ module containerRegistry './modules/container-registry.bicep' = {
   }
 }
 
+module mediaStorage './modules/storage-account.bicep' = {
+  name: 'media-storage'
+  scope: rg
+  params: {
+    storageAccountName: resourceNames.mediaStorage
+    location: location
+    tags: tags
+  }
+}
+
 module managedIdentity './modules/managed-identity.bicep' = {
   name: 'managed-identity'
   scope: rg
@@ -159,6 +170,9 @@ module containerApp './modules/container-app.bicep' = {
     djangoAllowedHosts: djangoAllowedHosts
     corsAllowedOrigins: 'https://${staticWebApp.outputs.defaultHostname}'
     appInsightsConnectionString: appInsights.outputs.connectionString
+    appIdentityClientId: managedIdentity.outputs.clientId
+    mediaStorageAccountName: mediaStorage.outputs.storageAccountName
+    mediaStorageContainerName: mediaStorage.outputs.containerName
     tags: tags
   }
 }
@@ -183,12 +197,14 @@ module roleAssignments './modules/role-assignments.bicep' = {
   dependsOn: [
     keyVault
     containerRegistry
+    mediaStorage
   ]
   params: {
     deployerObjectId: deployerObjectId
     appIdentityPrincipalId: managedIdentity.outputs.principalId
     keyVaultName: resourceNames.keyVault
     registryName: resourceNames.containerRegistry
+    mediaStorageAccountName: resourceNames.mediaStorage
   }
 }
 

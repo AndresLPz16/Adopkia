@@ -78,8 +78,9 @@ CREATE TABLE permiso_rol (
   accion VARCHAR(20) NOT NULL,
   PRIMARY KEY (id_permiso),
   CONSTRAINT uq_permiso_rol_recurso_accion UNIQUE (id_rol, recurso, accion),
+  -- El borrado en cascada de los permisos lo aplica Django al eliminar el rol.
   CONSTRAINT fk_permiso_rol_rol FOREIGN KEY (id_rol)
-    REFERENCES rol (id_rol) ON DELETE CASCADE
+    REFERENCES rol (id_rol)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -98,7 +99,8 @@ CREATE TABLE recurso_permiso (
 CREATE TABLE configuracion_portal (
   id SMALLINT UNSIGNED NOT NULL DEFAULT 1,
   etiquetas_menu_lateral JSON NOT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  CONSTRAINT chk_configuracion_portal_id CHECK (id >= 0)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -114,10 +116,41 @@ CREATE TABLE usuario (
   activo          BOOLEAN          NOT NULL DEFAULT TRUE,
   fecha_registro  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   es_superadministrador BOOLEAN   NOT NULL DEFAULT FALSE,
+  nombre_usuario  VARCHAR(30)      NOT NULL COMMENT 'Alias único; también sirve para iniciar sesión',
+  correo_verificado BOOLEAN        NOT NULL DEFAULT FALSE,
   PRIMARY KEY (id_usuario),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
+  CONSTRAINT uq_usuario_nombre_usuario UNIQUE (nombre_usuario),
   CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol)
     REFERENCES rol (id_rol)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- 1.1 CODIGO_VERIFICACION_CORREO (código de 6 dígitos vigente por usuario)
+-- ---------------------------------------------------------------------
+CREATE TABLE codigo_verificacion_correo (
+  id                BIGINT            NOT NULL AUTO_INCREMENT,
+  codigo_hash       VARCHAR(64)       NOT NULL COMMENT 'HMAC del código, nunca texto plano',
+  expira_en         DATETIME(6)       NOT NULL,
+  intentos_fallidos SMALLINT UNSIGNED NOT NULL,
+  enviado_en        DATETIME(6)       NOT NULL,
+  id_usuario        INT UNSIGNED      NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT uq_codigo_verificacion_usuario UNIQUE (id_usuario),
+  -- El borrado en cascada del código lo aplica Django al eliminar el usuario.
+  CONSTRAINT fk_codigo_verificacion_usuario FOREIGN KEY (id_usuario)
+    REFERENCES usuario (id_usuario),
+  CONSTRAINT chk_codigo_verificacion_intentos CHECK (intentos_fallidos >= 0)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- 1.2 RETO_MATEMATICO_LOGIN (reto de un solo uso previo al login)
+-- ---------------------------------------------------------------------
+CREATE TABLE reto_matematico_login (
+  id_reto        CHAR(32)    NOT NULL COMMENT 'UUID sin guiones',
+  respuesta_hash VARCHAR(64) NOT NULL,
+  expira_en      DATETIME(6) NOT NULL,
+  PRIMARY KEY (id_reto)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -380,7 +413,7 @@ CREATE TABLE recordatorio (
   id_historial       INT UNSIGNED NULL COMMENT 'Atención que cumplió el recordatorio',
   tipo               ENUM('vacuna','control_veterinario','checkin') NOT NULL,
   fecha_programada   DATE         NOT NULL,
-  notas              TEXT         NOT NULL,
+  notas              LONGTEXT     NOT NULL,
   estado             ENUM('pendiente','notificado','cumplido','vencido','cancelado')
                      NOT NULL DEFAULT 'pendiente',
   PRIMARY KEY (id_recordatorio),

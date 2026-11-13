@@ -112,6 +112,66 @@ export function DashboardSection({
   };
   const shortcuts = (shortcutKeysByRole[role] ?? visibleLinks)
     .filter((key) => key !== "dashboard" && key !== "permissions" && visibleLinks.includes(key));
+  const pendingRequests = requests.filter((item) =>
+    ["pendiente", "pending"].includes(
+      text(item.status_code || item.status).trim().toLocaleLowerCase(),
+    ),
+  ).length;
+  const activeAdoptions = adoptions.filter((item) =>
+    ["activa", "active", "en_proceso"].includes(
+      text(item.status_code || item.status).trim().toLocaleLowerCase(),
+    ),
+  ).length;
+  const unreadNotifications = notifications.filter(
+    (item) => item.is_read !== true,
+  ).length;
+  const pendingShelterVerifications = shelters.filter((item) =>
+    ["pendiente", "pending", "por_verificar", "unverified"].includes(
+      text(item.verification_status).trim().toLocaleLowerCase(),
+    ),
+  ).length;
+  const shortcutDescriptions: Record<string, Record<string, string>> = {
+    [ROLES.ADOPTER]: {
+      pets: `${availablePets.length} mascotas disponibles para conocer.`,
+      requests: pendingRequests
+        ? `Tienes ${pendingRequests} solicitud${pendingRequests === 1 ? "" : "es"} pendiente${pendingRequests === 1 ? "" : "s"}.`
+        : "Consulta el estado de tus solicitudes.",
+      adoptions: activeAdoptions
+        ? `${activeAdoptions} adopción${activeAdoptions === 1 ? " activa" : "es activas"} en seguimiento.`
+        : "Revisa el historial de tus adopciones.",
+      messages: "Revisa tus conversaciones con los refugios.",
+    },
+    [ROLES.SHELTER]: {
+      pets: `${managedPets.length} mascotas a tu cuidado; ${availablePets.length} disponibles.`,
+      requests: pendingRequests
+        ? `${pendingRequests} solicitud${pendingRequests === 1 ? "" : "es"} esperan respuesta.`
+        : "No tienes solicitudes pendientes.",
+      adoptions: activeAdoptions
+        ? `${activeAdoptions} adopción${activeAdoptions === 1 ? " activa" : "es activas"} en seguimiento.`
+        : "Consulta las adopciones de tu refugio.",
+      messages: "Responde mensajes de adoptantes y de tu equipo.",
+      shelters: "Consulta la información y los integrantes del refugio.",
+    },
+    [ROLES.VETERINARIAN]: {
+      records: `${records.length} expediente${records.length === 1 ? "" : "s"} médico${records.length === 1 ? "" : "s"} disponible${records.length === 1 ? "" : "s"}.`,
+      adoptions: "Consulta seguimientos y cuidados en curso.",
+      notifications: unreadNotifications
+        ? `${unreadNotifications} notificación${unreadNotifications === 1 ? "" : "es"} sin leer.`
+        : "No tienes notificaciones sin leer.",
+    },
+    [ROLES.ADMIN]: {
+      shelters: pendingShelterVerifications
+        ? `${pendingShelterVerifications} refugio${pendingShelterVerifications === 1 ? "" : "s"} pendiente${pendingShelterVerifications === 1 ? "" : "s"} de verificación.`
+        : `${shelters.length} refugio${shelters.length === 1 ? "" : "s"} registrado${shelters.length === 1 ? "" : "s"}.`,
+      statistics: `${text(stats?.total_adoptions) || 0} adopciones registradas; ${text(stats?.active_adoptions) || 0} activas.`,
+      users: "Consulta cuentas y roles registrados.",
+    },
+  };
+  const descriptionForShortcut = (key: string) =>
+    shortcutDescriptions[role]?.[key] ??
+    (key === "permissions"
+      ? "Configura qué puede consultar y gestionar cada rol."
+      : `Consulta la actividad reciente de ${sectionNames[key] ?? "esta sección"}.`);
 
   return (
     <div className="portal-dashboard" data-role={role}>
@@ -166,14 +226,14 @@ export function DashboardSection({
               )[key] ?? "›"}
             </span>
             <strong>{shortcutLabels[role]?.[key] ?? sectionNames[key]}</strong>
-            <small>{key === "messages" ? "Conversa con tu equipo" : "Ver y gestionar actividad"}</small>
+            <small>{descriptionForShortcut(key)}</small>
           </button>
         ))}
         {visibleLinks.includes("permissions") && (
           <button className="portal-shortcut" onClick={() => navTo("permissions")}>
             <span aria-hidden="true">▦</span>
             <strong>Permisos por rol</strong>
-            <small>Configurar accesos</small>
+            <small>{descriptionForShortcut("permissions")}</small>
           </button>
         )}
       </div>

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../rbac/auth";
@@ -61,10 +61,28 @@ describe("portal authentication startup", () => {
         name: "Encuentra a tu nuevo compañero",
       }),
     ).toBeInTheDocument();
-    const resourceLink = await screen.findByRole("button", {
+    const navigation = screen.getByRole("navigation", {
+      name: "Navegación principal",
+    });
+    const accountGroup = within(navigation).getByRole("button", {
+      name: "Mi cuenta",
+    });
+    expect(accountGroup).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(accountGroup);
+    expect(accountGroup).toHaveAttribute("aria-expanded", "true");
+    expect(
+      within(navigation).getByRole("button", { name: "Notificaciones" }),
+    ).toBeInTheDocument();
+    const resourceGroup = within(navigation).getByRole("button", {
+      name: "Recursos",
+    });
+    fireEvent.click(resourceGroup);
+    expect(accountGroup).toHaveAttribute("aria-expanded", "false");
+    const resourceLink = within(navigation).getByRole("button", {
       name: "LOCO y Medio",
     });
     fireEvent.click(resourceLink);
+    expect(resourceGroup).toHaveAttribute("aria-expanded", "true");
     expect(
       await screen.findByRole("heading", { name: "LOCO y Medio" }),
     ).toBeInTheDocument();

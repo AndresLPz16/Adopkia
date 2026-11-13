@@ -115,8 +115,9 @@ export function RolePermissionsPanel({
     () => catalog?.roles.find((role) => role.name === selectedRole) ?? null,
     [catalog, selectedRole],
   );
+  const isPlatformSuperadmin = user?.isPlatformSuperadmin === true;
   const canEditCurrentRole =
-    currentRole?.name !== ROLES.ADMIN || user?.isPlatformSuperadmin === true;
+    currentRole?.name !== ROLES.ADMIN || isPlatformSuperadmin;
   const canViewPanel = [
     ACTIONS.READ,
     ACTIONS.CREATE,
@@ -747,7 +748,8 @@ export function RolePermissionsPanel({
                               saving ||
                               !canUpdatePermissions ||
                               !canEditCurrentRole ||
-                              Boolean(isAdminRecoveryPermission)
+                              (Boolean(isAdminRecoveryPermission) &&
+                                !isPlatformSuperadmin)
                             }
                             onChange={() =>
                               togglePermission(resource.key, action.key)

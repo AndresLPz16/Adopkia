@@ -1,6 +1,7 @@
 import os
 import ssl
 import sys
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -11,9 +12,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in {"1", "true", "yes"}
+TESTING = "test" in sys.argv[1:] or "pytest" in sys.modules
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if "test" in sys.argv[1:] or "pytest" in sys.modules:
+    if TESTING:
         SECRET_KEY = "test-only-insecure-secret-key"
     else:
         raise ImproperlyConfigured(
@@ -49,6 +51,7 @@ DATABASE_ROUTERS = ["myproject.database_router.FrameworkTablesRouter"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -58,6 +61,25 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "myproject.throttling.SessionLoginRateLimitMiddleware",
+]
+
+# Con HTTPS obligatorio (por defecto fuera de debug) las cookies de sesión y
+# CSRF solo viajan cifradas, se envía HSTS y se confía en X-Forwarded-Proto del
+# proxy que termina TLS. La redirección HTTP->HTTPS queda en el proxy/ingress
+# para no romper las sondas de salud internas, que llegan por HTTP.
+HTTPS_ONLY = os.getenv(
+    "DJANGO_HTTPS_ONLY", "false" if DEBUG or TESTING else "true"
+).lower() in {"1", "true", "yes"}
+if HTTPS_ONLY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "31536000"))
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
 ]
 
 ROOT_URLCONF = "myproject.urls"
@@ -155,8 +177,38 @@ USE_I18N = True
 TIME_ZONE = "America/Bogota"
 USE_TZ = True
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# WhiteNoise sirve los estáticos recopilados por collectstatic; con debug los
+# toma directamente de las apps, sin necesidad de recopilarlos.
+WHITENOISE_USE_FINDERS = DEBUG
+if DEBUG or TESTING:
+    # Sin collectstatic no existe STATIC_ROOT; el aviso solo importa en producción.
+    warnings.filterwarnings("ignore", message="No directory at", category=UserWarning)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
+# Con AZURE_STORAGE_ACCOUNT_NAME las fotos subidas se guardan en Azure Blob
+# Storage mediante identidad administrada; sin ella se usa MEDIA_ROOT, que solo
+# es adecuado para desarrollo porque el disco de un contenedor es efímero.
+AZURE_STORAGE_ACCOUNT_NAME = os.getenv("AZURE_STORAGE_ACCOUNT_NAME", "").strip()
+if AZURE_STORAGE_ACCOUNT_NAME:
+    from azure.identity import DefaultAzureCredential
+
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.azure_storage.AzureStorage",
+        "OPTIONS": {
+            "account_name": AZURE_STORAGE_ACCOUNT_NAME,
+            "azure_container": os.getenv("AZURE_STORAGE_CONTAINER", "media").strip(),
+            "token_credential": DefaultAzureCredential(
+                managed_identity_client_id=os.getenv("AZURE_CLIENT_ID") or None
+            ),
+            "overwrite_files": False,
+        },
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = os.getenv(
@@ -203,6 +255,32 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "myproject.exceptions.api_exception_handler",
 }
+
+# Número de proxies de confianza delante de la aplicación. Sin este valor, DRF
+# identifica al cliente con la cabecera X-Forwarded-For completa, que el propio
+# cliente puede falsificar para esquivar los límites por IP.
+_num_proxies = os.getenv("DJANGO_NUM_PROXIES", "").strip()
+if _num_proxies:
+    REST_FRAMEWORK["NUM_PROXIES"] = int(_num_proxies)
+
+# Límites de los endpoints públicos de autenticación (myproject.throttling).
+# Se desactivan en las suites de pruebas; DJANGO_AUTH_THROTTLE_ENABLED=false
+# existe solo para el runner E2E local.
+AUTH_THROTTLE_ENABLED = not TESTING and os.getenv(
+    "DJANGO_AUTH_THROTTLE_ENABLED", "true"
+).lower() in {"1", "true", "yes"}
+AUTH_THROTTLE_RATES = (
+    {
+        "auth_login": "20/min",
+        "auth_login_identifier": "10/min",
+        "auth_login_challenge": "60/min",
+        "auth_register": "20/hour",
+        "auth_verify_email": "20/min",
+        "auth_resend_verification": "10/hour",
+    }
+    if AUTH_THROTTLE_ENABLED
+    else {}
+)
 SPECTACULAR_SETTINGS = {
     "TITLE": "Adopkia API",
     "DESCRIPTION": "API para adopción responsable y seguimiento post-adopción.",
