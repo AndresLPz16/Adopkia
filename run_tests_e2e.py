@@ -19,6 +19,12 @@ os.environ["DJANGO_DEBUG"] = "false"
 os.environ["DJANGO_AUTH_THROTTLE_ENABLED"] = "false"
 # El servidor de pruebas escucha en HTTP plano sobre 127.0.0.1.
 os.environ["DJANGO_HTTPS_ONLY"] = "false"
+# Sin debug, MySQL exigiría TLS verificado; el MySQL local usa un certificado
+# autofirmado. settings.py solo acepta este modo con un DB_HOST local.
+os.environ["DB_SSL_MODE"] = "disabled"
+# Sin debug el registro enviaría el código de verificación por SMTP; aquí no
+# hay servidor de correo y las pruebas marcan el correo como verificado.
+os.environ["EMAIL_BACKEND"] = "django.core.mail.backends.dummy.EmailBackend"
 
 import django
 from django.conf import settings

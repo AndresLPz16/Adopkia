@@ -44,7 +44,34 @@ Changes covered by the new tests:
 
 The project was placed under Git on this date (initial commit `8c0905e`, branch `main`, no remote).
 
-Still not re-run: `pytest`, the HTTP E2E runner (`run_tests_e2e.py`), the OpenAPI validation and any Azure deployment. The Azure Blob Storage path for uploaded photos remains unexercised against a real storage account.
+### Backend and HTTP E2E (same date, later run)
+
+| Step | Status | Details |
+|---|---|---|
+| Django tests (MySQL) | PASS | `manage.py test --noinput`; 100 tests, none skipped |
+| Django tests (SQLite) | PASS | 100 tests, 1 skipped (MySQL-only cases) |
+| pytest (MySQL) | PASS | `python -m pytest --create-db -W error::DeprecationWarning`; 101 passed, 296 subtests |
+| OpenAPI | PASS | `manage.py spectacular --validate`; exit 0, no errors |
+| HTTP E2E | PASS | `run_tests_e2e.py`; 6 tests, 383 `[PASS]` checks; fixtures of the run removed by prefix |
+
+Row counts of the business tables in `adopkia` were recorded before and after the E2E runs and matched, except `reto_matematico_login` (expired single-use login challenges, 1 to 0).
+
+The E2E runner had not been run since the 2026-10 cycle and no longer worked against the current application. Corrections:
+
+- **Runner could not start.** It runs without debug, so MySQL required verified TLS and the local server uses a self-signed certificate. `DB_SSL_MODE=disabled` is now also accepted when `DB_HOST` is local (`127.0.0.1`, `localhost`, `::1`), and the runner sets it. Remote hosts still require `verify_identity` outside debug.
+- **Registration returned 503.** Without debug the verification code is sent through SMTP and no mail server is configured locally. The runner now uses Django's dummy email backend; the tests mark the accounts as verified.
+- **Stale expectations in `tests_e2e/`.** The API root now returns `role`, `role_code` and `resources`; read serializers return the translated label in `status` and the catalog value in `status_code`; registration requires `username`. Role permissions are configurable, so the tests now derive the expected status from the `permiso_rol` matrix in force (`role_allows` in `tests_e2e/common.py`) instead of a fixed list. A role without the permission gets 403 before the object lookup, where the old tests expected 404 or 405.
+- `E2E_SHOW_BODY=1` adds the response body to a failed status assertion, for local diagnosis only.
+- SQLite mode used `DB_NAME` as the database file path and created an empty `adopkia` file in the project root on every run; it now always uses `db.sqlite3`.
+
+Behaviour observed and left unchanged, for a decision:
+
+- A non-adopter with role permission (administrator on adoption requests and conversations, shelter on conversations) is rejected by the integrity rule with 400, not 403. Nothing is created.
+- The default matrix gives the adopter role no `reminders` permission, so an adopter gets 403 on `/api/v1/reminders/`; the README route table lists the adopter as having access to their own reminders.
+- In the local `adopkia` database the adopter role differs from `DEFAULT_PERMISSIONS`: it lacks `notifications:update`, `formQuestions:read`, `shelters:read` and `vaccines:read`, and has `adoptionRequests:delete`, `notifications:delete`, `petPhotos:read` and `profile:delete`. With that matrix an adopter gets 403 when marking a notification as read.
+- `ShelterViewSet` validates the body before checking shelter membership, so an outsider sending an invalid `PUT` gets 400 rather than 403.
+
+Still not done: any Azure deployment. The Azure Blob Storage path for uploaded photos remains unexercised against a real storage account.
 
 ## Summary
 

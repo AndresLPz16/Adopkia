@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 
 from django.core.management import call_command
 
-from medical.models import Vaccine
+from medical.models import Reminder, Vaccine
 
 from .common import (
     STATE,
@@ -13,6 +13,8 @@ from .common import (
     count_notifications,
     require_state,
     request,
+    role_allows,
+    status_code,
 )
 
 
@@ -152,7 +154,12 @@ class E2EAdoptionHttpFlowTests(unittest.TestCase):
             token=admin["access"],
             data=request_payload,
         )
-        assert_response(self, "solicitud-desde-rol-administrador", non_adopter_admin, 403)
+        # El rol administrador tiene `manage` sobre solicitudes, así que pasa
+        # el control de permisos; la regla de integridad rechaza la creación.
+        admin_rejection = assert_response(
+            self, "solicitud-desde-rol-administrador", non_adopter_admin, 400
+        )
+        self.assertIn("adoptante", str(admin_rejection).lower())
 
         cancelled_request = request(
             "POST",
@@ -204,7 +211,7 @@ class E2EAdoptionHttpFlowTests(unittest.TestCase):
         pet_after_data = assert_response(
             self, "verificar-mascota-adoptada", pet_after_approval, 200
         )
-        self.assertEqual(pet_after_data["status"], "adoptada")
+        self.assertEqual(status_code(pet_after_data), "adoptada")
 
         approval_count, approval_rows = count_notifications(
             self, "adopter", "aprobacion"
@@ -292,12 +299,22 @@ class E2EAdoptionHttpFlowTests(unittest.TestCase):
         notified_reminder = request(
             "GET",
             f'reminders/{STATE["reminder_id"]}/',
-            token=adopter["access"],
+            # El adoptante solo puede consultarlo si su rol tiene `reminders`.
+            token=(
+                adopter
+                if role_allows(adopter["role"], "reminders", "read")
+                else shelter_user
+            )["access"],
         )
         reminder_after_data = assert_response(
             self, "verificar-recordatorio-notificado", notified_reminder, 200
         )
-        self.assertEqual(reminder_after_data["status"], "notificado")
+        # El recordatorio solo expone la etiqueta traducida del estado, así
+        # que el valor del catálogo se comprueba en la base.
+        self.assertEqual(reminder_after_data["id"], STATE["reminder_id"])
+        self.assertEqual(
+            Reminder.objects.get(pk=STATE["reminder_id"]).status, "notificado"
+        )
         reminder_count, reminder_rows = count_notifications(
             self, "adopter", "recordatorio"
         )
@@ -375,13 +392,13 @@ class E2EAdoptionHttpFlowTests(unittest.TestCase):
             },
         )
         returned_data = assert_response(self, "registrar-devolucion", returned, 200)
-        self.assertEqual(returned_data["status"], "devuelta")
+        self.assertEqual(status_code(returned_data), "devuelta")
 
         returned_pet = request("GET", f'pets/{STATE["pet_id"]}/')
         returned_pet_data = assert_response(
             self, "verificar-mascota-devuelta", returned_pet, 200
         )
-        self.assertEqual(returned_pet_data["status"], "devuelta")
+        self.assertEqual(status_code(returned_pet_data), "devuelta")
 
         statistics = request(
             "GET", "statistics/adoptions/", token=admin["access"]
