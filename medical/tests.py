@@ -201,6 +201,52 @@ class MedicalApiTests(APITestCase):
         reminder.refresh_from_db()
         self.assertEqual(reminder.status, Reminder.Status.NOTIFIED)
 
+    def test_adopter_reads_only_own_reminders_and_cannot_change_them(self):
+        adoption_request = AdoptionRequest.objects.create(
+            applicant=self.adopter,
+            pet=self.pet,
+            status=AdoptionRequest.Status.APPROVED,
+        )
+        adoption = Adoption.objects.create(
+            request=adoption_request, adoption_date=date.today()
+        )
+        reminder = Reminder.objects.create(
+            adoption=adoption,
+            reminder_type=Reminder.ReminderType.VETERINARY_CHECKUP,
+            scheduled_date=date.today() + timedelta(days=1),
+        )
+        other_adopter = User.objects.create_user(
+            email="other-adopter@example.com",
+            password="SafePass!2026",
+            name="Otra adoptante",
+        )
+
+        self.client.force_authenticate(self.adopter)
+        listing = self.client.get(reverse("reminder-list"))
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(
+            [item["id"] for item in listing.data["results"]], [reminder.pk]
+        )
+        detail = self.client.get(reverse("reminder-detail", args=(reminder.pk,)))
+        self.assertEqual(detail.status_code, 200)
+        denied = self.client.patch(
+            reverse("reminder-detail", args=(reminder.pk,)),
+            {"status": Reminder.Status.COMPLETED},
+            format="json",
+        )
+        self.assertEqual(denied.status_code, 403)
+        reminder.refresh_from_db()
+        self.assertEqual(reminder.status, Reminder.Status.PENDING)
+
+        self.client.force_authenticate(other_adopter)
+        foreign_listing = self.client.get(reverse("reminder-list"))
+        self.assertEqual(foreign_listing.status_code, 200)
+        self.assertEqual(foreign_listing.data["count"], 0)
+        foreign_detail = self.client.get(
+            reverse("reminder-detail", args=(reminder.pk,))
+        )
+        self.assertEqual(foreign_detail.status_code, 404)
+
     def test_shelter_can_edit_reminder_notes_and_mark_it_completed(self):
         shelter_user = User.objects.create_user(
             email="shelter@example.com",

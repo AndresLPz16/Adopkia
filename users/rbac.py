@@ -57,6 +57,7 @@ DEFAULT_PERMISSIONS = {
         ("followUps", "read"),
         ("medicalRecords", "read"),
         ("vaccines", "read"),
+        ("reminders", "read"),
         ("messaging", "read"),
         ("messaging", "create"),
         ("messaging", "update"),
