@@ -68,7 +68,7 @@ Behaviour observed and left unchanged, for a decision:
 
 - A non-adopter with role permission (administrator on adoption requests and conversations, shelter on conversations) is rejected by the integrity rule with 400, not 403. Nothing is created.
 - The default matrix gives the adopter role no `reminders` permission, so an adopter gets 403 on `/api/v1/reminders/`; the README route table lists the adopter as having access to their own reminders.
-- In the local `adopkia` database the adopter role differs from `DEFAULT_PERMISSIONS`: it lacks `notifications:update`, `formQuestions:read`, `shelters:read` and `vaccines:read`, and has `adoptionRequests:delete`, `notifications:delete`, `petPhotos:read` and `profile:delete`. With that matrix an adopter gets 403 when marking a notification as read.
+- In the local `adopkia` database the adopter role differs from `DEFAULT_PERMISSIONS`: it lacks `notifications:update`, `formQuestions:read`, `shelters:read` and `vaccines:read`, and has `adoptionRequests:delete`, `notifications:delete`, `petPhotos:read` and `profile:delete`. With that matrix an adopter got 403 when marking a notification as read. Corrected the same day in the local database only: the four missing default permissions were added and the extra ones kept; a new E2E run confirmed `PATCH /api/v1/notifications/{id}/` returns 200 for the adopter. No migration or code changed, so other installations are not affected.
 - `ShelterViewSet` validates the body before checking shelter membership, so an outsider sending an invalid `PUT` gets 400 rather than 403.
 
 Still not done: any Azure deployment. The Azure Blob Storage path for uploaded photos remains unexercised against a real storage account.
