@@ -151,7 +151,9 @@ elif DB_ENGINE == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.getenv("DB_NAME", str(BASE_DIR / "db.sqlite3")),
+            # DB_NAME es el nombre de la base MySQL; no se usa como ruta de
+            # archivo para no crear un archivo "adopkia" en la raíz.
+            "NAME": str(BASE_DIR / "db.sqlite3"),
         }
     }
 else:
