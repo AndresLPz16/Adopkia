@@ -1,6 +1,7 @@
 param containerAppName string
 param location string
 param environmentResourceId string
+param environmentDefaultDomain string
 param containerImage string
 param appPort int
 param registryLoginServer string
@@ -9,17 +10,33 @@ param keyVaultName string
 param keyVaultIdentityResourceId string
 param mysqlServerFqdn string
 param mysqlApplicationLogin string
-param djangoAllowedHosts string
-param corsAllowedOrigins string
-param appInsightsConnectionString string
 param appIdentityClientId string
 param mediaStorageAccountName string
 param mediaStorageContainerName string
+param emailBackend string
 param tags object
 
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 var isPlaceholder = containerImage == placeholderImage
 var effectivePort = isPlaceholder ? 80 : appPort
+
+// El portal y la API se sirven desde este mismo host, así que no hace falta
+// CORS: basta con permitir el nombre público de la aplicación.
+var publicHost = '${containerAppName}.${environmentDefaultDomain}'
+
+// Las sondas llegan por la IP interna del contenedor; se envía la cabecera
+// Host pública para que Django no las rechace por ALLOWED_HOSTS.
+var probeHttpGet = {
+  path: '/api/v1/'
+  port: appPort
+  scheme: 'HTTP'
+  httpHeaders: [
+    {
+      name: 'Host'
+      value: publicHost
+    }
+  ]
+}
 
 resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
   name: containerAppName
@@ -67,6 +84,8 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
           ]
     }
     template: {
+      // Se apaga sin tráfico y nunca pasa de una réplica, para mantenerse
+      // dentro de la cuota gratuita mensual del plan de consumo.
       scale: {
         minReplicas: 0
         maxReplicas: 1
@@ -76,8 +95,8 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
           name: 'adopkia-api'
           image: containerImage
           resources: {
-            cpu: 1
-            memory: '2Gi'
+            cpu: json('0.5')
+            memory: '1Gi'
           }
           env: concat(
             [
@@ -91,11 +110,15 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
               }
               {
                 name: 'DJANGO_ALLOWED_HOSTS'
-                value: djangoAllowedHosts
+                value: publicHost
               }
               {
                 name: 'DJANGO_CORS_ALLOWED_ORIGINS'
-                value: corsAllowedOrigins
+                value: 'https://${publicHost}'
+              }
+              {
+                name: 'DJANGO_CSRF_TRUSTED_ORIGINS'
+                value: 'https://${publicHost}'
               }
               {
                 name: 'DB_ENGINE'
@@ -122,10 +145,6 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
                 value: 'verify_identity'
               }
               {
-                name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-                value: appInsightsConnectionString
-              }
-              {
                 name: 'AZURE_CLIENT_ID'
                 value: appIdentityClientId
               }
@@ -140,6 +159,14 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
               {
                 name: 'DJANGO_NUM_PROXIES'
                 value: '1'
+              }
+              {
+                name: 'EMAIL_BACKEND'
+                value: emailBackend
+              }
+              {
+                name: 'WEB_CONCURRENCY'
+                value: '2'
               }
             ],
             isPlaceholder
@@ -159,32 +186,21 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
             ? []
             : [
                 {
+                  // Las migraciones corren antes de Gunicorn: hasta 5 minutos.
                   type: 'Startup'
-                  httpGet: {
-                    path: '/'
-                    port: appPort
-                    scheme: 'HTTP'
-                  }
+                  httpGet: probeHttpGet
                   periodSeconds: 10
                   failureThreshold: 30
                 }
                 {
                   type: 'Readiness'
-                  httpGet: {
-                    path: '/'
-                    port: appPort
-                    scheme: 'HTTP'
-                  }
+                  httpGet: probeHttpGet
                   periodSeconds: 10
                   failureThreshold: 3
                 }
                 {
                   type: 'Liveness'
-                  httpGet: {
-                    path: '/'
-                    port: appPort
-                    scheme: 'HTTP'
-                  }
+                  httpGet: probeHttpGet
                   periodSeconds: 30
                   failureThreshold: 3
                 }

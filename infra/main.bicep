@@ -7,7 +7,11 @@ param environmentName string
 @minLength(1)
 param location string
 
-param sessionId string
+// Sufijo corto de los nombres de recursos; varios deben ser únicos en Azure.
+@minLength(2)
+@maxLength(6)
+param resourceSuffix string
+
 param deployedBy string
 param createdAt string
 param deployerObjectId string
@@ -24,27 +28,28 @@ param djangoSecretKey string
 param mysqlAdministratorLogin string = 'adopkiaadmin'
 param mysqlApplicationLogin string = 'adopkia_app'
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-param djangoAllowedHosts string = 'localhost'
+
+// Sin servidor SMTP el registro respondería 503. Con el backend de consola el
+// código de verificación queda en los registros del contenedor.
+param emailBackend string = 'django.core.mail.backends.console.EmailBackend'
 
 var tags = {
-  'app-onboard-skill': 'true'
-  'app-onboard-session-id': sessionId
+  project: 'adopkia'
   'created-at': createdAt
   environment: environmentName
   'deployed-by': deployedBy
 }
 
 var resourceNames = {
-  resourceGroup: 'rg-adopkia-prod-0b3d'
-  staticWebApp: 'swa-adopkia-prod-0b3d'
-  containerApp: 'ca-adopkia-prod-0b3d'
-  mysql: 'mysql-adopkia-prod-0b3d'
-  containerRegistry: 'cradopkiaprod0b3d'
-  keyVault: 'kv-adopkia-prod-0b3d'
-  logAnalytics: 'log-adopkia-prod-0b3d'
-  appInsights: 'appi-adopkia-prod-0b3d'
-  managedIdentity: 'id-adopkia-prod-0b3d'
-  mediaStorage: 'stadopkiaprod0b3d'
+  resourceGroup: 'rg-adopkia-prod-${resourceSuffix}'
+  containerApp: 'ca-adopkia-prod-${resourceSuffix}'
+  containerAppEnvironment: 'cae-adopkia-prod-${resourceSuffix}'
+  mysql: 'mysql-adopkia-prod-${resourceSuffix}'
+  containerRegistry: 'cradopkiaprod${resourceSuffix}'
+  keyVault: 'kv-adopkia-prod-${resourceSuffix}'
+  logAnalytics: 'log-adopkia-prod-${resourceSuffix}'
+  managedIdentity: 'id-adopkia-prod-${resourceSuffix}'
+  mediaStorage: 'stadopkiaprod${resourceSuffix}'
 }
 
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
@@ -59,17 +64,6 @@ module logAnalytics './modules/log-analytics.bicep' = {
   params: {
     workspaceName: resourceNames.logAnalytics
     location: location
-    tags: tags
-  }
-}
-
-module appInsights './modules/app-insights.bicep' = {
-  name: 'app-insights'
-  scope: rg
-  params: {
-    componentName: resourceNames.appInsights
-    location: location
-    workspaceResourceId: logAnalytics.outputs.workspaceId
     tags: tags
   }
 }
@@ -134,7 +128,7 @@ module containerAppEnvironment './modules/container-app-environment.bicep' = {
   name: 'container-app-environment'
   scope: rg
   params: {
-    environmentResourceName: 'cae-adopkia-prod-0b3d'
+    environmentResourceName: resourceNames.containerAppEnvironment
     location: location
     workspaceName: resourceNames.logAnalytics
     workspaceCustomerId: logAnalytics.outputs.workspaceCustomerId
@@ -142,55 +136,8 @@ module containerAppEnvironment './modules/container-app-environment.bicep' = {
   }
 }
 
-module staticWebApp './modules/static-web-app.bicep' = {
-  name: 'static-web-app'
-  scope: rg
-  params: {
-    staticWebAppName: resourceNames.staticWebApp
-    location: location
-    tags: tags
-  }
-}
-
-module containerApp './modules/container-app.bicep' = {
-  name: 'container-app'
-  scope: rg
-  params: {
-    containerAppName: resourceNames.containerApp
-    location: location
-    environmentResourceId: containerAppEnvironment.outputs.environmentResourceId
-    containerImage: containerImage
-    appPort: 8000
-    registryLoginServer: containerRegistry.outputs.loginServer
-    registryIdentityResourceId: managedIdentity.outputs.identityResourceId
-    keyVaultName: resourceNames.keyVault
-    keyVaultIdentityResourceId: managedIdentity.outputs.identityResourceId
-    mysqlServerFqdn: mysql.outputs.fullyQualifiedDomainName
-    mysqlApplicationLogin: mysqlApplicationLogin
-    djangoAllowedHosts: djangoAllowedHosts
-    corsAllowedOrigins: 'https://${staticWebApp.outputs.defaultHostname}'
-    appInsightsConnectionString: appInsights.outputs.connectionString
-    appIdentityClientId: managedIdentity.outputs.clientId
-    mediaStorageAccountName: mediaStorage.outputs.storageAccountName
-    mediaStorageContainerName: mediaStorage.outputs.containerName
-    tags: tags
-  }
-}
-
-module staticWebAppBackend './modules/static-web-app-backend.bicep' = {
-  name: 'static-web-app-backend'
-  scope: rg
-  dependsOn: [
-    staticWebApp
-    containerApp
-  ]
-  params: {
-    staticWebAppName: resourceNames.staticWebApp
-    containerAppName: resourceNames.containerApp
-    location: location
-  }
-}
-
+// La identidad debe poder leer la imagen y los secretos antes de que arranque
+// la aplicación; por eso la Container App depende de las asignaciones.
 module roleAssignments './modules/role-assignments.bicep' = {
   name: 'role-assignments'
   scope: rg
@@ -208,7 +155,38 @@ module roleAssignments './modules/role-assignments.bicep' = {
   }
 }
 
+module containerApp './modules/container-app.bicep' = {
+  name: 'container-app'
+  scope: rg
+  dependsOn: [
+    roleAssignments
+  ]
+  params: {
+    containerAppName: resourceNames.containerApp
+    location: location
+    environmentResourceId: containerAppEnvironment.outputs.environmentResourceId
+    environmentDefaultDomain: containerAppEnvironment.outputs.defaultDomain
+    containerImage: containerImage
+    appPort: 8000
+    registryLoginServer: containerRegistry.outputs.loginServer
+    registryIdentityResourceId: managedIdentity.outputs.identityResourceId
+    keyVaultName: resourceNames.keyVault
+    keyVaultIdentityResourceId: managedIdentity.outputs.identityResourceId
+    mysqlServerFqdn: mysql.outputs.fullyQualifiedDomainName
+    mysqlApplicationLogin: mysqlApplicationLogin
+    appIdentityClientId: managedIdentity.outputs.clientId
+    mediaStorageAccountName: mediaStorage.outputs.storageAccountName
+    mediaStorageContainerName: mediaStorage.outputs.containerName
+    emailBackend: emailBackend
+    tags: tags
+  }
+}
+
 output resourceGroupName string = rg.name
-output staticWebAppDefaultHostname string = staticWebApp.outputs.defaultHostname
+output containerAppName string = resourceNames.containerApp
 output containerAppFqdn string = containerApp.outputs.fqdn
+output containerRegistryName string = resourceNames.containerRegistry
+output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
+output keyVaultName string = resourceNames.keyVault
+output mysqlServerName string = resourceNames.mysql
 output mysqlServerFqdn string = mysql.outputs.fullyQualifiedDomainName

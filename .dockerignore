@@ -9,3 +9,12 @@ db.sqlite3
 media
 staticfiles
 .pytest_cache
+.ruff_cache
+# Datos locales, respaldos y registros de despliegue: nunca dentro de la imagen.
+_no_subir
+.copilot-azure
+docs
+infra
+# El portal se compila dentro de la imagen.
+frontend/node_modules
+frontend/dist
