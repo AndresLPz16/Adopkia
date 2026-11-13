@@ -194,6 +194,15 @@ if DEBUG or TESTING:
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Portal React compilado (`frontend/dist`). Si se define, WhiteNoise lo sirve
+# desde la raíz del sitio, de modo que portal y API comparten host y no hace
+# falta CORS. En ese caso `/` entrega el portal y el índice de la API queda en
+# `/api/v1/`. Sin la variable, el comportamiento no cambia.
+FRONTEND_DIST_DIR = os.getenv("DJANGO_FRONTEND_DIST", "").strip()
+if FRONTEND_DIST_DIR:
+    WHITENOISE_ROOT = FRONTEND_DIST_DIR
+    WHITENOISE_INDEX_FILE = True
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},

@@ -18,8 +18,18 @@ resource mysql 'Microsoft.DBforMySQL/flexibleServers@2025-12-30' = {
     version: '8.0.21'
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
+    // La oferta gratuita cubre B1ms con 32 GB de datos y 32 GB de copias:
+    // sin crecimiento automático ni copias georredundantes para no excederla.
     storage: {
       storageSizeGB: 32
+      autoGrow: 'Disabled'
+    }
+    backup: {
+      backupRetentionDays: 7
+      geoRedundantBackup: 'Disabled'
+    }
+    highAvailability: {
+      mode: 'Disabled'
     }
     publicNetworkAccess: 'Enabled'
   }
