@@ -11,6 +11,7 @@ from .common import (
     count_notifications,
     require_state,
     request,
+    role_allows,
 )
 
 
@@ -112,8 +113,15 @@ class E2EAuthorizationHttpFlowTests(unittest.TestCase):
             token=other_adopter["access"],
             data={"is_read": True},
         )
+        # Con permiso de rol la notificación ajena queda oculta (404); sin él,
+        # el control por rol responde 403 antes de buscar el objeto.
         assert_response(
-            self, "modificar-notificacion-ajena-oculta", foreign_notification_patch, 404
+            self,
+            "modificar-notificacion-ajena-oculta",
+            foreign_notification_patch,
+            404
+            if role_allows(other_adopter["role"], "notifications", "update")
+            else 403,
         )
 
         second_shelter = request(
@@ -200,9 +208,12 @@ class E2EAuthorizationHttpFlowTests(unittest.TestCase):
             token=shelter["access"],
             data={"shelter": STATE["shelter_id"], "pet": STATE["pet_id"]},
         )
-        assert_response(
-            self, "refugio-no-inicia-conversaciones", shelter_conversation_create, 403
+        # El rol refugio tiene `messaging:create`; la creación la rechaza la
+        # regla de integridad: solo un adoptante inicia la conversación.
+        shelter_conversation_data = assert_response(
+            self, "refugio-no-inicia-conversaciones", shelter_conversation_create, 400
         )
+        self.assertIn("adoptante", str(shelter_conversation_data).lower())
 
         outsider_message_create = request(
             "POST",

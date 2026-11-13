@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import secrets
 from dataclasses import dataclass
@@ -87,11 +88,12 @@ def _contains_sensitive_key(value):
 
 def assert_response(testcase, name, response, expected, *, api_json=True):
     content_type = response.headers.get("Content-Type", "")
-    testcase.assertEqual(
-        response.status,
-        expected,
-        f"{name}: HTTP {response.status}; content-type={content_type}",
-    )
+    detail = f"{name}: HTTP {response.status}; content-type={content_type}"
+    if os.environ.get("E2E_SHOW_BODY") == "1":
+        # Solo para diagnosticar un fallo en local; el cuerpo no se imprime
+        # por defecto para no exponer datos en los registros.
+        detail += f"; body={response.text[:300]}"
+    testcase.assertEqual(response.status, expected, detail)
     if api_json and response.status != 204:
         testcase.assertIn("application/json", content_type.lower(), name)
         payload = response.json()
@@ -145,6 +147,28 @@ def login_account(testcase, alias):
     account["access"] = payload["access"]
     account["refresh"] = payload["refresh"]
     return account
+
+
+def status_code(payload):
+    """Código estable del estado.
+
+    Los serializadores de lectura devuelven en `status` la etiqueta traducida
+    (por ejemplo "Adoptada") y en `status_code` el valor del catálogo.
+    """
+    return payload.get("status_code", payload["status"])
+
+
+def role_allows(role, resource, action):
+    """Indica si la matriz `permiso_rol` concede la acción al rol.
+
+    Los permisos por rol son configurables, así que las pruebas comparan la
+    respuesta HTTP con la matriz vigente y no con una lista fija.
+    """
+    from users.models import RolePermission
+
+    return RolePermission.objects.filter(
+        role__name=role, resource=resource, action__in=(action, "manage")
+    ).exists()
 
 
 def require_state(testcase, *keys):

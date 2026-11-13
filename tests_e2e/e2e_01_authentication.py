@@ -94,32 +94,42 @@ class E2EAuthenticationHttpFlowTests(unittest.TestCase):
             "GET", "", token=STATE["accounts"]["admin"]["access"]
         )
         api_root_data = assert_response(self, "api-root", api_root, 200)
-        self.assertEqual(
-            set(api_root_data),
+        # El índice devuelve el rol y la lista de recursos visibles para ese
+        # rol. La matriz del administrador se puede editar desde el panel, así
+        # que se exige el conjunto base y no una igualdad exacta.
+        self.assertEqual(set(api_root_data), {"role", "role_code", "resources"})
+        self.assertEqual(api_root_data["role_code"], Role.Name.ADMIN)
+        resource_keys = {item["key"] for item in api_root_data["resources"]}
+        for item in api_root_data["resources"]:
+            self.assertEqual(set(item), {"key", "name", "url"})
+        self.assertLessEqual(
             {
                 "register",
-                "profile",
                 "login",
+                "login_challenge",
                 "refresh",
-                "shelters",
-                "shelter-members",
+                "profile",
+                "users",
+                "verified_shelters",
+                "shelter_members",
                 "species",
                 "breeds",
                 "pets",
-                "pet-photos",
-                "form-questions",
-                "adoption-requests",
+                "pet_photos",
+                "form_questions",
+                "adoption_requests",
                 "adoptions",
-                "follow-ups",
+                "follow_ups",
                 "veterinarians",
-                "medical-records",
+                "medical_records",
                 "vaccines",
                 "reminders",
                 "conversations",
                 "messages",
                 "notifications",
-                "statistics",
+                "adoption_statistics",
             },
+            resource_keys,
         )
 
         inactive = STATE["accounts"]["inactive"]

@@ -1,7 +1,10 @@
 import unittest
 from datetime import date
 
+from django.contrib.auth import get_user_model
+
 from adoptions.models import FormQuestion
+from users.models import RolePermission
 
 from .common import (
     STATE,
@@ -10,6 +13,7 @@ from .common import (
     new_password,
     record_account,
     request,
+    role_allows,
 )
 
 
@@ -24,6 +28,7 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
             "auth/register/",
             data={
                 "email": member_email,
+                "username": f'{STATE["email_prefix"][:15]}_member',
                 "password": member_password,
                 "name": "[E2E] integrante",
                 "role": "refugio",
@@ -31,6 +36,10 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
         )
         member_payload = assert_response(
             self, "registro-integrante-refugio", member_response, 201
+        )
+        # El registro deja la cuenta sin verificar y aquí no se envía correo.
+        get_user_model().objects.filter(pk=member_payload["id"]).update(
+            email_verified=True
         )
         member_account = record_account(
             "shelter_member",
@@ -59,20 +68,28 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
             "form-questions/",
             "vaccines/",
         )
-        protected_collections = (
-            "auth/me/",
-            "shelter-members/",
-            "pet-photos/",
-            "adoption-requests/",
-            "adoptions/",
-            "follow-ups/",
-            "veterinarians/",
-            "medical-records/",
-            "reminders/",
-            "conversations/",
-            "messages/",
-            "notifications/",
-        )
+        # Ruta -> recurso de la matriz de permisos por rol (`permiso_rol`).
+        # El perfil propio no depende de la matriz.
+        protected_collections = {
+            "auth/me/": None,
+            "shelter-members/": "shelterMembers",
+            "pet-photos/": "petPhotos",
+            "adoption-requests/": "adoptionRequests",
+            "adoptions/": "adoptions",
+            "follow-ups/": "followUps",
+            "veterinarians/": "veterinarians",
+            "medical-records/": "medicalRecords",
+            "reminders/": "reminders",
+            "conversations/": "messaging",
+            "messages/": "messaging",
+            "notifications/": "notifications",
+        }
+        readable = {
+            (role, resource)
+            for role, resource in RolePermission.objects.filter(
+                action__in=("read", "manage")
+            ).values_list("role__name", "resource")
+        }
 
         for path in public_collections:
             response = request("GET", path)
@@ -91,10 +108,16 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
             "veterinarian",
         ):
             account = accounts[alias]
-            for path in protected_collections:
+            for path, resource in protected_collections.items():
+                # La lectura debe coincidir con la matriz configurada: 200 si
+                # el rol tiene `read` o `manage` sobre el recurso, 403 si no.
+                allowed = resource is None or (account["role"], resource) in readable
                 response = request("GET", path, token=account["access"])
                 assert_response(
-                    self, f"lectura/{alias}/{path}", response, 200
+                    self,
+                    f"lectura/{alias}/{path}",
+                    response,
+                    200 if allowed else 403,
                 )
 
         for alias in ("adopter", "other_adopter", "shelter", "other_shelter", "veterinarian"):
@@ -236,7 +259,16 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 token=veterinarian["access"],
                 data={},
             )
-            assert_response(self, f"veterinario-no-{action}", response, 404)
+            # Sin permiso de rol responde 403; con él, la solicitud ajena
+            # quedaría oculta (404).
+            assert_response(
+                self,
+                f"veterinario-no-{action}",
+                response,
+                404
+                if role_allows(veterinarian["role"], "adoptionRequests", action)
+                else 403,
+            )
 
         admin = accounts["admin"]
         assert_response(
@@ -248,7 +280,9 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 token=admin["access"],
                 data={"pet": pet_id, "answers": valid_answers},
             ),
-            403,
+            # El administrador pasa el control por rol (`manage`) y lo
+            # rechaza la regla de integridad: solo solicita un adoptante.
+            400,
         )
         assert_response(
             self,
@@ -287,7 +321,9 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 token=admin["access"],
                 data={"shelter": shelter_id, "pet": pet_id},
             ),
-            403,
+            # Pasa el control por rol (`manage`) y lo rechaza la regla de
+            # integridad: solo un adoptante inicia la conversación.
+            400,
         )
         assert_response(
             self,
@@ -351,10 +387,14 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
         foreign_shelter_data = assert_response(
             self, "refugio-ajeno-ve-refugio-verificado", foreign_shelter_detail, 200
         )
+        # Quien no pertenece al refugio solo ve los campos públicos (sin
+        # dirección), así que el PUT se completa con un cuerpo válido: la
+        # pertenencia se comprueba después de validar los datos.
+        self.assertNotIn("address", foreign_shelter_data)
         foreign_shelter_put_data = {
-            key: foreign_shelter_data[key]
-            for key in ("name", "address", "city", "contact_phone", "contact_email")
-            if key in foreign_shelter_data
+            "name": foreign_shelter_data["name"],
+            "city": foreign_shelter_data["city"],
+            "address": "Dirección enviada por un refugio ajeno",
         }
         for method, path, data, expected in (
             ("PUT", f"shelters/{shelter_id}/", foreign_shelter_put_data, 403),
@@ -364,8 +404,24 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
             ("PATCH", f"pets/{pet_id}/", {"name": "Ajena"}, 403),
             ("DELETE", f"pets/{pet_id}/", {}, 403),
             ("DELETE", f"pet-photos/{photo_id}/", {}, 403),
-            ("PATCH", f"adoption-requests/{request_id}/", {"pet": pet_id}, 404),
-            ("DELETE", f"shelter-members/{member_id}/", {}, 404),
+            # Con permiso de rol el objeto ajeno queda oculto (404); sin él,
+            # el control por rol responde 403 antes de buscarlo.
+            (
+                "PATCH",
+                f"adoption-requests/{request_id}/",
+                {"pet": pet_id},
+                404
+                if role_allows(other_shelter["role"], "adoptionRequests", "update")
+                else 403,
+            ),
+            (
+                "DELETE",
+                f"shelter-members/{member_id}/",
+                {},
+                404
+                if role_allows(other_shelter["role"], "shelterMembers", "delete")
+                else 403,
+            ),
         ):
             response = request(
                 method, path, token=other_shelter["access"], data=data
@@ -434,29 +490,41 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
             403,
         )
 
-        for method, path in (
-            ("PUT", f"pet-photos/{photo_id}/"),
-            ("PATCH", f"pet-photos/{photo_id}/"),
-            ("PUT", f"adoption-requests/{request_id}/"),
-            ("DELETE", f"adoption-requests/{request_id}/"),
-            ("PUT", f"adoptions/{adoption_id}/"),
-            ("PATCH", f"adoptions/{adoption_id}/"),
-            ("DELETE", f"adoptions/{adoption_id}/"),
-            ("PUT", f"follow-ups/{followup_id}/"),
-            ("PUT", f"veterinarians/{veterinarian_id}/"),
-            ("DELETE", f"veterinarians/{veterinarian_id}/"),
-            ("POST", "notifications/"),
-            ("PUT", f"notifications/{notification_id}/"),
-            ("PUT", f"messages/{message_id}/"),
-            ("POST", "shelter-members/"),
-            ("PUT", f"shelter-members/{member_id}/"),
+        # El control por rol se evalúa antes que el método: un método no
+        # expuesto responde 405 solo si el rol tiene la acción equivalente
+        # sobre el recurso; si no, responde 403. En ningún caso se ejecuta.
+        method_actions = {
+            "POST": "create",
+            "PUT": "update",
+            "PATCH": "update",
+            "DELETE": "delete",
+        }
+        shelter_role = accounts["shelter"]["role"]
+        for method, path, resource in (
+            ("PUT", f"pet-photos/{photo_id}/", "petPhotos"),
+            ("PATCH", f"pet-photos/{photo_id}/", "petPhotos"),
+            ("PUT", f"adoption-requests/{request_id}/", "adoptionRequests"),
+            ("DELETE", f"adoption-requests/{request_id}/", "adoptionRequests"),
+            ("PUT", f"adoptions/{adoption_id}/", "adoptions"),
+            ("PATCH", f"adoptions/{adoption_id}/", "adoptions"),
+            ("DELETE", f"adoptions/{adoption_id}/", "adoptions"),
+            ("PUT", f"follow-ups/{followup_id}/", "followUps"),
+            ("PUT", f"veterinarians/{veterinarian_id}/", "veterinarians"),
+            ("DELETE", f"veterinarians/{veterinarian_id}/", "veterinarians"),
+            ("POST", "notifications/", "notifications"),
+            ("PUT", f"notifications/{notification_id}/", "notifications"),
+            ("PUT", f"messages/{message_id}/", "messaging"),
+            ("POST", "shelter-members/", "shelterMembers"),
+            ("PUT", f"shelter-members/{member_id}/", "shelterMembers"),
         ):
             response = request(method, path, token=accounts["shelter"]["access"], data={})
             assert_response(
                 self,
                 f"metodo-no-disponible/{method}/{path}",
                 response,
-                405,
+                405
+                if role_allows(shelter_role, resource, method_actions[method])
+                else 403,
             )
 
     def test_03_owner_mutations_and_object_isolation(self):
@@ -748,6 +816,9 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
             ),
             200,
         )
+        # El rol adoptante solo llega a sus recordatorios si la matriz le
+        # concede el recurso `reminders`; sin él, el control por rol responde
+        # 403 antes de evaluar la propiedad del objeto.
         assert_response(
             self,
             "adoptante-actualiza-recordatorio-propio",
@@ -757,7 +828,7 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 token=adopter["access"],
                 data={"status": "pendiente"},
             ),
-            200,
+            200 if role_allows(adopter["role"], "reminders", "update") else 403,
         )
         assert_response(
             self,
@@ -767,7 +838,7 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 f'reminders/{STATE["reminder_id"]}/',
                 token=other_adopter["access"],
             ),
-            404,
+            404 if role_allows(other_adopter["role"], "reminders", "delete") else 403,
         )
         assert_response(
             self,
@@ -843,7 +914,7 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 token=adopter["access"],
                 data={"is_read": True},
             ),
-            200,
+            200 if role_allows(adopter["role"], "notifications", "update") else 403,
         )
         assert_response(
             self,
@@ -853,7 +924,7 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 f'notifications/{STATE["approval_notification_id"]}/',
                 token=adopter["access"],
             ),
-            204,
+            204 if role_allows(adopter["role"], "notifications", "delete") else 403,
         )
 
         assert_response(
@@ -1018,6 +1089,7 @@ class E2EPermissionMatrixHttpTests(unittest.TestCase):
                 f"shelters/{other_shelter_id}/",
                 token=other_shelter["access"],
             ),
-            204,
+            # Eliminar el refugio exige `shelters:delete` en la matriz del rol.
+            204 if role_allows(other_shelter["role"], "shelters", "delete") else 403,
         )
         STATE["permission_mutation_matrix_ready"] = True

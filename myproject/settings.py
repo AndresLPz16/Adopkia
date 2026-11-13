@@ -124,9 +124,14 @@ if DB_ENGINE == "mysql":
         raise ImproperlyConfigured(
             "DB_SSL_MODE debe ser 'disabled' o 'verify_identity'."
         )
-    if mysql_ssl_mode == "disabled" and not DEBUG:
+    mysql_host = os.getenv("DB_HOST", "127.0.0.1")
+    # Una conexión a loopback no sale del equipo; es el caso del runner E2E,
+    # que arranca sin debug contra el MySQL local.
+    mysql_host_is_local = mysql_host.strip().lower() in {"127.0.0.1", "localhost", "::1"}
+    if mysql_ssl_mode == "disabled" and not (DEBUG or mysql_host_is_local):
         raise ImproperlyConfigured(
-            "DB_SSL_MODE=disabled solo se permite cuando DJANGO_DEBUG=true."
+            "DB_SSL_MODE=disabled solo se permite con DJANGO_DEBUG=true o con "
+            "un DB_HOST local (127.0.0.1, localhost o ::1)."
         )
     mysql_options = {"charset": "utf8mb4"}
     if mysql_ssl_mode == "verify_identity":
@@ -141,7 +146,7 @@ if DB_ENGINE == "mysql":
             "NAME": mysql_database_name,
             "USER": os.getenv("DB_USER", "adopkia"),
             "PASSWORD": mysql_password,
-            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+            "HOST": mysql_host,
             "PORT": os.getenv("DB_PORT", "3306"),
             "OPTIONS": mysql_options,
             "TEST": {"NAME": "test_adopkia"},
