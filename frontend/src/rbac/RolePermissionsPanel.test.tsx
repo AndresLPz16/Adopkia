@@ -579,6 +579,56 @@ describe("RolePermissionsPanel", () => {
     });
   });
 
+  it("lets the platform superadmin remove and restore administrator recovery access", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, _init?: RequestInit) => {
+        const url = String(input);
+        const profile = {
+          id: 1,
+          name: "Platform Admin",
+          email: "admin@example.test",
+          role: "administrador",
+          is_platform_superadmin: true,
+        };
+        return {
+          ok: true,
+          status: 200,
+          json: async () => (url.includes("/me/") ? profile : permissionCatalog),
+        };
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider getAccessToken={() => "access-token"}>
+        <RolePermissionsPanel />
+      </AuthProvider>,
+    );
+
+    const recoveryPermission = await screen.findByRole("checkbox", {
+      name: "Permisos por rol: Administrar",
+    });
+    expect(recoveryPermission).toBeChecked();
+    expect(recoveryPermission).toBeEnabled();
+
+    await user.click(recoveryPermission);
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      const saveCall = fetchMock.mock.calls.find(
+        ([input, init]) =>
+          String(input).includes("/permissions/administrador/") &&
+          init?.method === "PUT",
+      );
+      expect(saveCall).toBeDefined();
+      expect(JSON.parse(String(saveCall?.[1]?.body))).not.toContainEqual({
+        resource: "rolePermissions",
+        action: "manage",
+      });
+    });
+  });
+
   it("removes permissions from the selected role immediately", async () => {
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, _init?: RequestInit) => ({

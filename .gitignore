@@ -16,3 +16,5 @@ venv/
 _no_subir/
 *.txt
 !requirements.txt
+!requirements-dev.txt
+!requirements.lock.txt

@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 for statement in statements:
                     cursor.execute(statement)
                     if re.match(
-                        r"(?i)^CREATE\s+DATABASE\s+IF\s+NOT\s+EXISTS\s+`?adopkia_cmp`?\s*$",
+                        r"(?i)^CREATE\s+DATABASE\s+IF\s+NOT\s+EXISTS\s+`?adopkia_cmp`?(?:\s|$)",
                         statement,
                     ):
                         schema_created = True

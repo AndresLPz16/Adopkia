@@ -3,9 +3,9 @@
 USE adopkia;
 SET @adop=(SELECT id_rol FROM rol WHERE nombre='adoptante'), @ref=(SELECT id_rol FROM rol WHERE nombre='refugio'),
     @adm=(SELECT id_rol FROM rol WHERE nombre='administrador'), @vet=(SELECT id_rol FROM rol WHERE nombre='veterinario');
-INSERT INTO usuario (id_rol,nombre,correo,contrasena_hash) VALUES
- (@adop,'Ana Adoptante','ana@t.co','h'),(@ref,'Rita Refugio','rita@t.co','h'),
- (@adm,'Dani Admin','dani@t.co','h'),(@vet,'Vera Vet','vera@t.co','h'),(@adop,'Beto Libre','beto@t.co','h');
+INSERT INTO usuario (id_rol,nombre,correo,contrasena_hash,nombre_usuario) VALUES
+ (@adop,'Ana Adoptante','ana@t.co','h','ana'),(@ref,'Rita Refugio','rita@t.co','h','rita'),
+ (@adm,'Dani Admin','dani@t.co','h','dani'),(@vet,'Vera Vet','vera@t.co','h','vera'),(@adop,'Beto Libre','beto@t.co','h','beto');
 SET @ana=(SELECT id_usuario FROM usuario WHERE correo='ana@t.co'), @rita=(SELECT id_usuario FROM usuario WHERE correo='rita@t.co'),
     @dani=(SELECT id_usuario FROM usuario WHERE correo='dani@t.co'), @vera=(SELECT id_usuario FROM usuario WHERE correo='vera@t.co'),
     @beto=(SELECT id_usuario FROM usuario WHERE correo='beto@t.co');
@@ -62,7 +62,7 @@ SELECT 'T21 cambiar rol del admin verificador (debe FALLAR)' AS prueba;
 UPDATE usuario SET id_rol=@adop WHERE id_usuario=@dani;
 SELECT 'T22 cambiar rol de adoptante con solicitudes (debe FALLAR)' AS prueba;
 UPDATE usuario SET id_rol=@ref WHERE id_usuario=@ana;
-INSERT INTO usuario (id_rol,nombre,correo,contrasena_hash) VALUES (@adop,'Sin Vinculos','sv@t.co','h');
+INSERT INTO usuario (id_rol,nombre,correo,contrasena_hash,nombre_usuario) VALUES (@adop,'Sin Vinculos','sv@t.co','h','sv');
 SELECT 'T23 cambiar rol de usuario sin vinculos (debe OK)' AS prueba;
 UPDATE usuario SET id_rol=@ref WHERE correo='sv@t.co';
 SELECT 'T24 vista tasa de devolucion' AS prueba; SELECT * FROM vista_tasa_devolucion;

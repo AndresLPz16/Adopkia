@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt -c requirements.lock.txt
 
 COPY . .
 
+# Los estáticos del panel y de la API navegable se recopilan en la imagen y los
+# sirve WhiteNoise. La clave y el motor de esta línea solo existen durante el build.
+RUN DJANGO_SECRET_KEY=build-only DB_ENGINE=sqlite python manage.py collectstatic --noinput
+
 EXPOSE 8000
 
 CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py seed_data && exec gunicorn myproject.wsgi:application --bind 0.0.0.0:${PORT} --workers ${WEB_CONCURRENCY:-2} --timeout 120"]

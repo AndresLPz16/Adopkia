@@ -1,0 +1,163 @@
+:root {
+  --brand-primary: #7c3aed;
+  --brand-secondary: #8b5cf6;
+  --brand-secondary-text: #6d28d9;
+  --brand-deep: #5b21b6;
+  --brand-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #f43f5e 100%);
+  --brand-coral: #f43f5e;
+  --brand-coral-text: #be123c;
+  --brand-coral-soft: #fda4af;
+  --brand-emerald: #10b981;
+  --brand-emerald-soft: #a7f3d0;
+  --brand-amber: #f59e0b;
+  --brand-sky: #0ea5e9;
+  --text-primary: #1e1b4b;
+  --text-secondary: #64748b;
+  --surface-muted: #fbf8f6;
+  --surface-tint: #f4efec;
+  --border: #e8e1de;
+  --border-strong: #d3c9c4;
+  --focus: #6d28d9;
+  --radius-control: 0.55rem;
+  --radius-card: 0.9rem;
+  --radius-panel: 1.15rem;
+  --motion-standard: 260ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-sm: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 10px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 10px -4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 20px 35px -5px rgba(15, 23, 42, 0.1), 0 8px 16px -6px rgba(15, 23, 42, 0.05);
+  --shadow-3d: 0 20px 40px -15px rgba(124, 58, 237, 0.25), 0 8px 16px -6px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 25px rgba(124, 58, 237, 0.35);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.portal-title h1 {
+  line-height: 1.12;
+}
+
+.portal-section,
+.portal-dashboard {
+  scroll-margin-top: 1rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.login {
+  display: grid;
+  min-height: 100vh;
+  padding: 1rem;
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 15% 10%, rgb(135 91 196 / 16%), transparent 36%),
+    linear-gradient(145deg, var(--surface-muted), var(--surface-tint));
+}
+
+.login__card {
+  width: min(100%, 440px);
+  padding: clamp(1.5rem, 5vw, 2.6rem);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  box-shadow: 0 1.5rem 4rem rgb(53 44 66 / 12%);
+}
+
+.login__brand {
+  display: inline-block;
+  margin-bottom: 2.4rem;
+  color: var(--brand-primary);
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.login__eyebrow {
+  margin: 0 0 0.4rem;
+  color: var(--brand-secondary-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.login h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.login__copy {
+  margin: 0.65rem 0 1.8rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.login form,
+.login form label {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.login form {
+  gap: 1.1rem;
+}
+
+.login form label {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.login input {
+  min-height: 2.85rem;
+  padding: 0 0.8rem;
+  color: inherit;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 0.55rem;
+}
+
+.login form button,
+.login > button {
+  min-height: 2.9rem;
+  color: #fff;
+  background: var(--brand-primary);
+  border: 0;
+  border-radius: 0.55rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.login form button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.login__error {
+  margin: 0;
+  color: #9b342e;
+  font-size: 0.88rem;
+}
+

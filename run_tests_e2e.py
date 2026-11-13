@@ -15,6 +15,10 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myproject.settings")
 os.environ["DJANGO_SECRET_KEY"] = secrets.token_urlsafe(48)
 os.environ["DJANGO_DEBUG"] = "false"
+# El runner inicia sesión muchas veces desde 127.0.0.1 en pocos segundos.
+os.environ["DJANGO_AUTH_THROTTLE_ENABLED"] = "false"
+# El servidor de pruebas escucha en HTTP plano sobre 127.0.0.1.
+os.environ["DJANGO_HTTPS_ONLY"] = "false"
 
 import django
 from django.conf import settings

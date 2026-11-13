@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
 import { DataCard, EmptyState, Field, SectionTitle, text } from "./shared";
@@ -187,12 +187,26 @@ export function UsersSection({
   setError: (value: string) => void;
 }) {
   const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("");
+  const [userStatusFilter, setUserStatusFilter] = useState("");
+  const [userSort, setUserSort] = useState("name-asc");
+  const [userPage, setUserPage] = useState(1);
+  const [usersPerPage, setUsersPerPage] = useState(10);
   const mayCreate = canDo(RESOURCES.USERS, ACTIONS.CREATE);
   const mayUpdate = canDo(RESOURCES.USERS, ACTIONS.UPDATE);
   const mayDelete = canDo(RESOURCES.USERS, ACTIONS.DELETE);
   const editingAccount = users.find((account) => text(account.id) === editingUser);
   const editingPlatformSuperadmin = editingAccount?.is_platform_superadmin === true;
   const roleRows = [...availableRoleRows];
+  for (const account of users) {
+    const accountRole = text(account.role);
+    if (accountRole && !roleRows.some((item) => text(item.name) === accountRole)) {
+      roleRows.push({
+        name: accountRole,
+        label: roleNames[accountRole] ?? accountRole,
+      });
+    }
+  }
   if (
     editingAccount &&
     !roleRows.some((item) => text(item.name) === text(editingAccount.role))
@@ -207,8 +221,8 @@ export function UsersSection({
     label: text(item.label) || roleNames[text(item.name)] || text(item.name),
   }));
   const searchTerm = userSearch.trim().toLocaleLowerCase();
-  const filteredUsers = users.filter((account) =>
-    [
+  const filteredUsers = users.filter((account) => {
+    const matchesSearch = [
       account.name,
       account.username,
       account.email,
@@ -218,8 +232,50 @@ export function UsersSection({
       .map(text)
       .join(" ")
       .toLocaleLowerCase()
-      .includes(searchTerm),
-  );
+      .includes(searchTerm);
+    const matchesRole = !userRoleFilter || text(account.role) === userRoleFilter;
+    const isActive = account.active !== false;
+    const matchesStatus =
+    !userStatusFilter ||
+    (userStatusFilter === "active" ? isActive : !isActive);
+    return matchesSearch && matchesRole && matchesStatus;
+  }).sort((left, right) => {
+    const leftName = text(left.name || left.username).toLocaleLowerCase();
+    const rightName = text(right.name || right.username).toLocaleLowerCase();
+    if (userSort === "name-desc") return rightName.localeCompare(leftName, "es");
+    if (userSort === "role-asc") {
+      const leftRole = roleNames[text(left.role)] ?? text(left.role);
+      const rightRole = roleNames[text(right.role)] ?? text(right.role);
+      return leftRole.localeCompare(rightRole, "es");
+    }
+    if (userSort === "status") {
+      return Number(left.active === false) - Number(right.active === false);
+    }
+    return leftName.localeCompare(rightName, "es");
+  });
+  const pageCount = Math.ceil(filteredUsers.length / usersPerPage);
+  const currentPage = Math.min(userPage, Math.max(pageCount, 1));
+  const pageStart = (currentPage - 1) * usersPerPage;
+  const paginatedUsers = filteredUsers.slice(pageStart, pageStart + usersPerPage);
+  useEffect(() => {
+    setUserPage((page) => Math.min(page, Math.max(pageCount, 1)));
+  }, [pageCount]);
+  const updateUserSearch = (value: string) => {
+    setUserSearch(value);
+    setUserPage(1);
+  };
+  const updateUserRoleFilter = (value: string) => {
+    setUserRoleFilter(value);
+    setUserPage(1);
+  };
+  const updateUserStatusFilter = (value: string) => {
+    setUserStatusFilter(value);
+    setUserPage(1);
+  };
+  const updateUserSort = (value: string) => {
+    setUserSort(value);
+    setUserPage(1);
+  };
 
   return (
     <>
@@ -238,20 +294,57 @@ export function UsersSection({
           </div>
         </>
       )}
-      <label className="portal-search">
-        <span>Buscar por nombre, usuario, correo o rol</span>
-        <input
-          type="search"
-          value={userSearch}
-          onChange={(event) => setUserSearch(event.target.value)}
-          placeholder="Ej. yoider00, refugio o adoptante"
-        />
-      </label>
-      {searchTerm && (
-        <p className="portal-form-hint">
-          Resultados: {filteredUsers.length} de {users.length} usuarios.
-        </p>
-      )}
+      <div className="portal-user-filters">
+        <label className="portal-search">
+          <span>Buscar por nombre, usuario, correo o rol</span>
+          <input
+            type="search"
+            value={userSearch}
+            onChange={(event) => updateUserSearch(event.target.value)}
+            placeholder="Ej. yoider00, refugio o adoptante"
+          />
+        </label>
+        <label className="portal-user-filters__field">
+          <span>Filtrar por rol</span>
+          <select
+            value={userRoleFilter}
+            onChange={(event) => updateUserRoleFilter(event.target.value)}
+          >
+            <option value="">Todos los roles</option>
+            {availableRoles.map((item) => (
+              <option key={item.value} value={item.value}>{item.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="portal-user-filters__field">
+          <span>Filtrar por estado</span>
+          <select
+            value={userStatusFilter}
+            onChange={(event) => updateUserStatusFilter(event.target.value)}
+          >
+            <option value="">Todos los estados</option>
+            <option value="active">Activas</option>
+            <option value="inactive">Desactivadas</option>
+          </select>
+        </label>
+        <label className="portal-user-filters__field">
+          <span>Ordenar por</span>
+          <select
+            value={userSort}
+            onChange={(event) => updateUserSort(event.target.value)}
+          >
+            <option value="name-asc">Nombre: A–Z</option>
+            <option value="name-desc">Nombre: Z–A</option>
+            <option value="role-asc">Rol: A–Z</option>
+            <option value="status">Estado: activas primero</option>
+          </select>
+        </label>
+      </div>
+      <p className="portal-user-list__summary" aria-live="polite">
+        {filteredUsers.length === 0
+          ? "No hay usuarios para mostrar."
+          : `Mostrando ${pageStart + 1}–${Math.min(pageStart + usersPerPage, filteredUsers.length)} de ${filteredUsers.length} usuarios`}
+      </p>
       {(mayCreate || (editingUser && mayUpdate)) && (
         <form className="portal-form" onSubmit={submit(async () => {
           const payload: Record<string, unknown> = {
@@ -287,7 +380,7 @@ export function UsersSection({
         </form>
       )}
       <div className="portal-user-list">
-        {filteredUsers.map((account) => {
+        {paginatedUsers.map((account) => {
           const canManageAccount =
             isPlatformSuperadmin ||
             (text(account.role) !== ROLES.ADMIN && account.is_platform_superadmin !== true);
@@ -333,6 +426,43 @@ export function UsersSection({
           );
         })}
       </div>
+      {filteredUsers.length > 0 && (
+        <div className="portal-user-pagination" aria-label="Paginación de usuarios">
+          <label className="portal-user-pagination__size">
+            <span>Por página</span>
+            <select
+              value={usersPerPage}
+              onChange={(event) => {
+                setUsersPerPage(Number(event.target.value));
+                setUserPage(1);
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </label>
+          <div className="portal-user-pagination__controls">
+            <button
+              type="button"
+              className="portal-button portal-button--secondary"
+              disabled={currentPage === 1}
+              onClick={() => setUserPage((page) => Math.max(page - 1, 1))}
+            >
+              Anterior
+            </button>
+            <span aria-live="polite">Página {currentPage} de {Math.max(pageCount, 1)}</span>
+            <button
+              type="button"
+              className="portal-button portal-button--secondary"
+              disabled={currentPage >= pageCount}
+              onClick={() => setUserPage((page) => Math.min(page + 1, pageCount))}
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
       {!loading && users.length === 0 && <EmptyState>No hay cuentas registradas.</EmptyState>}
       {!loading && users.length > 0 && filteredUsers.length === 0 && (
         <EmptyState>No se encontraron cuentas que coincidan con la búsqueda.</EmptyState>

@@ -7,7 +7,13 @@ type SidebarLabelsResponse = {
   labels: Record<string, string>;
 };
 
-export function SidebarLabelsEditor() {
+interface SidebarLabelsEditorProps {
+  onLabelsChange?: (labels: Record<string, string>) => void;
+}
+
+export function SidebarLabelsEditor({
+  onLabelsChange,
+}: SidebarLabelsEditorProps) {
   const { user, request } = useAuth();
   const [defaults, setDefaults] = useState<Record<string, string>>({});
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -30,13 +36,14 @@ export function SidebarLabelsEditor() {
       }
       setDefaults(data.defaults);
       setLabels(data.labels);
+      onLabelsChange?.(data.labels);
     } catch (caught) {
       if (signal?.aborted) return;
       setError(caught instanceof Error ? caught.message : "No se pudieron cargar los nombres.");
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [request]);
+  }, [onLabelsChange, request]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,6 +72,7 @@ export function SidebarLabelsEditor() {
       const data = (await response.json()) as SidebarLabelsResponse;
       setDefaults(data.defaults);
       setLabels(data.labels);
+      onLabelsChange?.(data.labels);
       setNotice("Nombres del menú actualizados para todos los usuarios.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudieron guardar los nombres.");

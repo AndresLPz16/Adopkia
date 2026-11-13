@@ -2,10 +2,12 @@ param deployerObjectId string
 param appIdentityPrincipalId string
 param keyVaultName string
 param registryName string
+param mediaStorageAccountName string
 
 var keyVaultSecretsOfficerRoleId = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+var storageBlobDataContributorRoleId = 'ba92f84c-dfbb-4974-a4a0-4abb9b0a1f2f'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2026-05-15' existing = {
   name: keyVaultName
@@ -23,6 +25,20 @@ resource mysqlApplicationPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2026-
 
 resource registry 'Microsoft.ContainerRegistry/registries@2025-11-01' existing = {
   name: registryName
+}
+
+resource mediaStorage 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+  name: mediaStorageAccountName
+}
+
+resource appMediaBlobContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(mediaStorage.id, appIdentityPrincipalId, storageBlobDataContributorRoleId)
+  scope: mediaStorage
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataContributorRoleId)
+    principalId: appIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 resource deployerSecretsOfficer 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
