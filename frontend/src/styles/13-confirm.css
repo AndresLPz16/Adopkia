@@ -19,7 +19,7 @@
 .confirm-dialog {
   width: min(100%, 420px);
   padding: 1.5rem;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-lg);

@@ -73,7 +73,7 @@ h2,
   display: grid;
   gap: 0.7rem;
   padding: 1rem;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
 }
@@ -83,7 +83,7 @@ h2,
   background: linear-gradient(
     90deg,
     var(--surface-tint) 25%,
-    color-mix(in srgb, var(--surface-tint) 55%, white) 50%,
+    color-mix(in srgb, var(--surface-tint) 55%, var(--surface)) 50%,
     var(--surface-tint) 75%
   );
   background-size: 200% 100%;

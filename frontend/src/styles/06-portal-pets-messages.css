@@ -169,7 +169,7 @@
   min-height: 420px;
   grid-template-columns: minmax(190px, 0.34fr) minmax(0, 1fr);
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 0.85rem;
 }
@@ -359,7 +359,7 @@
     gap: 0.75rem;
     padding: 0.5rem 0.75rem;
     color: var(--text-primary);
-    background: #fff;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     font: inherit;
@@ -412,7 +412,7 @@
 
   .app-sidebar__group {
     min-width: 0;
-    background: #fff;
+    background: var(--surface);
     border-color: var(--border);
   }
 
@@ -717,7 +717,7 @@
     min-width: 0;
     margin: 0;
     padding: 0;
-    background: #fff;
+    background: var(--surface);
     overflow: visible;
   }
 

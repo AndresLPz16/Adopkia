@@ -32,7 +32,7 @@
 
 .app-header__bell:hover {
   transform: translateY(-2px) scale(1.05);
-  background: #ffffff;
+  background: var(--surface);
   border-color: var(--role-accent, var(--brand-primary));
   box-shadow: 0 6px 18px -3px var(--role-glow, rgba(124, 58, 237, 0.25));
 }
@@ -74,7 +74,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--surface);
   box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
   animation: badge-pulse 2s infinite;
 }
@@ -103,7 +103,7 @@
   right: 0;
   width: 380px;
   max-width: min(92vw, 420px);
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1.15rem;
   box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.04);
@@ -151,7 +151,7 @@
 }
 
 .app-header__notifications-mark-all:hover {
-  background: #ffffff;
+  background: var(--surface);
   text-decoration: underline;
 }
 
@@ -194,7 +194,7 @@
 }
 
 .app-header__notification-item.is-unread {
-  background: color-mix(in srgb, var(--role-tint, var(--surface-tint)) 45%, #ffffff);
+  background: color-mix(in srgb, var(--role-tint, var(--surface-tint)) 45%, var(--surface));
 }
 
 .app-header__notification-item:hover {
@@ -237,7 +237,7 @@
   place-items: center;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--surface);
   color: var(--brand-emerald, #10b981);
   font-weight: 800;
   font-size: 0.85rem;

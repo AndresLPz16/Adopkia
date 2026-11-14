@@ -98,7 +98,7 @@ svg.lucide {
 .portal-pet-photo-placeholder,
 .landing-hero__photo > span,
 .landing-spotlight__media > span {
-  color: color-mix(in srgb, var(--brand-primary) 45%, white);
+  color: color-mix(in srgb, var(--brand-primary) 45%, var(--surface));
 }
 
 /* Botón de cerrar de los avisos: el icono queda centrado en su área. */

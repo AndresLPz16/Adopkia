@@ -1,3 +1,4 @@
+import { ThemeToggle } from "../ui/theme";
 import type { AuthFlow } from "./useAuthFlow";
 
 export function LandingHeader({
@@ -17,6 +18,7 @@ export function LandingHeader({
         <a href="#preguntas-frecuentes">Preguntas frecuentes</a>
       </nav>
       <nav className="landing-header__actions" aria-label="Acceso a tu cuenta">
+        <ThemeToggle />
         <button
           className="landing-header__login"
           onClick={() => showAuthentication("login")}

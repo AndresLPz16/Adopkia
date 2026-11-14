@@ -58,7 +58,7 @@
   transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
     translateY(-6px);
   box-shadow: var(--shadow-3d);
-  border-color: color-mix(in srgb, var(--brand-secondary) 35%, white);
+  border-color: color-mix(in srgb, var(--brand-secondary) 35%, var(--surface));
 }
 
 .landing-pet__photo-open > img {

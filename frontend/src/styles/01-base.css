@@ -13,6 +13,7 @@
   --brand-sky: #0ea5e9;
   --text-primary: #1e1b4b;
   --text-secondary: #64748b;
+  --surface: #fff;
   --surface-muted: #fbf8f6;
   --surface-tint: #f4efec;
   --border: #e8e1de;
@@ -79,7 +80,7 @@ input {
 .login__card {
   width: min(100%, 440px);
   padding: clamp(1.5rem, 5vw, 2.6rem);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1.1rem;
   box-shadow: 0 1.5rem 4rem rgb(53 44 66 / 12%);
