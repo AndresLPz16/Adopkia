@@ -47,10 +47,42 @@ export function PortalSidebar({
     expandedSidebarGroup ??
     sidebarGroups.find((group) => group.sections.includes(section))?.key;
 
+  // En pantallas angostas el menú empieza plegado para que el contenido se vea
+  // sin desplazarse; en escritorio el botón no se muestra y el menú siempre
+  // está visible (lo decide la hoja de estilos).
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [section]);
+
   return (
     <aside className="app-sidebar">
       <p>{sidebarCopy.heading}</p>
-      <nav aria-label="Navegación principal">
+      <button
+        className="app-sidebar__mobile-toggle"
+        type="button"
+        aria-label={
+          mobileMenuOpen
+            ? "Cerrar menú de navegación"
+            : "Abrir menú de navegación"
+        }
+        aria-expanded={mobileMenuOpen}
+        aria-controls="portal-navigation"
+        onClick={() => setMobileMenuOpen((open) => !open)}
+      >
+        <span className="app-sidebar__mobile-toggle-icon" aria-hidden="true">
+          {mobileMenuOpen ? "✕" : "☰"}
+        </span>
+        <span className="app-sidebar__mobile-toggle-text">
+          <small>Menú</small>
+          <strong>{visibleSectionNames[section] ?? "Permisos por rol"}</strong>
+        </span>
+      </button>
+      <nav
+        id="portal-navigation"
+        aria-label="Navegación principal"
+        data-mobile-open={mobileMenuOpen}
+      >
         {sidebarGroups.map((group) => (
           <div
             className="app-sidebar__group"

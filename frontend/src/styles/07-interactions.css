@@ -47,6 +47,18 @@
   left: 100%;
 }
 
+/* El enlace para cambiar entre inicio de sesión y registro es un enlace de
+   texto, no un botón primario: sin sombra, sin brillo y sin ocupar el ancho. */
+.landing-auth > button.portal-link {
+  justify-self: start;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.landing-auth > button.portal-link::before {
+  content: none;
+}
+
 .landing-carousel__controls button:active:not(:disabled) {
   transform: translateY(1px) scale(0.94);
 }

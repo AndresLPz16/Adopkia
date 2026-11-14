@@ -351,12 +351,63 @@
     display: none;
   }
 
+  .app-sidebar__mobile-toggle {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-primary);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .app-sidebar__mobile-toggle-icon {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--role-text, var(--brand-primary));
+    background: var(--role-tint, var(--surface-tint));
+    border-radius: 0.6rem;
+    font-size: 1rem;
+  }
+
+  .app-sidebar__mobile-toggle-text {
+    display: grid;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  .app-sidebar__mobile-toggle-text small {
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+  }
+
+  .app-sidebar__mobile-toggle-text strong {
+    overflow: hidden;
+    font-size: 0.92rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .app-sidebar nav {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
     align-items: start;
     gap: 0.55rem;
     overflow: visible;
+  }
+
+  /* El menú empieza plegado: el contenido queda visible sin desplazarse. */
+  .app-sidebar nav[data-mobile-open="false"] {
+    display: none;
   }
 
   .app-sidebar__group {
