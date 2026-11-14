@@ -78,8 +78,11 @@
 }
 
 /* --- Transición entre secciones del portal ---------------------------------- */
+/* "backwards" y no "both": si la animación dejara su transform puesto al
+   terminar, .portal-view pasaría a ser el marco de los elementos fijos y los
+   diálogos de la sección ya no cubrirían toda la pantalla. */
 .portal-view {
-  animation: view-enter 0.35s var(--motion-ease) both;
+  animation: view-enter 0.35s var(--motion-ease) backwards;
 }
 
 /* La entrada del panel ya la da .portal-view. */

@@ -1107,7 +1107,5 @@
   border: 1px solid var(--border);
   border-radius: 1rem;
   box-shadow: 0 1.5rem 4rem rgb(53 44 66 / 24%);
-  background: rgb(30 27 75 / 45%);
-  backdrop-filter: blur(8px);
 }
 
