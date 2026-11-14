@@ -1,0 +1,183 @@
+/* ==========================================================================
+   MOVIMIENTO
+   Aparición al desplazarse, tarjetas con inclinación 3D, transición entre
+   secciones y portada con profundidad. La regla global de 05-portal.css
+   anula todas las animaciones con "reducir movimiento".
+   ========================================================================== */
+
+/* --- Aparición al desplazarse ----------------------------------------------
+   El estado oculto lo pone ui/motion.ts solo cuando puede revelarlo después. */
+[data-revealed] {
+  transition:
+    opacity 0.7s var(--motion-ease),
+    transform 0.7s var(--motion-ease);
+}
+
+[data-revealed="false"] {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+/* Las tarjetas de beneficios y los pasos entran una tras otra. */
+[data-revealed] > .landing-benefits > div,
+.landing-benefits[data-revealed] > div,
+.landing-process[data-revealed] li {
+  transition:
+    opacity 0.6s var(--motion-ease),
+    transform 0.6s var(--motion-ease);
+}
+
+.landing-benefits[data-revealed="false"] > div,
+.landing-process[data-revealed="false"] li {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.landing-benefits[data-revealed] > div:nth-child(2),
+.landing-process[data-revealed] li:nth-child(2) {
+  transition-delay: 0.1s;
+}
+
+.landing-benefits[data-revealed] > div:nth-child(3),
+.landing-process[data-revealed] li:nth-child(3) {
+  transition-delay: 0.2s;
+}
+
+/* --- Tarjetas de mascota con inclinación 3D ---------------------------------
+   ui/motion.ts actualiza --tilt-x / --tilt-y con la posición del cursor. */
+.landing-pet {
+  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition:
+    transform 180ms ease-out,
+    box-shadow 350ms ease,
+    border-color 350ms ease;
+  will-change: transform;
+}
+
+.landing-pet:hover {
+  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    translateY(-6px);
+  box-shadow: var(--shadow-3d);
+  border-color: color-mix(in srgb, var(--brand-secondary) 35%, var(--surface));
+}
+
+.landing-pet__photo-open > img {
+  transition:
+    transform 0.6s var(--motion-ease),
+    opacity 0.35s ease;
+}
+
+.landing-pet:hover .landing-pet__photo-open > img {
+  transform: scale(1.07);
+}
+
+/* --- Corazón de "me gusta" --------------------------------------------------- */
+.landing-pet__heart--liked > svg,
+.landing-pet-dialog__like--liked > svg {
+  animation: heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --- Transición entre secciones del portal ---------------------------------- */
+.portal-view {
+  animation: view-enter 0.35s var(--motion-ease) both;
+}
+
+/* La entrada del panel ya la da .portal-view. */
+.portal-view > .portal-dashboard {
+  animation: none;
+}
+
+/* Las cifras del panel entran escalonadas. */
+.portal-view .portal-stat,
+.portal-view .portal-shortcut {
+  animation: view-enter 0.45s var(--motion-ease) both;
+}
+
+.portal-view .portal-stat:nth-child(2),
+.portal-view .portal-shortcut:nth-child(2) {
+  animation-delay: 0.06s;
+}
+
+.portal-view .portal-stat:nth-child(3),
+.portal-view .portal-shortcut:nth-child(3) {
+  animation-delay: 0.12s;
+}
+
+.portal-view .portal-stat:nth-child(4),
+.portal-view .portal-shortcut:nth-child(4) {
+  animation-delay: 0.18s;
+}
+
+/* --- Portada con profundidad ------------------------------------------------
+   Flotado lento y de poca amplitud: se percibe, pero no distrae. */
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: perspective(1000px) translateY(0) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: perspective(1000px) translateY(-10px) rotateX(2deg) rotateY(-2deg);
+  }
+}
+
+@keyframes hero-note-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes hero-blob-drift {
+  0%,
+  100% {
+    transform: rotate(-8deg) scale(1);
+  }
+  50% {
+    transform: rotate(-4deg) scale(1.03);
+  }
+}
+
+.landing-hero__photo {
+  animation: hero-float 9s ease-in-out infinite;
+}
+
+.landing-hero__note {
+  animation: hero-note-float 7s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+.landing-hero__blob {
+  animation: hero-blob-drift 14s ease-in-out infinite;
+}
+
+/* Emblema del panel de inicio. */
+.portal-dashboard__hero-emblem {
+  animation: float-emblem-3d 8s ease-in-out infinite;
+}
+
+.portal-dashboard__hero-sparkle {
+  animation: sparkle-float 3.2s ease-in-out infinite alternate;
+}
+
+.portal-dashboard__hero-sparkle--2 {
+  animation-delay: 1.5s;
+}
+
+/* En pantallas táctiles no hay cursor: sin inclinación ni flotado constante,
+   que además gasta batería. */
+@media (hover: none) {
+  .landing-pet,
+  .landing-pet:hover {
+    transform: none;
+  }
+
+  .landing-hero__photo,
+  .landing-hero__note,
+  .landing-hero__blob,
+  .portal-dashboard__hero-emblem {
+    animation: none;
+  }
+}

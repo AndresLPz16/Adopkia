@@ -1,3 +1,4 @@
+import { createContext, useContext, useId } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type { Action, Resource } from "../rbac/types";
 
@@ -186,6 +187,46 @@ export function statusTone(value: unknown): string {
   return "neutral";
 }
 
+/** Errores de validación del servidor, por nombre de campo. */
+export type FieldErrors = Record<string, string[]>;
+
+/**
+ * Error de la API que conserva la respuesta, para poder mostrar cada mensaje
+ * de validación junto a su campo además del resumen general.
+ */
+export class ApiError extends Error {
+  readonly data: unknown;
+  readonly status: number;
+
+  constructor(data: unknown, status: number) {
+    super(apiErrorMessage(data, status));
+    this.name = "ApiError";
+    this.data = data;
+    this.status = status;
+  }
+
+  get fieldErrors(): FieldErrors {
+    return apiFieldErrors(this.data);
+  }
+}
+
+/** Extrae `{ campo: [mensajes] }` de una respuesta de validación de DRF. */
+export function apiFieldErrors(data: unknown): FieldErrors {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+  const errors: FieldErrors = {};
+  for (const [field, value] of Object.entries(data)) {
+    if (field === "detail" || field === "non_field_errors") continue;
+    const messages = (Array.isArray(value) ? value : [value]).filter(
+      (message): message is string => typeof message === "string" && message !== "",
+    );
+    if (messages.length > 0) errors[field] = messages;
+  }
+  return errors;
+}
+
+/** Errores por campo del formulario activo; `Field` los lee por su `name`. */
+export const FieldErrorsContext = createContext<FieldErrors>({});
+
 export function apiErrorMessage(data: unknown, status: number): string {
   if (
     data &&
@@ -232,7 +273,7 @@ export async function responseData(response: Response): Promise<unknown> {
     }
   }
   if (!response.ok) {
-    throw new Error(apiErrorMessage(data, response.status));
+    throw new ApiError(data, response.status);
   }
   return data;
 }
@@ -248,15 +289,29 @@ export function Field({
   multiline = false,
   readOnly = false,
 }: FieldProps) {
+  const labelId = useId();
+  const errorId = useId();
+  const messages = useContext(FieldErrorsContext)[name];
+  const invalid = Boolean(messages?.length);
+  // El mensaje va dentro del <label>; nombrar el control solo con el texto de
+  // la etiqueta evita que el lector de pantalla lo lea como parte del nombre.
+  const errorProps = invalid
+    ? {
+        "aria-labelledby": labelId,
+        "aria-invalid": true as const,
+        "aria-describedby": errorId,
+      }
+    : {};
   return (
-    <label className="portal-field">
-      <span>{label}</span>
+    <label className={invalid ? "portal-field portal-field--invalid" : "portal-field"}>
+      <span id={labelId}>{label}</span>
       {options ? (
         <select
           name={name}
           value={value}
           required={required}
           disabled={readOnly}
+          {...errorProps}
           onChange={(event) => onChange(name, event.target.value)}
         >
           <option value="">Selecciona una opción</option>
@@ -272,6 +327,7 @@ export function Field({
           value={value}
           required={required}
           rows={3}
+          {...errorProps}
           onChange={(event) => onChange(name, event.target.value)}
         />
       ) : (
@@ -281,8 +337,14 @@ export function Field({
           value={value}
           required={required}
           readOnly={readOnly}
+          {...errorProps}
           onChange={(event) => onChange(name, event.target.value)}
         />
+      )}
+      {invalid && (
+        <small className="portal-field__error" id={errorId}>
+          {messages.join(" ")}
+        </small>
       )}
     </label>
   );

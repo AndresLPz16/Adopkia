@@ -1,3 +1,5 @@
+import { confirmAction } from "../../ui/confirm";
+import { FadeImage } from "../../ui/loading";
 import { PawPrint } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
@@ -62,8 +64,11 @@ export function PetCard({
             {canDo(RESOURCES.PETS, ACTIONS.DELETE) && (
               <button
                 className="portal-link portal-link--danger"
-                onClick={() => {
-                  if (window.confirm(`¿Eliminar el perfil de ${text(pet.name)}?`)) {
+                onClick={async () => {
+                  if (await confirmAction({
+                    title: `¿Eliminar el perfil de ${text(pet.name)}?`,
+                    message: "Se borrarán también sus fotos. Esta acción no se puede deshacer.",
+                  })) {
                     void send(
                       `/api/v1/pets/${text(pet.id)}/`,
                       "DELETE",
@@ -116,7 +121,7 @@ export function PetCard({
         }}
       >
         {typeof primaryPhoto?.url === "string" ? (
-          <img
+          <FadeImage
             className="portal-pet-photo"
             src={primaryPhoto.url}
             alt=""

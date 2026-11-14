@@ -1,3 +1,6 @@
+import { SkeletonGrid } from "./ui/loading";
+import { useDocumentTitle } from "./ui/useDocumentTitle";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -5,8 +8,16 @@ import { useAuth } from "./rbac/auth";
 import { can } from "./rbac/permissions";
 import { ACTIONS, RESOURCES, ROLES } from "./rbac/types";
 import type { Action, Resource } from "./rbac/types";
-import { isAvailablePet, responseData, rows, text } from "./portal/shared";
-import type { PortalDataRow, PortalPetSaver } from "./portal/shared";
+import {
+  ApiError,
+  FieldErrorsContext,
+  apiErrorMessage,
+  isAvailablePet,
+  responseData,
+  rows,
+  text,
+} from "./portal/shared";
+import type { FieldErrors, PortalDataRow, PortalPetSaver } from "./portal/shared";
 import { loadAllPages } from "./portal/loadAllPages";
 import { loadSectionData } from "./portal/loadSectionData";
 import {
@@ -85,6 +96,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const dynamicResourceSections = dynamicResources.map(
     (resource) => `resource:${resource.key}`,
   );
@@ -260,10 +272,65 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     setSelectedConversation("");
     setError("");
     setNotice("");
+    setFieldErrors({});
   }, [section]);
+
+  // Un aviso de éxito se cierra solo; los errores esperan a que se lean.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const setValue = (name: string, value: string) => {
     setForm((current) => ({ ...current, [name]: value }));
+    // Al corregir un campo se quita su error; los demás siguen marcados.
+    setFieldErrors((current) => {
+      if (!(name in current)) return current;
+      const rest = { ...current };
+      delete rest[name];
+      return rest;
+    });
+  };
+
+  // Un error de validación se muestra junto a su campo cuando ese campo está
+  // en pantalla; lo que no tiene campo visible va al aviso general.
+  const reportFailure = (caught: unknown, fallback: string) => {
+    if (!(caught instanceof ApiError)) {
+      setError(caught instanceof Error ? caught.message : fallback);
+      return;
+    }
+    const inline: FieldErrors = {};
+    const general: Record<string, unknown> = {};
+    const responseFields =
+      caught.data && typeof caught.data === "object" && !Array.isArray(caught.data)
+        ? (caught.data as Record<string, unknown>)
+        : {};
+    const fieldErrorsFound = caught.fieldErrors;
+    for (const [field, value] of Object.entries(responseFields)) {
+      const hasControl =
+        field in fieldErrorsFound &&
+        /^[\w-]+$/.test(field) &&
+        document.querySelector(`.app-content .portal-field [name="${field}"]`) !== null;
+      if (hasControl) inline[field] = fieldErrorsFound[field];
+      else general[field] = value;
+    }
+    if (Object.keys(inline).length === 0) {
+      setError(caught.message);
+      return;
+    }
+    setFieldErrors(inline);
+    setError(
+      Object.keys(general).length > 0
+        ? apiErrorMessage(general, caught.status)
+        : "Revisa los campos marcados.",
+    );
+    // Lleva el foco al primer campo con error una vez pintado.
+    window.setTimeout(() => {
+      document
+        .querySelector<HTMLElement>('.app-content .portal-field [aria-invalid="true"]')
+        ?.focus();
+    }, 0);
   };
 
   const send = async (
@@ -275,6 +342,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    setFieldErrors({});
     try {
       const response = await request(endpoint, {
         method,
@@ -291,9 +359,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
       await reload(endpointsAffectedBy(endpoint));
       return true;
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "No se pudo completar la acción.",
-      );
+      reportFailure(caught, "No se pudo completar la acción.");
       return false;
     } finally {
       setBusy(false);
@@ -343,6 +409,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    setFieldErrors({});
     let petWasSaved = false;
     let petId = "";
     let uploadedPhotos = 0;
@@ -412,7 +479,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
             : `La mascota se guardó, pero no se pudieron guardar sus fotos. ${message}`,
         );
       } else {
-        setError(message);
+        reportFailure(caught, message);
       }
       return false;
     } finally {
@@ -504,6 +571,10 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     );
 
 
+  useDocumentTitle(
+    user ? (visibleSectionNames as Record<string, string>)[section] : undefined,
+  );
+
   if (status === "error") {
     return (
       <main className="login">
@@ -543,9 +614,15 @@ function Portal({ onLogout }: { onLogout: () => void }) {
           navTo={navTo}
         />
         <main className="app-content">
-          {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error">×</button></div>}
-          {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso">×</button></div>}
-          {loading && <p className="portal-loading" role="status">Cargando información…</p>}
+          {/* Avisos flotantes: no desplazan el contenido al aparecer. */}
+          <div className="portal-toasts">
+            {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error"><X size={16} aria-hidden="true" /></button></div>}
+            {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso"><X size={16} aria-hidden="true" /></button></div>}
+          </div>
+          {loading && <SkeletonGrid label="Cargando información…" />}
+          {/* La clave reinicia la animación de entrada al cambiar de sección. */}
+          <div className="portal-view" key={section}>
+          <FieldErrorsContext.Provider value={fieldErrors}>
           <SectionContent
             {...{
               section,
@@ -609,6 +686,8 @@ function Portal({ onLogout }: { onLogout: () => void }) {
               loading,
             }}
           />
+          </FieldErrorsContext.Provider>
+          </div>
         </main>
       </div>
     </div>

@@ -1,0 +1,98 @@
+/* ==========================================================================
+   DIÁLOGO DE CONFIRMACIÓN
+   Sustituye al cuadro del navegador en las acciones que no se pueden
+   deshacer (ui/confirm.tsx). Se monta en <body>, fuera de .app-shell.
+   ========================================================================== */
+
+.confirm-dialog__backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgb(30 27 75 / 45%);
+  backdrop-filter: blur(6px);
+  animation: confirm-backdrop-in 0.2s ease both;
+}
+
+.confirm-dialog {
+  width: min(100%, 420px);
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-lg);
+  animation: confirm-dialog-in 0.28s var(--motion-ease) both;
+}
+
+.confirm-dialog__icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  margin-bottom: 0.9rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 50%;
+}
+
+.confirm-dialog h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.12rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.confirm-dialog p {
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+}
+
+.confirm-dialog__actions .portal-button.confirm-dialog__confirm {
+  color: #fff;
+  background: #b91c1c;
+  border-color: #b91c1c;
+  box-shadow: 0 4px 14px rgb(185 28 28 / 22%);
+}
+
+.confirm-dialog__actions .portal-button.confirm-dialog__confirm:hover:not(:disabled) {
+  background: #991b1b;
+  border-color: #991b1b;
+  box-shadow: 0 10px 24px -2px rgb(185 28 28 / 35%);
+}
+
+@keyframes confirm-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes confirm-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}
+
+@media (max-width: 480px) {
+  .confirm-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog__actions .portal-button {
+    width: 100%;
+  }
+}

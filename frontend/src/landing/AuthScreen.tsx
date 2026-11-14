@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import { useDocumentTitle } from "../ui/useDocumentTitle";
 import type { AuthFlow } from "./useAuthFlow";
 
 export function AuthScreen({ auth }: { auth: AuthFlow }) {
@@ -20,6 +21,14 @@ export function AuthScreen({ auth }: { auth: AuthFlow }) {
     resendVerificationCode,
     submit,
   } = auth;
+
+  useDocumentTitle(
+    view === "login"
+      ? "Iniciar sesión"
+      : view === "register"
+        ? "Crear cuenta"
+        : "Verificar correo",
+  );
 
   return (
     <main className="landing landing--auth">

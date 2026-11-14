@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   AdoptionsSection,
@@ -142,7 +142,6 @@ describe("veterinarian directory", () => {
 describe("medical record permissions", () => {
   it("shows edit and delete actions only when the role has those permissions", async () => {
     const send = vi.fn(async () => true);
-    vi.stubGlobal("confirm", () => true);
     render(
       <RecordsSection
         role="administrador"
@@ -190,6 +189,9 @@ describe("medical record permissions", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Eliminar atención" }));
+    const confirmation = await screen.findByRole("alertdialog");
+    fireEvent.click(within(confirmation).getByRole("button", { name: "Eliminar" }));
+    await waitFor(() => expect(confirmation).not.toBeInTheDocument());
     expect(send).toHaveBeenLastCalledWith(
       "/api/v1/medical-records/9/",
       "DELETE",

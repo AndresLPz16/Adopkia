@@ -1,3 +1,4 @@
+import { revealRef } from "../ui/motion";
 import { AuthScreen } from "./AuthScreen";
 import { LandingHeader } from "./LandingHeader";
 import { LandingHero } from "./LandingHero";
@@ -32,7 +33,7 @@ export function Landing() {
           showAuthentication={showAuthentication}
         />
       )}
-      <section className="landing-bottom">
+      <section className="landing-bottom" ref={revealRef}>
         <div>
           <p className="portal-eyebrow">Nuestra comunidad</p>
           <h2>Un espacio para cada persona que cuida.</h2>

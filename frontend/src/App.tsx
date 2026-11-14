@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { AuthProvider } from "./rbac/auth";
-import Portal from "./Portal";
 import { Landing } from "./landing/Landing";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "./landing/api";
+import { ErrorBoundary } from "./ui/ErrorBoundary";
 
+// El portal se descarga solo al iniciar sesión: quien visita la página
+// pública no carga el código de gestión.
+const Portal = lazy(() => import("./Portal"));
 
 function AuthenticatedApp() {
   const [token, setToken] = useState(
@@ -20,15 +23,17 @@ function AuthenticatedApp() {
       key={token}
       getAccessToken={() => window.localStorage.getItem(ACCESS_TOKEN_KEY)}
     >
-      <Portal onLogout={logout} />
+      <Suspense fallback={<p className="app-loading" role="status">Abriendo el portal…</p>}>
+        <Portal onLogout={logout} />
+      </Suspense>
     </AuthProvider>
   );
 }
 
 export default function App() {
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY) ? (
-    <AuthenticatedApp />
-  ) : (
-    <Landing />
+  return (
+    <ErrorBoundary>
+      {window.localStorage.getItem(ACCESS_TOKEN_KEY) ? <AuthenticatedApp /> : <Landing />}
+    </ErrorBoundary>
   );
 }

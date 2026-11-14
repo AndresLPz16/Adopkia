@@ -1,3 +1,4 @@
+import { ThemeToggle } from "../ui/theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlarmClock, Bell, BellOff, Check, ClipboardList, Mail, PawPrint } from "lucide-react";
 import { ACTIONS, RESOURCES } from "../rbac/types";
@@ -182,6 +183,7 @@ export function PortalHeader({
           </div>
         )}
 
+        <ThemeToggle />
         <div className="app-header__account">
           <div><strong>{user.name}</strong><span>{roleNames[role] ?? role}</span></div>
           <button type="button" onClick={onLogout}>Cerrar sesión</button>

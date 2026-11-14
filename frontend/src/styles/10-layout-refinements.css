@@ -84,7 +84,7 @@
 .portal-user-list {
   display: grid;
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
 }

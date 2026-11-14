@@ -1,3 +1,5 @@
+import { revealRef, tiltHandlers } from "../ui/motion";
+import { FadeImage, SkeletonGrid } from "../ui/loading";
 import { ArrowLeft, ArrowRight, Heart, MapPin, PawPrint, Search } from "lucide-react";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
@@ -40,7 +42,7 @@ export function PetCarousel({
   } = catalog;
 
   return (
-    <section className="landing-pets" id="mascotas">
+    <section className="landing-pets" id="mascotas" ref={revealRef}>
       <div className="landing-pets__heading">
         <div>
           <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Encuentra a tu compañero</p>
@@ -140,7 +142,7 @@ export function PetCarousel({
               const photo =
                 pet.photos?.find((item) => item.is_primary) ?? pet.photos?.[0];
               return (
-                <article className="portal-card landing-pet" key={pet.id}>
+                <article className="portal-card landing-pet" key={pet.id} {...tiltHandlers}>
                   <div className="landing-pet__media">
                     <button
                       className="landing-pet__photo-open"
@@ -156,7 +158,7 @@ export function PetCarousel({
                       }}
                     >
                       {photo?.url ? (
-                        <img src={photo.url} alt="" loading="lazy" />
+                        <FadeImage src={photo.url} alt="" loading="lazy" />
                       ) : (
                         <span className="landing-pet__placeholder" aria-hidden="true"><PawPrint size={56} strokeWidth={1.5} /></span>
                       )}
@@ -226,9 +228,7 @@ export function PetCarousel({
           </div>
         )}
         {petsLoading && (
-          <div className="landing-pets__empty" role="status">
-            <span aria-hidden="true"><Heart size={28} /></span><strong>Buscando mascotas disponibles…</strong>
-          </div>
+          <SkeletonGrid label="Buscando mascotas disponibles…" />
         )}
       </div>
     </section>

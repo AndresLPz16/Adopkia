@@ -152,8 +152,8 @@
   display: grid;
   width: 90px;
   height: 90px;
-  background: #ffffff;
-  border: 2px solid color-mix(in srgb, var(--role-accent, var(--brand-primary)) 28%, white);
+  background: var(--surface);
+  border: 2px solid color-mix(in srgb, var(--role-accent, var(--brand-primary)) 28%, var(--surface));
   border-radius: 50%;
   box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--role-accent, var(--brand-primary)) 28%, transparent);
   place-items: center;
@@ -212,7 +212,7 @@
 .portal-stat:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-sm);
-  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, white);
+  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, var(--surface));
 }
 
 .portal-stat:hover::before {
@@ -240,7 +240,7 @@
 .portal-pet-carousel__track > .portal-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-sm);
-  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, white);
+  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, var(--surface));
 }
 
 /* --------------------------------------------------------------------------

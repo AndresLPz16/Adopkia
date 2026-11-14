@@ -1,3 +1,5 @@
+import { revealRef } from "../ui/motion";
+import { FadeImage } from "../ui/loading";
 import {
   Check,
   Heart,
@@ -6,6 +8,7 @@ import {
   PawPrint,
   Search,
   ShieldCheck,
+  Sparkle,
 } from "lucide-react";
 import type { PetCatalog } from "./usePetCatalog";
 
@@ -59,7 +62,7 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
           <div className="landing-hero__blob" />
           <div className="landing-hero__photo">
             {featuredPet?.photos?.[0]?.url ? (
-              <img src={featuredPet.photos.find((item) => item.is_primary)?.url ?? featuredPet.photos[0].url} alt="" />
+              <FadeImage src={featuredPet.photos.find((item) => item.is_primary)?.url ?? featuredPet.photos[0].url} alt="" />
             ) : (
               <span><PawPrint size={64} strokeWidth={1.5} /></span>
             )}
@@ -70,11 +73,11 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
             </span>
             <span><strong>Una nueva historia</strong><small>empieza contigo</small></span>
           </div>
-          <span className="landing-hero__spark landing-hero__spark--one">✦</span>
-          <span className="landing-hero__spark landing-hero__spark--two">✳</span>
+          <span className="landing-hero__spark landing-hero__spark--one" aria-hidden="true"><Sparkle size={26} fill="currentColor" /></span>
+          <span className="landing-hero__spark landing-hero__spark--two" aria-hidden="true"><Sparkle size={20} fill="currentColor" /></span>
         </div>
       </section>
-      <section className="landing-benefits" aria-label="Beneficios de Adopkia">
+      <section className="landing-benefits" aria-label="Beneficios de Adopkia" ref={revealRef}>
         <div>
           <span aria-hidden="true"><ShieldCheck size={20} /></span>
           <p><strong>Refugios verificados</strong><small>Conoce organizaciones confiables</small></p>
