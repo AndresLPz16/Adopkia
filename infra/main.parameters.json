@@ -3,13 +3,13 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "environmentName": {
-      "value": "adopkia-prod-ncus"
+      "value": "adopkia-prod-spc"
     },
     "location": {
-      "value": "northcentralus"
+      "value": "spaincentral"
     },
     "resourceSuffix": {
-      "value": "ncus"
+      "value": "spc"
     },
     "deployedBy": {
       "value": "yoider brito"

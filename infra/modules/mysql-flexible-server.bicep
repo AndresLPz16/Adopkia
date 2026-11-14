@@ -53,7 +53,21 @@ resource mysqlTls 'Microsoft.DBforMySQL/flexibleServers/configurations@2025-12-3
   }
 }
 
-resource mysqlDatabase 'Microsoft.DBforMySQL/flexibleServers/databases@2025-12-30' = {
+// Las migraciones crean funciones y triggers con un usuario sin SUPER; con el
+// registro binario activo MySQL lo rechaza (error 1419) salvo con este ajuste.
+resource mysqlTrustFunctionCreators 'Microsoft.DBforMySQL/flexibleServers/configurations@2025-12-30' = {
+  parent: mysql
+  name: 'log_bin_trust_function_creators'
+  dependsOn: [
+    mysqlTls
+  ]
+  properties: {
+    value: 'ON'
+    source: 'user-override'
+  }
+}
+
+resource mysqlDatabase'Microsoft.DBforMySQL/flexibleServers/databases@2025-12-30' = {
   parent: mysql
   name: appDbName
 }
