@@ -71,7 +71,38 @@ Behaviour observed and left unchanged, for a decision:
 - In the local `adopkia` database the adopter role differs from `DEFAULT_PERMISSIONS`: it lacks `notifications:update`, `formQuestions:read`, `shelters:read` and `vaccines:read`, and has `adoptionRequests:delete`, `notifications:delete`, `petPhotos:read` and `profile:delete`. With that matrix an adopter got 403 when marking a notification as read. Corrected the same day in the local database only: the four missing default permissions were added and the extra ones kept; a new E2E run confirmed `PATCH /api/v1/notifications/{id}/` returns 200 for the adopter. No migration or code changed, so other installations are not affected.
 - `ShelterViewSet` validates the body before checking shelter membership, so an outsider sending an invalid `PUT` gets 400 rather than 403.
 
-Still not done: any Azure deployment. The Azure Blob Storage path for uploaded photos remains unexercised against a real storage account.
+### Azure deployment and final run (2026-11-13, evening)
+
+The application was deployed to an Azure for Students subscription, region `spaincentral`, resource group `rg-adopkia-prod-spc`: a Container App (express environment, 0.5 vCPU, scale to zero) serving the React portal and the API from one container, MySQL Flexible Server B1ms, Container Registry, Key Vault and a storage account for photos. The database holds the repository's demonstration dataset (42 users), not a copy of the local database.
+
+| Step | Status | Details |
+|---|---|---|
+| Live routes | PASS | portal at `/`, `/app/dashboard` and `/admin/permissions`; `/api/v1/`, catalog endpoints, `/api/docs/`, admin login and static files returned 200 |
+| Live flow with a temporary shelter account | PASS | login 200, profile 200, pet creation 201, photo upload 201; account and data removed afterwards |
+| Azure Blob Storage for uploaded photos | PASS | the uploaded photo was readable at its public blob URL; after deleting the photo through the API the blob returned 404 |
+| Verification email | PASS | a real registration returned 201 and the code arrived by email (Gmail SMTP); the test account was removed |
+
+Findings during the deployment:
+
+- MySQL provisioning was rejected in `northcentralus` (`ProvisionNotSupportedForRegion`) although the capability listing showed the SKU; it succeeded in `spaincentral`.
+- Static Web Apps is not offered in any region the subscription allows, so the portal is built into the image and served by WhiteNoise (`DJANGO_FRONTEND_DIST`).
+- The Container Apps express environment does not support Key Vault secret references; secrets are passed as app secrets.
+- Deleting a photo left its blob behind. A `post_delete` handler now removes the stored file (also when the pet is deleted). Its first version did not match Azure URLs, because `AzureStorage.url()` drops the trailing slash of a folder name; fixed and covered by a test.
+
+Final run on the code as deployed:
+
+| Step | Status | Details |
+|---|---|---|
+| Django tests (MySQL) | PASS | 109 tests |
+| pytest (MySQL) | PASS | 110 passed, 296 subtests |
+| HTTP E2E | PASS | 6 tests, 383 `[PASS]` checks; local row counts unchanged |
+| OpenAPI | PASS | `spectacular --validate`, exit 0 |
+| Schema comparison | PASS | `compare_schema`, no differences |
+| Frontend | PASS | typecheck clean; 83 tests in 17 files, four consecutive runs |
+
+One frontend run reported 1 failed test out of 83 while pytest and the E2E runner were running at the same time on the same machine. The failing test was not captured and the failure did not repeat in four runs alone; a timing issue under load is the likely cause, not confirmed.
+
+Not exercised: the E2E runner against the Azure deployment (it only targets the local database), and behaviour after the container scales to zero for a long period.
 
 ## Summary
 
