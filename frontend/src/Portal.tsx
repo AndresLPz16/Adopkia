@@ -1,4 +1,5 @@
 import { SkeletonGrid } from "./ui/loading";
+import { useDocumentTitle } from "./ui/useDocumentTitle";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -569,6 +570,10 @@ function Portal({ onLogout }: { onLogout: () => void }) {
           : `/app/${key}`,
     );
 
+
+  useDocumentTitle(
+    user ? (visibleSectionNames as Record<string, string>)[section] : undefined,
+  );
 
   if (status === "error") {
     return (

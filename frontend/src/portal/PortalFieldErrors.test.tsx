@@ -74,6 +74,8 @@ describe("validation errors next to the field", () => {
     await submitShelterForm();
 
     const email = await screen.findByRole("textbox", { name: "Correo de contacto" });
+    // La pestaña del navegador nombra la sección abierta.
+    expect(document.title).toBe("Mi refugio y equipo · Adopkia");
     await waitFor(() => expect(email).toHaveAttribute("aria-invalid", "true"));
     expect(email).toHaveAccessibleDescription(
       "Introduzca una dirección de correo electrónico válida.",
