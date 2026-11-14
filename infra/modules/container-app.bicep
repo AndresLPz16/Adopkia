@@ -6,8 +6,12 @@ param containerImage string
 param appPort int
 param registryLoginServer string
 param registryIdentityResourceId string
-param keyVaultName string
-param keyVaultIdentityResourceId string
+// El entorno express de Container Apps no admite referencias a Key Vault:
+// los secretos se pasan como secretos propios de la aplicación.
+@secure()
+param djangoSecretKey string
+@secure()
+param mysqlApplicationLoginPassword string
 param mysqlServerFqdn string
 param mysqlApplicationLogin string
 param appIdentityClientId string
@@ -56,7 +60,7 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
         external: true
         targetPort: effectivePort
         allowInsecure: false
-        transport: 'auto'
+        transport: 'http'
       }
       registries: isPlaceholder
         ? []
@@ -71,15 +75,11 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
         : [
             {
               name: 'django-secret-key'
-              #disable-next-line no-hardcoded-env-urls
-              keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/django-secret-key'
-              identity: keyVaultIdentityResourceId
+              value: djangoSecretKey
             }
             {
               name: 'mysql-app-password'
-              #disable-next-line no-hardcoded-env-urls
-              keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/mysql-app-password'
-              identity: keyVaultIdentityResourceId
+              value: mysqlApplicationLoginPassword
             }
           ]
     }

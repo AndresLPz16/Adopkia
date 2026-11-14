@@ -170,8 +170,8 @@ module containerApp './modules/container-app.bicep' = {
     appPort: 8000
     registryLoginServer: containerRegistry.outputs.loginServer
     registryIdentityResourceId: managedIdentity.outputs.identityResourceId
-    keyVaultName: resourceNames.keyVault
-    keyVaultIdentityResourceId: managedIdentity.outputs.identityResourceId
+    djangoSecretKey: djangoSecretKey
+    mysqlApplicationLoginPassword: mysqlApplicationLoginPassword
     mysqlServerFqdn: mysql.outputs.fullyQualifiedDomainName
     mysqlApplicationLogin: mysqlApplicationLogin
     appIdentityClientId: managedIdentity.outputs.clientId
