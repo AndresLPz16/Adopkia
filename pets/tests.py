@@ -2,6 +2,7 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -258,6 +259,26 @@ class PetApiTests(APITestCase):
             uploaded_photo_name("/media/pets/0123456789abcdef0123456789abcdef.png"),
             "pets/0123456789abcdef0123456789abcdef.png",
         )
+
+        # Azure Blob Storage devuelve URL absolutas y normaliza el nombre
+        # pedido (quita la barra final de una carpeta).
+        blob_base = "https://cuenta.blob.core.windows.net/media/"
+        with patch(
+            "pets.signals.default_storage.url",
+            side_effect=lambda name: blob_base + name.rstrip("/"),
+        ):
+            self.assertEqual(
+                uploaded_photo_name(
+                    blob_base + "pets/0123456789abcdef0123456789abcdef.png"
+                ),
+                "pets/0123456789abcdef0123456789abcdef.png",
+            )
+            self.assertIsNone(
+                uploaded_photo_name(
+                    "https://otra.blob.core.windows.net/media/pets/"
+                    "0123456789abcdef0123456789abcdef.png"
+                )
+            )
 
         photo = PetPhoto.objects.create(
             pet=self.pet, url="https://example.com/luna.jpg"

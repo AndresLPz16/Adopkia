@@ -21,7 +21,12 @@ def uploaded_photo_name(url):
     `None`: solo se reconoce una URL que apunte al almacenamiento configurado y
     tenga el nombre que genera la subida de archivos.
     """
-    prefix = default_storage.url("pets/").split("?", 1)[0]
+    # Se pregunta por un nombre de archivo y no por la carpeta: el almacenamiento
+    # de Azure normaliza el nombre y quita la barra final de "pets/".
+    probe = default_storage.url("pets/_").split("?", 1)[0]
+    if not probe.endswith("pets/_"):
+        return None
+    prefix = probe[:-1]
     location = (url or "").split("?", 1)[0]
     if not location.startswith(prefix):
         return None
