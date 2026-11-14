@@ -1,3 +1,4 @@
+import { FileImage } from "lucide-react";
 import { Field, text } from "../shared";
 import type { PortalDataRow, PortalPetSaver, PortalSubmit } from "../shared";
 import type { PetPhotos } from "./usePetPhotos";
@@ -156,7 +157,7 @@ export function PetForm({
                 {preview ? (
                   <img src={preview} alt={`Vista previa de ${file.name}`} />
                 ) : (
-                  <span className="portal-photo-preview__file" aria-hidden="true">▧</span>
+                  <span className="portal-photo-preview__file" aria-hidden="true"><FileImage size={30} /></span>
                 )}
                 <figcaption>{file.name}</figcaption>
                 <button

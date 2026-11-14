@@ -8,6 +8,7 @@ import {
   PawPrint,
   Search,
   ShieldCheck,
+  Sparkle,
 } from "lucide-react";
 import type { PetCatalog } from "./usePetCatalog";
 
@@ -72,8 +73,8 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
             </span>
             <span><strong>Una nueva historia</strong><small>empieza contigo</small></span>
           </div>
-          <span className="landing-hero__spark landing-hero__spark--one">✦</span>
-          <span className="landing-hero__spark landing-hero__spark--two">✳</span>
+          <span className="landing-hero__spark landing-hero__spark--one" aria-hidden="true"><Sparkle size={26} fill="currentColor" /></span>
+          <span className="landing-hero__spark landing-hero__spark--two" aria-hidden="true"><Sparkle size={20} fill="currentColor" /></span>
         </div>
       </section>
       <section className="landing-benefits" aria-label="Beneficios de Adopkia" ref={revealRef}>

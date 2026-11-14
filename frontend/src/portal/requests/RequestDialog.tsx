@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { rows, text } from "../shared";
 import type { PortalDataRow } from "../shared";
@@ -58,7 +59,7 @@ export function RequestDialog({
             requestOpenerRef.current?.focus();
           }}
         >
-          ×
+          <X size={20} aria-hidden="true" />
         </button>
         <div className="landing-pet-dialog__content">
           <p className="portal-eyebrow">Solicitud de adopción</p>

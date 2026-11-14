@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Heart, PawPrint } from "lucide-react";
+import { ArrowLeft, ArrowRight, Heart, PawPrint, X } from "lucide-react";
 import type { PublicPetPreview } from "../publicCatalog";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
@@ -44,7 +44,7 @@ export function PetDialog({
           aria-label="Cerrar detalles de la mascota"
           onClick={() => setSelectedPet(null)}
         >
-          ×
+          <X size={20} aria-hidden="true" />
         </button>
         <div className="landing-pet-dialog__gallery" aria-label={`Fotos de ${selectedPet.name}`}>
           {selectedPetPhotos.length > 0 ? (

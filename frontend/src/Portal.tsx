@@ -1,4 +1,5 @@
 import { SkeletonGrid } from "./ui/loading";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -610,8 +611,8 @@ function Portal({ onLogout }: { onLogout: () => void }) {
         <main className="app-content">
           {/* Avisos flotantes: no desplazan el contenido al aparecer. */}
           <div className="portal-toasts">
-            {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error">×</button></div>}
-            {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso">×</button></div>}
+            {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error"><X size={16} aria-hidden="true" /></button></div>}
+            {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso"><X size={16} aria-hidden="true" /></button></div>}
           </div>
           {loading && <SkeletonGrid label="Cargando información…" />}
           {/* La clave reinicia la animación de entrada al cambiar de sección. */}

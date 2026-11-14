@@ -1,4 +1,4 @@
-import { PawPrint } from "lucide-react";
+import { ArrowDown, ArrowUp, PawPrint, X } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
 import { rows, text } from "../shared";
@@ -45,7 +45,7 @@ export function PetDetailsDialog({
           aria-label="Cerrar detalles de la mascota"
           onClick={closePetDetails}
         >
-          ×
+          <X size={20} aria-hidden="true" />
         </button>
         {(() => {
           const photos = rows(selectedPet.photos);
@@ -91,7 +91,7 @@ export function PetDetailsDialog({
                       )
                     }
                   >
-                    ↑
+                    <ArrowUp size={18} aria-hidden="true" />
                   </button>
                   <button
                     className="landing-pet-dialog__gallery-arrow landing-pet-dialog__gallery-arrow--next portal-pet-details-dialog__gallery-arrow--next"
@@ -101,7 +101,7 @@ export function PetDetailsDialog({
                       setSelectedPhotoIndex((selectedPhotoIndex + 1) % photos.length)
                     }
                   >
-                    ↓
+                    <ArrowDown size={18} aria-hidden="true" />
                   </button>
                   <span className="landing-pet-dialog__gallery-count" aria-live="polite">
                     {selectedPhotoIndex + 1} / {photos.length}
