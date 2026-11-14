@@ -1,0 +1,192 @@
+/* ==========================================================================
+   AJUSTES DE ORGANIZACIÓN
+   Pestañas de solicitudes, lista compacta de usuarios, paginación discreta y
+   tarjetas de la página pública más ligeras.
+   ========================================================================== */
+
+/* --- Pestañas (solicitudes / preguntas del formulario) -------------------- */
+.portal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 1.25rem 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.portal-tabs__tab {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: -1px;
+  padding: 0.55rem 0.9rem;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.portal-tabs__tab:hover {
+  color: var(--text-primary);
+}
+
+.portal-tabs__tab[aria-selected="true"] {
+  color: var(--role-text, var(--brand-primary));
+  border-bottom-color: var(--role-accent, var(--brand-primary));
+}
+
+.portal-tabs__count {
+  display: inline-grid;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.4rem;
+  place-items: center;
+  color: var(--text-secondary);
+  background: var(--surface-tint);
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.portal-tabs__tab[aria-selected="true"] .portal-tabs__count {
+  color: var(--role-text, var(--brand-primary));
+  background: var(--role-tint, var(--surface-tint));
+}
+
+/* Dentro de una pestaña el título de las preguntas ya lo da la pestaña. */
+[role="tabpanel"] > .portal-section > .portal-subheading:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Usuarios: barra de acciones y filas compactas ------------------------ */
+.portal-user-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.portal-user-toolbar .portal-user-list__summary {
+  margin: 0;
+}
+
+.portal-user-list {
+  display: grid;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+
+.portal-user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.7rem 1.1rem;
+}
+
+.portal-user-row + .portal-user-row {
+  border-top: 1px solid var(--border);
+}
+
+.portal-user-row:hover {
+  background: var(--surface-muted);
+}
+
+.portal-user-row__identity {
+  min-width: 0;
+}
+
+.portal-user-row__identity h3 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.94rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-user-row__identity p {
+  margin: 0.1rem 0 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-user-row__actions {
+  display: flex;
+  min-width: 13.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .portal-user-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .portal-user-row__actions {
+    min-width: 0;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .portal-user-row__identity p {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* --- Paginación de mascotas: debajo de la lista y más pequeña ------------- */
+.portal-pet-pagination {
+  margin: 1.25rem 0 0.5rem;
+  gap: 0.35rem;
+}
+
+.portal-pet-pagination .portal-button {
+  min-width: 2.25rem;
+  min-height: 36px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .portal-pet-pagination .portal-button {
+    min-height: 44px;
+  }
+}
+
+/* --- Tarjetas de la página pública ---------------------------------------- */
+.landing-pet__details,
+.landing-pet__source {
+  font-size: 0.82rem;
+}
+
+.landing-pet__temperament {
+  font-size: 0.9rem;
+}
+
+/* La salud ocupa una sola línea en la tarjeta; el texto completo está en el
+   detalle de la mascota. */
+.landing-pet__health {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}

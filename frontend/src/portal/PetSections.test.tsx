@@ -169,6 +169,14 @@ describe("pet photo uploads", () => {
         />,
       );
 
+      // Las solicitudes se muestran primero; las preguntas están en su pestaña.
+      expect(screen.getByRole("tab", { name: /Solicitudes/ })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(screen.queryByLabelText("Pregunta")).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("tab", { name: /Preguntas del formulario/ }));
+
       fireEvent.click(screen.getByRole("button", { name: "Editar" }));
       fireEvent.change(screen.getByLabelText("Pregunta"), {
         target: { value: "¿Qué mascotas tienes?" },
