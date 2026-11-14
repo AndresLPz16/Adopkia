@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { confirmAction } from "../ui/confirm";
 import { useAuth } from "./auth";
 import type { PermissionCatalog, PermissionRole } from "./types";
 import { ACTIONS, RESOURCES, ROLES } from "./types";
@@ -260,9 +261,11 @@ export function RolePermissionsPanel({
   const removePermissions = async () => {
     if (!currentRole || !canEditCurrentRole || !canUpdatePermissions) return;
     if (
-      !window.confirm(
-        `¿Quitar los permisos asignados a ${currentRole.label}? Esta acción se guardará de inmediato.`,
-      )
+      !(await confirmAction({
+        title: `¿Quitar los permisos asignados a ${currentRole.label}?`,
+        message: "Esta acción se guardará de inmediato.",
+        confirmLabel: "Quitar permisos",
+      }))
     ) {
       return;
     }
@@ -360,7 +363,10 @@ export function RolePermissionsPanel({
     if (
       !currentRole ||
       !canDeleteRoles ||
-      !window.confirm(`¿Eliminar el rol ${currentRole.label}?`)
+      !(await confirmAction({
+        title: `¿Eliminar el rol ${currentRole.label}?`,
+        message: "Esta acción no se puede deshacer.",
+      }))
     ) return;
     setSaving(true);
     setError(null);
@@ -457,9 +463,10 @@ export function RolePermissionsPanel({
   ) => {
     if (
       !canDeleteRoles ||
-      !window.confirm(
-        `¿Eliminar el recurso "${resource.label}" y quitar sus permisos de todos los roles?`,
-      )
+      !(await confirmAction({
+        title: `¿Eliminar el recurso "${resource.label}"?`,
+        message: "También se quitarán sus permisos de todos los roles.",
+      }))
     ) return;
     setSaving(true);
     setError(null);

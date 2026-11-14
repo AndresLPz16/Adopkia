@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SheltersSection, UsersSection } from "./ManagementSections";
 
@@ -200,9 +200,8 @@ describe("user management search", () => {
 });
 
 describe("shelter management actions", () => {
-  it("shows and executes shelter deletion when the role has delete permission", () => {
+  it("shows and executes shelter deletion when the role has delete permission", async () => {
     const send = vi.fn(async () => true);
-    vi.stubGlobal("confirm", () => true);
     render(
       <SheltersSection
         role="refugio"
@@ -236,6 +235,10 @@ describe("shelter management actions", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Eliminar refugio" }));
+    expect(send).not.toHaveBeenCalled();
+    const confirmation = await screen.findByRole("alertdialog");
+    fireEvent.click(within(confirmation).getByRole("button", { name: "Eliminar" }));
+    await waitFor(() => expect(confirmation).not.toBeInTheDocument());
 
     expect(send).toHaveBeenCalledWith(
       "/api/v1/shelters/3/",
@@ -243,6 +246,5 @@ describe("shelter management actions", () => {
       undefined,
       "Refugio eliminado.",
     );
-    vi.unstubAllGlobals();
   });
 });

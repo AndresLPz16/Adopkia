@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirmAction } from "../ui/confirm";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
 import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusTone, text } from "./shared";
@@ -105,8 +106,11 @@ export function SheltersSection({
             )) && canDo(RESOURCES.SHELTERS, ACTIONS.DELETE) && (
               <button
                 className="portal-link portal-link--danger"
-                onClick={() => {
-                  if (window.confirm(`¿Eliminar el refugio "${text(shelter.name)}"? Esta acción no se puede deshacer.`)) {
+                onClick={async () => {
+                  if (await confirmAction({
+                    title: `¿Eliminar el refugio "${text(shelter.name)}"?`,
+                    message: "Esta acción no se puede deshacer.",
+                  })) {
                     void send(
                       `/api/v1/shelters/${text(shelter.id)}/`,
                       "DELETE",
@@ -134,8 +138,12 @@ export function SheltersSection({
                 status={text(member.position)}
                 actions={
                   text(member.user) !== text(userId) && canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.DELETE)
-                    ? <button className="portal-link portal-link--danger" onClick={() => {
-                        if (window.confirm("¿Quitar esta cuenta del refugio?")) {
+                    ? <button className="portal-link portal-link--danger" onClick={async () => {
+                        if (await confirmAction({
+                          title: "¿Quitar esta cuenta del refugio?",
+                          message: "La persona dejará de gestionar este refugio; su cuenta no se elimina.",
+                          confirmLabel: "Quitar",
+                        })) {
                           void send(`/api/v1/shelter-members/${text(member.id)}/`, "DELETE", undefined, "Integrante eliminado.");
                         }
                       }}>Quitar integrante</button>
@@ -439,8 +447,11 @@ export function UsersSection({
                     )}>{account.active === false ? "Reactivar" : "Desactivar"}</button>
                   )}
                   {mayDelete && canManageAccount && account.id !== userId && (
-                    <button className="portal-link portal-link--danger" onClick={() => {
-                      if (window.confirm(`¿Eliminar la cuenta de ${text(account.name)}?`)) {
+                    <button className="portal-link portal-link--danger" onClick={async () => {
+                      if (await confirmAction({
+                        title: `¿Eliminar la cuenta de ${text(account.name)}?`,
+                        message: "Esta acción no se puede deshacer.",
+                      })) {
                         void send(`/api/v1/auth/users/${text(account.id)}/`, "DELETE", undefined, "Cuenta eliminada.");
                       }
                     }}>Eliminar</button>

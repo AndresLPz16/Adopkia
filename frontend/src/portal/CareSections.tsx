@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmAction } from "../ui/confirm";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
 import { DataCard, EmptyState, Field, SectionTitle, labelStatus, text } from "./shared";
@@ -139,8 +140,11 @@ export function VaccineCatalogSection({
                     type="button"
                     className="portal-link"
                     disabled={busy}
-                    onClick={() => {
-                      if (window.confirm(`¿Eliminar la vacuna ${text(vaccine.name)}?`)) {
+                    onClick={async () => {
+                      if (await confirmAction({
+                        title: `¿Eliminar la vacuna ${text(vaccine.name)}?`,
+                        message: "Se quitará del historial de la mascota. Esta acción no se puede deshacer.",
+                      })) {
                         void send(
                           `/api/v1/vaccines/${text(vaccine.id)}/`,
                           "DELETE",
@@ -650,8 +654,11 @@ export function RecordsSection({
                   {canDo(RESOURCES.MEDICAL_RECORDS, ACTIONS.DELETE) && (
                     <button
                       className="portal-link portal-link--danger"
-                      onClick={() => {
-                        if (window.confirm("¿Eliminar este registro del historial médico?")) {
+                      onClick={async () => {
+                        if (await confirmAction({
+                          title: "¿Eliminar este registro del historial médico?",
+                          message: "Esta acción no se puede deshacer.",
+                        })) {
                           void send(
                             `/api/v1/medical-records/${text(item.id)}/`,
                             "DELETE",

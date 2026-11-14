@@ -258,7 +258,6 @@ describe("RolePermissionsPanel", () => {
       },
     );
     vi.stubGlobal("fetch", fetchMock);
-    vi.stubGlobal("confirm", vi.fn(() => true));
     const user = userEvent.setup();
 
     render(
@@ -284,6 +283,9 @@ describe("RolePermissionsPanel", () => {
     );
 
     await user.click(within(renamedRow).getByRole("button", { name: "Eliminar" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Eliminar" }),
+    );
     expect(await screen.findByText(/Se eliminó el recurso "Pepe"/)).toBeInTheDocument();
     expect(
       screen.queryByRole("row", { name: /Pepe/ }),
@@ -646,7 +648,6 @@ describe("RolePermissionsPanel", () => {
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    vi.stubGlobal("confirm", vi.fn(() => true));
     const user = userEvent.setup();
 
     render(
@@ -658,6 +659,9 @@ describe("RolePermissionsPanel", () => {
     await screen.findByRole("checkbox", { name: "Mascotas: Consultar" });
     await user.selectOptions(screen.getByRole("combobox"), "adoptante");
     await user.click(screen.getByRole("button", { name: "Quitar permisos" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Quitar permisos" }),
+    );
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -688,7 +692,6 @@ describe("RolePermissionsPanel", () => {
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    vi.stubGlobal("confirm", vi.fn(() => true));
     const user = userEvent.setup();
 
     render(
@@ -699,6 +702,9 @@ describe("RolePermissionsPanel", () => {
 
     await screen.findByRole("checkbox", { name: "Mascotas: Consultar" });
     await user.click(screen.getByRole("button", { name: "Quitar permisos" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Quitar permisos" }),
+    );
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(

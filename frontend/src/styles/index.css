@@ -15,3 +15,4 @@
 @import "./10-layout-refinements.css"; /* Pestañas, lista compacta de usuarios y paginación discreta */
 @import "./11-typography-loading.css"; /* Fuentes, esqueletos de carga, imágenes y avisos flotantes */
 @import "./12-motion.css"; /* Aparición al desplazarse, inclinación 3D, transiciones y portada */
+@import "./13-confirm.css"; /* Diálogo de confirmación propio */
