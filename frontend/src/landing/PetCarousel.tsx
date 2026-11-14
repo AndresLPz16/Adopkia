@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight, Heart, MapPin, PawPrint, Search } from "lucide-react";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
 
@@ -42,7 +43,7 @@ export function PetCarousel({
     <section className="landing-pets" id="mascotas">
       <div className="landing-pets__heading">
         <div>
-          <p className="landing-eyebrow"><span aria-hidden="true">♥</span> Encuentra a tu compañero</p>
+          <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Encuentra a tu compañero</p>
           <h2>Conoce a quienes buscan hogar</h2>
           <p>Cada perfil es una oportunidad para empezar una historia juntos.</p>
         </div>
@@ -55,7 +56,7 @@ export function PetCarousel({
               onClick={() => scrollCarousel(-1)}
               disabled={carouselPage === 0}
             >
-              ←
+              <ArrowLeft size={18} aria-hidden="true" />
             </button>
             <span aria-live="polite">{carouselPage + 1} / {petPages.length}</span>
             <button
@@ -64,7 +65,7 @@ export function PetCarousel({
               onClick={() => scrollCarousel(1)}
               disabled={carouselPage === petPages.length - 1}
             >
-              →
+              <ArrowRight size={18} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -72,7 +73,7 @@ export function PetCarousel({
       {petsError && <p className="portal-alert portal-alert--error">{petsError}</p>}
       <div className="landing-filters">
         <label className="landing-filter landing-filter--search">
-          <span aria-hidden="true">⌕</span>
+          <span aria-hidden="true"><Search size={16} /></span>
           <input
             aria-label="Filtrar mascotas"
             placeholder="Nombre, ciudad o personalidad"
@@ -157,10 +158,10 @@ export function PetCarousel({
                       {photo?.url ? (
                         <img src={photo.url} alt="" loading="lazy" />
                       ) : (
-                        <span className="landing-pet__placeholder" aria-hidden="true">🐾</span>
+                        <span className="landing-pet__placeholder" aria-hidden="true"><PawPrint size={56} strokeWidth={1.5} /></span>
                       )}
                     </button>
-                    <span className="landing-pet__badge"><span aria-hidden="true">♥</span> Busca familia</span>
+                    <span className="landing-pet__badge"><Heart size={11} fill="currentColor" aria-hidden="true" /> Busca familia</span>
                   </div>
                   <div className="landing-pet__content">
                     <div className="landing-pet__title">
@@ -172,11 +173,11 @@ export function PetCarousel({
                         aria-pressed={likedPetIds.has(pet.id)}
                         onClick={() => togglePetLike(pet.id)}
                       >
-                        {likedPetIds.has(pet.id) ? "♥" : "♡"}
+                        <Heart size={18} fill={likedPetIds.has(pet.id) ? "currentColor" : "none"} aria-hidden="true" />
                       </button>
                     </div>
                     <p className="landing-pet__details">
-                      <span aria-hidden="true">⌖</span> {pet.city || "Ubicación por confirmar"}
+                      <MapPin size={13} aria-hidden="true" /> {pet.city || "Ubicación por confirmar"}
                       {pet.age != null && <><span className="landing-pet__dot">·</span>{pet.age} {pet.age === 1 ? "año" : "años"}</>}
                     </p>
                     {(pet.size || pet.health?.trim()) && (
@@ -201,7 +202,7 @@ export function PetCarousel({
                     )}
                     {pet.temperament && <p className="landing-pet__temperament">{pet.temperament}</p>}
                     <button className="landing-pet__action" onClick={() => showAuthentication("login")}>
-                      Quiero adoptar <span aria-hidden="true">→</span>
+                      Quiero adoptar <ArrowRight size={16} aria-hidden="true" />
                     </button>
                   </div>
                 </article>
@@ -212,7 +213,7 @@ export function PetCarousel({
         </div>
         {!petsLoading && visiblePets.length === 0 && !petsError && (
           <div className="landing-pets__empty">
-            <span aria-hidden="true">♡</span>
+            <span aria-hidden="true"><Heart size={28} /></span>
             <strong>{pets.length ? "No encontramos coincidencias" : "Pronto habrá nuevos perfiles"}</strong>
             <p>{pets.length ? "Prueba con otros filtros para encontrar a tu compañero." : "Estamos preparando nuevas historias para que encuentres a tu mejor amigo."}</p>
             {(petSearch || speciesFilter || cityFilter || sizeFilter || petSort !== "recent") && <button className="portal-link" onClick={() => {
@@ -226,7 +227,7 @@ export function PetCarousel({
         )}
         {petsLoading && (
           <div className="landing-pets__empty" role="status">
-            <span aria-hidden="true">♡</span><strong>Buscando mascotas disponibles…</strong>
+            <span aria-hidden="true"><Heart size={28} /></span><strong>Buscando mascotas disponibles…</strong>
           </div>
         )}
       </div>

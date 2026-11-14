@@ -186,15 +186,6 @@ export const sidebarGroupDefinitions: SidebarGroup[] = [
   { key: "account", label: "Mi cuenta", sections: ["notifications", "profile"] },
 ];
 
-export const sidebarGroupIcons: Record<string, string> = {
-  home: "⌂",
-  adoption: "♡",
-  care: "✚",
-  management: "▦",
-  account: "◉",
-  "custom-resources": "◇",
-};
-
 // Endpoints que carga cada sección; el panel de inicio varía según el rol.
 export function pathsForRole(role: string): Record<string, string[]> {
   return {

@@ -1,3 +1,4 @@
+import { Heart, PawPrint } from "lucide-react";
 import type { PublicPetPreview } from "../publicCatalog";
 import type { PetCatalog } from "./usePetCatalog";
 
@@ -23,7 +24,7 @@ export function PetSpotlight({
       aria-labelledby="landing-spotlight-title"
     >
       <div className="landing-spotlight__intro">
-        <p className="landing-eyebrow"><span aria-hidden="true">♥</span> Una historia que empieza contigo</p>
+        <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Una historia que empieza contigo</p>
         <h2 id="landing-spotlight-title">Cada perfil tiene algo especial.</h2>
         <p>
           Conoce de cerca a una de las mascotas disponibles en refugios
@@ -47,7 +48,7 @@ export function PetSpotlight({
             return photo?.url ? (
               <img src={photo.url} alt={`Foto de ${featuredPet.name}`} loading="lazy" />
             ) : (
-              <span aria-hidden="true">🐾</span>
+              <span aria-hidden="true"><PawPrint size={64} strokeWidth={1.5} /></span>
             );
           })()}
         </div>

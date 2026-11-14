@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AlarmClock, Bell, BellOff, Check, ClipboardList, Mail, PawPrint } from "lucide-react";
 import { ACTIONS, RESOURCES } from "../rbac/types";
 import { roleNames } from "./navigation";
 import { labelStatus, text } from "./shared";
@@ -73,7 +74,9 @@ export function PortalHeader({
               aria-expanded={notificationsOpen}
               onClick={() => setNotificationsOpen((prev) => !prev)}
             >
-              <span className="app-header__bell-icon" aria-hidden="true">🔔</span>
+              <span className="app-header__bell-icon" aria-hidden="true">
+                <Bell size={20} />
+              </span>
               {unreadNotificationsCount > 0 && (
                 <span className="app-header__bell-badge" aria-hidden="true">
                   {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
@@ -110,7 +113,9 @@ export function PortalHeader({
                 <div className="app-header__notifications-list">
                   {notifications.length === 0 ? (
                     <div className="app-header__notifications-empty">
-                      <span aria-hidden="true">🔕</span>
+                      <span aria-hidden="true">
+                        <BellOff size={26} />
+                      </span>
                       <p>No tienes notificaciones pendientes.</p>
                     </div>
                   ) : (
@@ -120,13 +125,15 @@ export function PortalHeader({
                         className={`app-header__notification-item ${item.is_read ? "is-read" : "is-unread"}`}
                       >
                         <span className="app-header__notification-icon" aria-hidden="true">
-                          {item.notification_type === "mensaje"
-                            ? "✉️"
-                            : item.notification_type === "solicitud"
-                              ? "📋"
-                              : item.notification_type === "recordatorio"
-                                ? "⏰"
-                                : "🐾"}
+                          {item.notification_type === "mensaje" ? (
+                            <Mail size={18} />
+                          ) : item.notification_type === "solicitud" ? (
+                            <ClipboardList size={18} />
+                          ) : item.notification_type === "recordatorio" ? (
+                            <AlarmClock size={18} />
+                          ) : (
+                            <PawPrint size={18} />
+                          )}
                         </span>
                         <div className="app-header__notification-body">
                           <p className="app-header__notification-message">{text(item.message)}</p>
@@ -150,7 +157,7 @@ export function PortalHeader({
                               )
                             }
                           >
-                            ✓
+                            <Check size={16} aria-hidden="true" />
                           </button>
                         )}
                       </div>

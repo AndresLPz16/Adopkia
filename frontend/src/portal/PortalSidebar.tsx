@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { sidebarGroupDefinitions, sidebarGroupIcons } from "./navigation";
+import { ChevronDown, Menu, X } from "lucide-react";
+import { GroupIcon, SectionIcon } from "../ui/icons";
+import { sidebarGroupDefinitions } from "./navigation";
 
 export function PortalSidebar({
   section,
@@ -71,7 +73,7 @@ export function PortalSidebar({
         onClick={() => setMobileMenuOpen((open) => !open)}
       >
         <span className="app-sidebar__mobile-toggle-icon" aria-hidden="true">
-          {mobileMenuOpen ? "✕" : "☰"}
+          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
         </span>
         <span className="app-sidebar__mobile-toggle-text">
           <small>Menú</small>
@@ -103,13 +105,15 @@ export function PortalSidebar({
               }
             >
               <span className="app-sidebar__group-icon" aria-hidden="true">
-                {sidebarGroupIcons[group.key] ?? "◇"}
+                <GroupIcon name={group.key} />
               </span>
               <span className="app-sidebar__group-label">{group.label}</span>
               <span className="app-sidebar__group-count" aria-hidden="true">
                 {group.sections.length}
               </span>
-              <span className="app-sidebar__group-chevron" aria-hidden="true">⌄</span>
+              <span className="app-sidebar__group-chevron" aria-hidden="true">
+                <ChevronDown size={16} />
+              </span>
             </button>
             <div
               className="app-sidebar__group-links"
@@ -123,7 +127,9 @@ export function PortalSidebar({
                   aria-current={section === key ? "page" : undefined}
                   onClick={() => navTo(key)}
                 >
-                  <span aria-hidden="true">{({ dashboard: "⌂", pets: "♡", requests: "▤", adoptions: "⌂", messages: "✉", records: "+", shelters: "⌂", notifications: "♧", profile: "◉", statistics: "▥", users: "♙", permissions: "▦" } as Record<string, string>)[key] ?? "›"}</span>
+                  <span aria-hidden="true">
+                    <SectionIcon name={key} size={16} />
+                  </span>
                   {visibleSectionNames[key] ?? "Permisos por rol"}
                 </button>
               ))}

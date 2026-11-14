@@ -1,3 +1,5 @@
+import { Sparkle, Sparkles } from "lucide-react";
+import { RoleIcon, SectionIcon } from "../ui/icons";
 import { isAvailablePet, SectionTitle, text } from "./shared";
 import type { PortalDataRow } from "./shared";
 import { ROLES } from "../rbac/types";
@@ -191,10 +193,14 @@ export function DashboardSection({
         <div className="portal-dashboard__hero-3d" aria-hidden="true">
           <div className="portal-dashboard__hero-emblem">
             <span className="portal-dashboard__hero-icon">
-              {role === ROLES.ADOPTER ? "🐾" : role === ROLES.SHELTER ? "🏡" : role === ROLES.VETERINARIAN ? "🩺" : "🛡️"}
+              <RoleIcon role={role} size={40} strokeWidth={1.75} />
             </span>
-            <span className="portal-dashboard__hero-sparkle portal-dashboard__hero-sparkle--1">✨</span>
-            <span className="portal-dashboard__hero-sparkle portal-dashboard__hero-sparkle--2">💫</span>
+            <span className="portal-dashboard__hero-sparkle portal-dashboard__hero-sparkle--1">
+              <Sparkles size={20} />
+            </span>
+            <span className="portal-dashboard__hero-sparkle portal-dashboard__hero-sparkle--2">
+              <Sparkle size={16} />
+            </span>
           </div>
         </div>
       </div>
@@ -210,20 +216,7 @@ export function DashboardSection({
         {shortcuts.map((key) => (
           <button key={key} className="portal-shortcut" onClick={() => navTo(key)}>
             <span aria-hidden="true">
-              {(
-                {
-                  pets: "♡",
-                  requests: "▤",
-                  adoptions: "⌂",
-                  messages: "✉",
-                  records: "+",
-                  shelters: "⌂",
-                  notifications: "♧",
-                  profile: "◉",
-                  statistics: "▥",
-                  users: "♙",
-                } as Record<string, string>
-              )[key] ?? "›"}
+              <SectionIcon name={key} size={22} />
             </span>
             <strong>{shortcutLabels[role]?.[key] ?? sectionNames[key]}</strong>
             <small>{descriptionForShortcut(key)}</small>
@@ -231,7 +224,9 @@ export function DashboardSection({
         ))}
         {visibleLinks.includes("permissions") && (
           <button className="portal-shortcut" onClick={() => navTo("permissions")}>
-            <span aria-hidden="true">▦</span>
+            <span aria-hidden="true">
+              <SectionIcon name="permissions" size={22} />
+            </span>
             <strong>Permisos por rol</strong>
             <small>{descriptionForShortcut("permissions")}</small>
           </button>
