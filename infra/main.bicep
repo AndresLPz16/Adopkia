@@ -29,9 +29,14 @@ param mysqlAdministratorLogin string = 'adopkiaadmin'
 param mysqlApplicationLogin string = 'adopkia_app'
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-// Sin servidor SMTP el registro respondería 503. Con el backend de consola el
-// código de verificación queda en los registros del contenedor.
-param emailBackend string = 'django.core.mail.backends.console.EmailBackend'
+// Correo saliente (SMTP con STARTTLS). Sin emailHost el código de verificación
+// de un registro nuevo queda en los registros del contenedor y no se envía.
+param emailHost string = ''
+param emailPort string = '587'
+param emailHostUser string = ''
+@secure()
+param emailHostPassword string = ''
+param defaultFromEmail string = ''
 
 var tags = {
   project: 'adopkia'
@@ -177,7 +182,11 @@ module containerApp './modules/container-app.bicep' = {
     appIdentityClientId: managedIdentity.outputs.clientId
     mediaStorageAccountName: mediaStorage.outputs.storageAccountName
     mediaStorageContainerName: mediaStorage.outputs.containerName
-    emailBackend: emailBackend
+    emailHost: emailHost
+    emailPort: emailPort
+    emailHostUser: emailHostUser
+    emailHostPassword: emailHostPassword
+    defaultFromEmail: defaultFromEmail
     tags: tags
   }
 }

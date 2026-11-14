@@ -185,6 +185,87 @@ class PetApiTests(APITestCase):
             self.assertTrue(
                 Path(media_root, photo.url.removeprefix("/media/")).is_file()
             )
+
+    def _upload_photo(self):
+        image_buffer = BytesIO()
+        Image.new("RGB", (1, 1), color="red").save(image_buffer, format="PNG")
+        response = self.client.post(
+            reverse("pet-photo-list"),
+            {
+                "pet": self.pet.pk,
+                "image": SimpleUploadedFile(
+                    "luna.png", image_buffer.getvalue(), content_type="image/png"
+                ),
+            },
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 201)
+        return PetPhoto.objects.get(pk=response.data["id"])
+
+    def test_deleting_an_uploaded_photo_removes_its_file(self):
+        self.client.force_authenticate(self.owner)
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            photo = self._upload_photo()
+            stored_file = Path(media_root, photo.url.removeprefix("/media/"))
+            self.assertTrue(stored_file.is_file())
+
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.delete(
+                    reverse("pet-photo-detail", args=(photo.pk,))
+                )
+
+            self.assertEqual(response.status_code, 204)
+            self.assertFalse(stored_file.exists())
+
+    def test_deleting_a_pet_removes_the_files_of_its_uploaded_photos(self):
+        self.client.force_authenticate(self.owner)
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            photo = self._upload_photo()
+            stored_file = Path(media_root, photo.url.removeprefix("/media/"))
+
+            with self.captureOnCommitCallbacks(execute=True):
+                self.pet.delete()
+
+            self.assertFalse(PetPhoto.objects.filter(pk=photo.pk).exists())
+            self.assertFalse(stored_file.exists())
+
+    def test_file_is_kept_when_the_deletion_is_rolled_back(self):
+        self.client.force_authenticate(self.owner)
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            photo = self._upload_photo()
+            stored_file = Path(media_root, photo.url.removeprefix("/media/"))
+
+            with self.captureOnCommitCallbacks(execute=False) as callbacks:
+                photo.delete()
+
+            # Sin confirmar la transacción el archivo sigue en su sitio.
+            self.assertEqual(len(callbacks), 1)
+            self.assertTrue(stored_file.is_file())
+
+    def test_photo_registered_by_link_never_touches_the_storage(self):
+        from .signals import uploaded_photo_name
+
+        for url in (
+            "https://example.com/luna.jpg",
+            "https://example.com/media/pets/0123456789abcdef0123456789abcdef.png",
+            "/media/pets/../../settings.py",
+            "/media/pets/luna.png",
+            "/media/otros/0123456789abcdef0123456789abcdef.png",
+            "",
+        ):
+            self.assertIsNone(uploaded_photo_name(url), url)
+        self.assertEqual(
+            uploaded_photo_name("/media/pets/0123456789abcdef0123456789abcdef.png"),
+            "pets/0123456789abcdef0123456789abcdef.png",
+        )
+
+        photo = PetPhoto.objects.create(
+            pet=self.pet, url="https://example.com/luna.jpg"
+        )
+        with self.captureOnCommitCallbacks(execute=True) as callbacks:
+            photo.delete()
+        self.assertEqual(callbacks, [])
+
     def test_future_birth_date_is_rejected(self):
         self.client.force_authenticate(self.owner)
         response = self.client.post(

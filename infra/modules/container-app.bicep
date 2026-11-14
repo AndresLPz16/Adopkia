@@ -17,12 +17,20 @@ param mysqlApplicationLogin string
 param appIdentityClientId string
 param mediaStorageAccountName string
 param mediaStorageContainerName string
-param emailBackend string
+// Correo saliente. Sin emailHost se usa el backend de consola: el código de
+// verificación queda en los registros del contenedor y no se envía.
+param emailHost string
+param emailPort string
+param emailHostUser string
+@secure()
+param emailHostPassword string
+param defaultFromEmail string
 param tags object
 
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 var isPlaceholder = containerImage == placeholderImage
 var effectivePort = isPlaceholder ? 80 : appPort
+var useSmtp = !empty(emailHost)
 
 // El portal y la API se sirven desde este mismo host, así que no hace falta
 // CORS: basta con permitir el nombre público de la aplicación.
@@ -80,6 +88,11 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
             {
               name: 'mysql-app-password'
               value: mysqlApplicationLoginPassword
+            }
+            {
+              name: 'email-host-password'
+              // Un secreto no puede estar vacío; sin SMTP no se usa.
+              value: empty(emailHostPassword) ? 'sin-configurar' : emailHostPassword
             }
           ]
     }
@@ -162,7 +175,25 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
               }
               {
                 name: 'EMAIL_BACKEND'
-                value: emailBackend
+                value: useSmtp
+                  ? 'django.core.mail.backends.smtp.EmailBackend'
+                  : 'django.core.mail.backends.console.EmailBackend'
+              }
+              {
+                name: 'EMAIL_HOST'
+                value: emailHost
+              }
+              {
+                name: 'EMAIL_PORT'
+                value: emailPort
+              }
+              {
+                name: 'EMAIL_HOST_USER'
+                value: emailHostUser
+              }
+              {
+                name: 'DEFAULT_FROM_EMAIL'
+                value: empty(defaultFromEmail) ? emailHostUser : defaultFromEmail
               }
               {
                 name: 'WEB_CONCURRENCY'
@@ -179,6 +210,10 @@ resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
                   {
                     name: 'DB_PASSWORD'
                     secretRef: 'mysql-app-password'
+                  }
+                  {
+                    name: 'EMAIL_HOST_PASSWORD'
+                    secretRef: 'email-host-password'
                   }
                 ]
           )
