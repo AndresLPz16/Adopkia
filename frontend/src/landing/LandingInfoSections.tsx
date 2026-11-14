@@ -1,3 +1,4 @@
+import { ArrowRight, Heart } from "lucide-react";
 // Secciones estáticas: cómo funciona el proceso y preguntas frecuentes.
 export function LandingInfoSections() {
   return (
@@ -8,7 +9,7 @@ export function LandingInfoSections() {
         aria-labelledby="landing-process-title"
       >
         <div className="landing-process__intro">
-          <p className="landing-eyebrow"><span aria-hidden="true">♥</span> Un proceso claro y acompañado</p>
+          <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Un proceso claro y acompañado</p>
           <h2 id="landing-process-title">Conoce, conecta y acompaña.</h2>
           <p>
             Cada adopción empieza con información clara y continúa junto a las
@@ -33,7 +34,7 @@ export function LandingInfoSections() {
           </li>
         </ol>
         <a className="landing-process__link" href="#mascotas">
-          Ver mascotas disponibles <span aria-hidden="true">→</span>
+          Ver mascotas disponibles <ArrowRight size={16} aria-hidden="true" />
         </a>
       </section>
       <section
@@ -42,7 +43,7 @@ export function LandingInfoSections() {
         aria-labelledby="landing-faq-title"
       >
         <div className="landing-faq__intro">
-          <p className="landing-eyebrow"><span aria-hidden="true">♥</span> Antes de empezar</p>
+          <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Antes de empezar</p>
           <h2 id="landing-faq-title">Preguntas frecuentes</h2>
           <p>Información práctica para dar tus primeros pasos en Adopkia.</p>
         </div>
@@ -89,7 +90,7 @@ export function LandingInfoSections() {
           </details>
         </div>
         <a className="landing-faq__link" href="#mascotas">
-          Explorar mascotas <span aria-hidden="true">→</span>
+          Explorar mascotas <ArrowRight size={16} aria-hidden="true" />
         </a>
       </section>
     </>

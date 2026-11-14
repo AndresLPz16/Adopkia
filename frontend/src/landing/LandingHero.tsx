@@ -1,3 +1,12 @@
+import {
+  Check,
+  Heart,
+  HeartHandshake,
+  HeartPulse,
+  PawPrint,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import type { PetCatalog } from "./usePetCatalog";
 
 export function LandingHero({ catalog }: { catalog: PetCatalog }) {
@@ -7,14 +16,18 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
     <>
       <section className="landing-hero">
         <div className="landing-hero__copy">
-          <p className="landing-eyebrow"><span aria-hidden="true">♥</span> Adopción responsable</p>
+          <p className="landing-eyebrow">
+            <Heart size={13} fill="currentColor" aria-hidden="true" /> Adopción responsable
+          </p>
           <h1>Tu próxima gran amistad <em>te está esperando.</em></h1>
           <p>
             Conoce mascotas de refugios verificados y encuentra esa conexión que
             cambia dos vidas para siempre.
           </p>
           <div className="landing-search">
-            <span className="landing-search__icon" aria-hidden="true">⌕</span>
+            <span className="landing-search__icon" aria-hidden="true">
+              <Search size={18} />
+            </span>
             <input
               aria-label="Buscar mascotas por nombre, especie, ciudad o personalidad"
               placeholder="¿A quién estás buscando?"
@@ -34,8 +47,12 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
             </button>
           </div>
           <div className="landing-hero__trust">
-            <span><strong>♡</strong> Adopciones con acompañamiento</span>
-            <span><strong>✓</strong> Refugios verificados</span>
+            <span>
+              <strong><Heart size={14} aria-hidden="true" /></strong> Adopciones con acompañamiento
+            </span>
+            <span>
+              <strong><Check size={14} aria-hidden="true" /></strong> Refugios verificados
+            </span>
           </div>
         </div>
         <div className="landing-hero__art" aria-hidden="true">
@@ -44,11 +61,13 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
             {featuredPet?.photos?.[0]?.url ? (
               <img src={featuredPet.photos.find((item) => item.is_primary)?.url ?? featuredPet.photos[0].url} alt="" />
             ) : (
-              <span>🐾</span>
+              <span><PawPrint size={64} strokeWidth={1.5} /></span>
             )}
           </div>
           <div className="landing-hero__note">
-            <span className="landing-hero__note-icon" aria-hidden="true">♡</span>
+            <span className="landing-hero__note-icon" aria-hidden="true">
+              <Heart size={18} />
+            </span>
             <span><strong>Una nueva historia</strong><small>empieza contigo</small></span>
           </div>
           <span className="landing-hero__spark landing-hero__spark--one">✦</span>
@@ -56,9 +75,18 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
         </div>
       </section>
       <section className="landing-benefits" aria-label="Beneficios de Adopkia">
-        <div><span aria-hidden="true">⌂</span><p><strong>Refugios verificados</strong><small>Conoce organizaciones confiables</small></p></div>
-        <div><span aria-hidden="true">♡</span><p><strong>Adopción responsable</strong><small>Acompañamiento en cada paso</small></p></div>
-        <div><span aria-hidden="true">✚</span><p><strong>Bienestar primero</strong><small>Seguimiento para una vida feliz</small></p></div>
+        <div>
+          <span aria-hidden="true"><ShieldCheck size={20} /></span>
+          <p><strong>Refugios verificados</strong><small>Conoce organizaciones confiables</small></p>
+        </div>
+        <div>
+          <span aria-hidden="true"><HeartHandshake size={20} /></span>
+          <p><strong>Adopción responsable</strong><small>Acompañamiento en cada paso</small></p>
+        </div>
+        <div>
+          <span aria-hidden="true"><HeartPulse size={20} /></span>
+          <p><strong>Bienestar primero</strong><small>Seguimiento para una vida feliz</small></p>
+        </div>
       </section>
     </>
   );

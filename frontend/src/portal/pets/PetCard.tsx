@@ -1,3 +1,4 @@
+import { PawPrint } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
 import { DataCard, rows, text } from "../shared";
@@ -123,7 +124,7 @@ export function PetCard({
           />
         ) : (
           <span className="portal-pet-photo-placeholder" aria-hidden="true">
-            🐾
+            <PawPrint size={56} strokeWidth={1.5} />
           </span>
         )}
         <span>Ver información completa</span>

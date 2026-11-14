@@ -55,6 +55,14 @@ export function RequestsSection({
   );
   const [editingRequestId, setEditingRequestId] = useState("");
   const activeQuestions = questions.filter((question) => question.active !== false);
+  // Quien administra el formulario ve dos pestañas: las solicitudes primero y
+  // las preguntas aparte, para que no queden por encima de las solicitudes.
+  const canManageQuestions =
+    canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.CREATE) ||
+    canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.UPDATE) ||
+    canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.DELETE);
+  const [tab, setTab] = useState<"requests" | "questions">("requests");
+  const showRequests = !canManageQuestions || tab === "requests";
   const requestOpenerRef = useRef<HTMLButtonElement | null>(null);
   const requestDialogCloseRef = useRef<HTMLButtonElement | null>(null);
   const editingRequest = requests.find(
@@ -114,18 +122,51 @@ export function RequestsSection({
               : "Revisa cada solicitud y acompaña a las familias interesadas."
         }
       />
-      {(canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.CREATE) ||
-        canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.UPDATE) ||
-        canDo(RESOURCES.FORM_QUESTIONS, ACTIONS.DELETE)) && (
-        <QuestionManager
-          canDo={canDo}
-          submit={submit}
-          send={send}
-          questions={questions}
-          activeQuestions={activeQuestions}
-          busy={busy}
-        />
+      {canManageQuestions && (
+        <div className="portal-tabs" role="tablist" aria-label="Solicitudes y formulario">
+          <button
+            type="button"
+            role="tab"
+            id="requests-tab"
+            className="portal-tabs__tab"
+            aria-selected={tab === "requests"}
+            aria-controls="requests-panel"
+            onClick={() => setTab("requests")}
+          >
+            Solicitudes <span className="portal-tabs__count">{requests.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="questions-tab"
+            className="portal-tabs__tab"
+            aria-selected={tab === "questions"}
+            aria-controls="questions-panel"
+            onClick={() => setTab("questions")}
+          >
+            Preguntas del formulario{" "}
+            <span className="portal-tabs__count">{activeQuestions.length}</span>
+          </button>
+        </div>
       )}
+      {canManageQuestions && tab === "questions" && (
+        <div role="tabpanel" id="questions-panel" aria-labelledby="questions-tab">
+          <QuestionManager
+            canDo={canDo}
+            submit={submit}
+            send={send}
+            questions={questions}
+            activeQuestions={activeQuestions}
+            busy={busy}
+          />
+        </div>
+      )}
+      {showRequests && (
+      <div
+        role={canManageQuestions ? "tabpanel" : undefined}
+        id={canManageQuestions ? "requests-panel" : undefined}
+        aria-labelledby={canManageQuestions ? "requests-tab" : undefined}
+      >
       {role === ROLES.ADOPTER && canDo(RESOURCES.ADOPTION_REQUESTS, ACTIONS.CREATE) && (
         <RequestForm
           form={form}
@@ -172,6 +213,8 @@ export function RequestsSection({
         ))}
       </div>
       {!loading && requests.length === 0 && <EmptyState>Aún no hay solicitudes para mostrar.</EmptyState>}
+      </div>
+      )}
       {selectedRequest && (
         <RequestDialog
           selectedRequest={selectedRequest}

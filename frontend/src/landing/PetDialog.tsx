@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight, Heart, PawPrint } from "lucide-react";
 import type { PublicPetPreview } from "../publicCatalog";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
@@ -62,7 +63,7 @@ export function PetDialog({
               ))}
             </div>
           ) : (
-            <div className="landing-pet-dialog__photo landing-pet__placeholder" aria-hidden="true">🐾</div>
+            <div className="landing-pet-dialog__photo landing-pet__placeholder" aria-hidden="true"><PawPrint size={72} strokeWidth={1.5} /></div>
           )}
           {selectedPetPhotos.length > 1 && (
             <>
@@ -72,7 +73,7 @@ export function PetDialog({
                 aria-label="Foto anterior"
                 onClick={() => changePetPhoto(-1)}
               >
-                ←
+                <ArrowLeft size={18} aria-hidden="true" />
               </button>
               <button
                 className="landing-pet-dialog__gallery-arrow landing-pet-dialog__gallery-arrow--next"
@@ -80,7 +81,7 @@ export function PetDialog({
                 aria-label="Foto siguiente"
                 onClick={() => changePetPhoto(1)}
               >
-                →
+                <ArrowRight size={18} aria-hidden="true" />
               </button>
               <span className="landing-pet-dialog__gallery-count" aria-live="polite">
                 {selectedPhotoIndex + 1} / {selectedPetPhotos.length}
@@ -125,7 +126,8 @@ export function PetDialog({
             aria-pressed={likedPetIds.has(selectedPet.id)}
             onClick={() => togglePetLike(selectedPet.id)}
           >
-            {likedPetIds.has(selectedPet.id) ? "♥ Te gusta esta mascota" : "♡ Me gusta"}
+            <Heart size={16} fill={likedPetIds.has(selectedPet.id) ? "currentColor" : "none"} aria-hidden="true" />
+            {likedPetIds.has(selectedPet.id) ? "Te gusta esta mascota" : "Me gusta"}
           </button>
           <button
             className="portal-button"

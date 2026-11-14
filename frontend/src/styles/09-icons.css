@@ -1,0 +1,102 @@
+/* ==========================================================================
+   ICONOS
+   Los iconos son SVG de lucide-react y toman el color del texto que los
+   contiene. Aquí se alinean con el texto y se les da color donde antes lo
+   aportaba un emoji.
+   ========================================================================== */
+
+svg.lucide {
+  flex: 0 0 auto;
+  vertical-align: -0.15em;
+}
+
+/* Contenedores que centran un único icono. */
+.app-sidebar__group-chevron,
+.app-sidebar__link > span,
+.app-header__bell-icon,
+.app-header__notification-icon,
+.app-header__notification-action,
+.portal-shortcut > span,
+.portal-dashboard__hero-icon,
+.portal-dashboard__hero-sparkle,
+.landing-search__icon,
+.landing-hero__note-icon,
+.landing-hero__trust strong,
+.landing-benefits > div > span,
+.landing-filter--search > span,
+.landing-pet__heart,
+.landing-carousel__controls button,
+.landing-pets__empty > span,
+.app-header__notifications-empty span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Texto con un icono al lado. */
+.landing-pet__badge,
+.landing-pet__details,
+.landing-pet__action,
+.landing-process__link,
+.landing-faq__link,
+.landing-auth-screen__back,
+.landing-pet-dialog__like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.landing-pet__details {
+  flex-wrap: wrap;
+}
+
+.landing-pet__action {
+  justify-content: space-between;
+}
+
+/* Colores que antes daba el emoji. */
+.landing-eyebrow > svg,
+.landing-pet__badge > svg {
+  color: var(--brand-coral-text);
+}
+
+.landing-pet__details > svg {
+  color: var(--brand-secondary);
+}
+
+.landing-pet__heart--liked,
+.landing-pet-dialog__like--liked {
+  color: var(--brand-coral);
+}
+
+.app-header__bell-icon {
+  color: var(--brand-deep);
+}
+
+.app-header__notification-icon {
+  color: var(--role-text, var(--brand-primary));
+}
+
+.app-header__notifications-empty span {
+  color: var(--text-secondary);
+}
+
+.portal-dashboard__hero-icon {
+  color: var(--role-text, var(--brand-primary));
+}
+
+.portal-dashboard__hero-sparkle {
+  color: var(--brand-amber);
+}
+
+.portal-shortcut > span {
+  color: var(--role-text, var(--brand-primary));
+}
+
+/* Marcadores de mascota sin foto. */
+.landing-pet__placeholder,
+.portal-pet-photo-placeholder,
+.landing-hero__photo > span,
+.landing-spotlight__media > span {
+  color: color-mix(in srgb, var(--brand-primary) 45%, white);
+}

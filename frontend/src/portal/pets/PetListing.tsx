@@ -23,6 +23,15 @@ export function PetListing({
 }) {
   return role === ROLES.ADOPTER ? (
     <section className="portal-pet-carousel" aria-label="Catálogo de mascotas disponibles">
+      <div
+        className="portal-pet-carousel__viewport"
+        role="region"
+        aria-label="Listado de mascotas"
+        tabIndex={0}
+      >
+        <div className="portal-pet-carousel__track">{visiblePetCards}</div>
+      </div>
+      {/* La paginación va debajo de la lista: primero las mascotas. */}
       {petPageCount > 0 && (
         <nav className="portal-pet-pagination" aria-label="Páginas de mascotas">
           <button
@@ -60,14 +69,6 @@ export function PetListing({
           </button>
         </nav>
       )}
-      <div
-        className="portal-pet-carousel__viewport"
-        role="region"
-        aria-label="Listado de mascotas"
-        tabIndex={0}
-      >
-        <div className="portal-pet-carousel__track">{visiblePetCards}</div>
-      </div>
     </section>
   ) : (
     <>

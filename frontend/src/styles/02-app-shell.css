@@ -2,34 +2,10 @@
   min-height: 100vh;
 }
 
-.app-shell[data-role="adoptante"] {
-  --role-accent: #e11d48;
-  --role-text: #be123c;
-  --role-button: #be123c;
-  --role-tint: #fff1f2;
-  --role-glow: rgba(225, 29, 72, 0.35);
-  --role-gradient: linear-gradient(135deg, #e11d48, #f43f5e, #fb7185);
-}
-
-.app-shell[data-role="refugio"] {
-  --role-accent: #059669;
-  --role-text: #047857;
-  --role-button: #047857;
-  --role-tint: #ecfdf5;
-  --role-glow: rgba(5, 150, 105, 0.35);
-  --role-gradient: linear-gradient(135deg, #059669, #10b981, #34d399);
-}
-
-.app-shell[data-role="veterinario"] {
-  --role-accent: #2563eb;
-  --role-text: #1d4ed8;
-  --role-button: #1d4ed8;
-  --role-tint: #eff6ff;
-  --role-glow: rgba(37, 99, 235, 0.35);
-  --role-gradient: linear-gradient(135deg, #2563eb, #3b82f6, #60a5fa);
-}
-
-.app-shell[data-role="administrador"] {
+/* Una sola marca: todo el portal usa el morado de Adopkia, igual que la página
+   pública. Antes cada rol cambiaba botones, menú y cifras de color (rojo,
+   verde, azul) y el portal parecía un producto distinto según quién entrara. */
+.app-shell[data-role] {
   --role-accent: #7c3aed;
   --role-text: #6d28d9;
   --role-button: #6d28d9;
@@ -38,8 +14,41 @@
   --role-gradient: linear-gradient(135deg, #7c3aed, #8b5cf6, #c084fc);
 }
 
+/* El color propio del rol queda como un detalle: la etiqueta del rol en el
+   encabezado. */
+.app-shell[data-role="adoptante"] {
+  --role-badge: #be123c;
+  --role-badge-tint: #fff1f2;
+}
+
+.app-shell[data-role="refugio"] {
+  --role-badge: #047857;
+  --role-badge-tint: #ecfdf5;
+}
+
+.app-shell[data-role="veterinario"] {
+  --role-badge: #1d4ed8;
+  --role-badge-tint: #eff6ff;
+}
+
+.app-shell[data-role="administrador"] {
+  --role-badge: #6d28d9;
+  --role-badge-tint: #f5f3ff;
+}
+
 .app-shell[data-role] .app-header {
   border-top: 3px solid var(--role-accent);
+}
+
+.app-shell[data-role] .app-header__brand small {
+  display: inline-block;
+  width: fit-content;
+  margin-top: 0.2rem;
+  padding: 0.08rem 0.5rem;
+  color: var(--role-badge);
+  background: var(--role-badge-tint);
+  border-radius: 999px;
+  font-weight: 700;
 }
 
 .app-shell[data-role] .app-content {
@@ -92,25 +101,32 @@
   margin: 0;
 }
 
-.portal-dashboard[data-role="adoptante"] .portal-dashboard__hero {
-  background: linear-gradient(120deg, #fff0e9, #fffaf7 76%);
-}
-
-.portal-dashboard[data-role="refugio"] .portal-dashboard__hero {
-  background: linear-gradient(120deg, #e8f5f1, #f8fcfb 76%);
-}
-
-.portal-dashboard[data-role="veterinario"] .portal-dashboard__hero {
-  background: linear-gradient(120deg, #edf2fb, #fafbfe 76%);
-}
-
-.portal-dashboard[data-role="administrador"] .portal-dashboard__hero {
+.portal-dashboard[data-role] .portal-dashboard__hero {
   background: linear-gradient(120deg, #f2ecf9, #fcfaff 76%);
 }
 
-.app-shell[data-role] .portal-button {
+/* El color del rol solo rellena los botones primarios. Los secundarios
+   conservan el fondo blanco: antes heredaban el relleno y su texto oscuro
+   quedaba ilegible ("Anterior", "Siguiente", "Ver solicitud completa"). */
+.app-shell[data-role] .portal-button:not(.portal-button--secondary) {
   border-color: var(--role-button, var(--role-accent));
   background: var(--role-button, var(--role-accent));
+}
+
+/* En la paginación solo se rellena la página actual; el resto de números se
+   ve como un botón secundario para que se distinga cuál está activa. */
+.app-shell[data-role] .portal-button--secondary,
+.app-shell[data-role] .portal-pet-pagination__number:not(.is-active) {
+  color: var(--role-text, var(--brand-deep));
+  background: #fff;
+  border-color: var(--border);
+  box-shadow: 0 2px 6px rgb(15 23 42 / 6%);
+}
+
+.app-shell[data-role] .portal-pet-pagination__number.is-active {
+  color: #fff;
+  background: var(--role-button, var(--role-accent));
+  border-color: var(--role-button, var(--role-accent));
 }
 
 .app-shell[data-role] .portal-stat {
@@ -194,6 +210,11 @@
   padding: 1.35rem 0.9rem 1rem;
   background: #fff;
   border-right: 1px solid var(--border);
+}
+
+/* Solo se muestra en pantallas angostas (ver 06-portal-pets-messages.css). */
+.app-sidebar__mobile-toggle {
+  display: none;
 }
 
 .app-sidebar nav {

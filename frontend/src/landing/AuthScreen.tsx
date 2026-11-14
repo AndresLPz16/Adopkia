@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import type { AuthFlow } from "./useAuthFlow";
 
 export function AuthScreen({ auth }: { auth: AuthFlow }) {
@@ -35,7 +36,7 @@ export function AuthScreen({ auth }: { auth: AuthFlow }) {
             setView("catalog");
           }}
         >
-          ← Volver a las mascotas
+          <ArrowLeft size={16} aria-hidden="true" /> Volver a las mascotas
         </button>
       </header>
       <section className="landing-auth-screen">

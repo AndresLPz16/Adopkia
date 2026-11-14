@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../rbac/types";
 import type { Action, Resource } from "../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, text } from "./shared";
+import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusTone, text } from "./shared";
 import type { PortalDataRow, PortalSender, PortalSubmit } from "./shared";
 
 type PermissionCheck = (resource: Resource, action: Action) => boolean;
@@ -192,6 +192,9 @@ export function UsersSection({
   const [userSort, setUserSort] = useState("name-asc");
   const [userPage, setUserPage] = useState(1);
   const [usersPerPage, setUsersPerPage] = useState(10);
+  // El formulario de alta se abre con el botón "Nueva cuenta" para que la
+  // lista de cuentas quede a la vista.
+  const [createFormOpen, setCreateFormOpen] = useState(false);
   const mayCreate = canDo(RESOURCES.USERS, ACTIONS.CREATE);
   const mayUpdate = canDo(RESOURCES.USERS, ACTIONS.UPDATE);
   const mayDelete = canDo(RESOURCES.USERS, ACTIONS.DELETE);
@@ -340,12 +343,23 @@ export function UsersSection({
           </select>
         </label>
       </div>
-      <p className="portal-user-list__summary" aria-live="polite">
-        {filteredUsers.length === 0
-          ? "No hay usuarios para mostrar."
-          : `Mostrando ${pageStart + 1}–${Math.min(pageStart + usersPerPage, filteredUsers.length)} de ${filteredUsers.length} usuarios`}
-      </p>
-      {(mayCreate || (editingUser && mayUpdate)) && (
+      <div className="portal-user-toolbar">
+        <p className="portal-user-list__summary" aria-live="polite">
+          {filteredUsers.length === 0
+            ? "No hay usuarios para mostrar."
+            : `Mostrando ${pageStart + 1}–${Math.min(pageStart + usersPerPage, filteredUsers.length)} de ${filteredUsers.length} usuarios`}
+        </p>
+        {mayCreate && !editingUser && !createFormOpen && (
+          <button
+            className="portal-button"
+            type="button"
+            onClick={() => setCreateFormOpen(true)}
+          >
+            Nueva cuenta
+          </button>
+        )}
+      </div>
+      {((mayCreate && createFormOpen) || (editingUser && mayUpdate)) && (
         <form className="portal-form" onSubmit={submit(async () => {
           const payload: Record<string, unknown> = {
             name: form.name,
@@ -359,12 +373,13 @@ export function UsersSection({
             setError("Ingresa una contraseña para la nueva cuenta.");
             return;
           }
-          await send(
+          const saved = await send(
             editingUser ? `/api/v1/auth/users/${editingUser}/` : "/api/v1/auth/users/",
             editingUser ? "PATCH" : "POST",
             payload,
             editingUser ? "Cuenta actualizada." : "Cuenta creada.",
           );
+          if (saved !== false && !editingUser) setCreateFormOpen(false);
         })}>
           <h2>{editingUser ? "Editar cuenta" : "Crear cuenta"}</h2>
           <Field label="Nombre completo" name="name" value={form.name ?? ""} onChange={setValue} required />
@@ -376,6 +391,7 @@ export function UsersSection({
           <div className="portal-form__actions">
             <button className="portal-button" disabled={busy}>{busy ? "Guardando…" : editingUser ? "Guardar cambios" : "Crear cuenta"}</button>
             {editingUser && <button className="portal-button portal-button--secondary" type="button" onClick={() => { setEditingUser(""); setForm({}); }}>Cancelar edición</button>}
+            {!editingUser && <button className="portal-button portal-button--secondary" type="button" onClick={() => { setCreateFormOpen(false); setForm({}); }}>Cancelar</button>}
           </div>
         </form>
       )}
@@ -384,14 +400,23 @@ export function UsersSection({
           const canManageAccount =
             isPlatformSuperadmin ||
             (text(account.role) !== ROLES.ADMIN && account.is_platform_superadmin !== true);
+          const status =
+            account.active === false
+              ? "desactivada"
+              : availableRoles.find((item) => item.value === text(account.role))?.label ??
+                roleNames[text(account.role)] ??
+                text(account.role);
           return (
-            <DataCard
-              key={text(account.id)}
-              title={text(account.name)}
-              subtitle={`${account.username ? `@${text(account.username)} · ` : ""}${text(account.email)} · Cuenta #${text(account.id)}`}
-              status={account.active === false ? "desactivada" : availableRoles.find((item) => item.value === text(account.role))?.label ?? roleNames[text(account.role)] ?? text(account.role)}
-              actions={
-                <>
+            // Fila compacta: una cuenta por línea en lugar de una tarjeta alta.
+            <article className="portal-user-row" key={text(account.id)}>
+              <div className="portal-user-row__identity">
+                <h3>{text(account.name) || "Registro"}</h3>
+                <p>{`${account.username ? `@${text(account.username)} · ` : ""}${text(account.email)} · Cuenta #${text(account.id)}`}</p>
+              </div>
+              <span className={`portal-badge portal-badge--${statusTone(status)}`}>
+                {labelStatus(status)}
+              </span>
+              <div className="portal-user-row__actions">
                   {mayUpdate && canManageAccount && (
                     <button className="portal-link" onClick={() => {
                       setEditingUser(text(account.id));
@@ -420,9 +445,8 @@ export function UsersSection({
                       }
                     }}>Eliminar</button>
                   )}
-                </>
-              }
-            />
+              </div>
+            </article>
           );
         })}
       </div>

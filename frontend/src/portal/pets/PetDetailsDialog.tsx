@@ -1,3 +1,4 @@
+import { PawPrint } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
 import { rows, text } from "../shared";
@@ -75,7 +76,7 @@ export function PetDetailsDialog({
                 </div>
               ) : (
                 <div className="portal-pet-photo-placeholder" aria-hidden="true">
-                  🐾
+                  <PawPrint size={72} strokeWidth={1.5} />
                 </div>
               )}
               {photos.length > 1 && (

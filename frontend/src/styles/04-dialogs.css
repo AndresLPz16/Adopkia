@@ -393,7 +393,9 @@
 
 .landing-bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 430px);
+  /* Una sola columna: la segunda (de al menos 300px) quedó sin contenido y en
+     pantallas angostas reducía el texto a una palabra por línea. */
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: clamp(2rem, 7vw, 6rem);
   padding: 4rem clamp(1rem, 8vw, 7rem);

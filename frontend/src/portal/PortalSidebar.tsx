@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { sidebarGroupDefinitions, sidebarGroupIcons } from "./navigation";
+import { ChevronDown, Menu, X } from "lucide-react";
+import { GroupIcon, SectionIcon } from "../ui/icons";
+import { sidebarGroupDefinitions } from "./navigation";
 
 export function PortalSidebar({
   section,
@@ -47,10 +49,42 @@ export function PortalSidebar({
     expandedSidebarGroup ??
     sidebarGroups.find((group) => group.sections.includes(section))?.key;
 
+  // En pantallas angostas el menú empieza plegado para que el contenido se vea
+  // sin desplazarse; en escritorio el botón no se muestra y el menú siempre
+  // está visible (lo decide la hoja de estilos).
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [section]);
+
   return (
     <aside className="app-sidebar">
       <p>{sidebarCopy.heading}</p>
-      <nav aria-label="Navegación principal">
+      <button
+        className="app-sidebar__mobile-toggle"
+        type="button"
+        aria-label={
+          mobileMenuOpen
+            ? "Cerrar menú de navegación"
+            : "Abrir menú de navegación"
+        }
+        aria-expanded={mobileMenuOpen}
+        aria-controls="portal-navigation"
+        onClick={() => setMobileMenuOpen((open) => !open)}
+      >
+        <span className="app-sidebar__mobile-toggle-icon" aria-hidden="true">
+          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+        </span>
+        <span className="app-sidebar__mobile-toggle-text">
+          <small>Menú</small>
+          <strong>{visibleSectionNames[section] ?? "Permisos por rol"}</strong>
+        </span>
+      </button>
+      <nav
+        id="portal-navigation"
+        aria-label="Navegación principal"
+        data-mobile-open={mobileMenuOpen}
+      >
         {sidebarGroups.map((group) => (
           <div
             className="app-sidebar__group"
@@ -71,13 +105,15 @@ export function PortalSidebar({
               }
             >
               <span className="app-sidebar__group-icon" aria-hidden="true">
-                {sidebarGroupIcons[group.key] ?? "◇"}
+                <GroupIcon name={group.key} />
               </span>
               <span className="app-sidebar__group-label">{group.label}</span>
               <span className="app-sidebar__group-count" aria-hidden="true">
                 {group.sections.length}
               </span>
-              <span className="app-sidebar__group-chevron" aria-hidden="true">⌄</span>
+              <span className="app-sidebar__group-chevron" aria-hidden="true">
+                <ChevronDown size={16} />
+              </span>
             </button>
             <div
               className="app-sidebar__group-links"
@@ -91,7 +127,9 @@ export function PortalSidebar({
                   aria-current={section === key ? "page" : undefined}
                   onClick={() => navTo(key)}
                 >
-                  <span aria-hidden="true">{({ dashboard: "⌂", pets: "♡", requests: "▤", adoptions: "⌂", messages: "✉", records: "+", shelters: "⌂", notifications: "♧", profile: "◉", statistics: "▥", users: "♙", permissions: "▦" } as Record<string, string>)[key] ?? "›"}</span>
+                  <span aria-hidden="true">
+                    <SectionIcon name={key} size={16} />
+                  </span>
                   {visibleSectionNames[key] ?? "Permisos por rol"}
                 </button>
               ))}
