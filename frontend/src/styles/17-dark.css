@@ -127,8 +127,7 @@
   border-color: #f87171;
 }
 
-:root[data-theme="dark"] .portal-field__error,
-:root[data-theme="dark"] .portal-link--danger {
+:root[data-theme="dark"] .portal-field__error {
   color: #fca5a5;
 }
 
@@ -229,4 +228,9 @@
 
 :root[data-theme="dark"] input[type="search"] {
   background: var(--surface-muted);
+}
+
+/* Va después de .portal-link para que las acciones destructivas sigan en rojo. */
+:root[data-theme="dark"] .portal-link--danger {
+  color: #fca5a5;
 }
