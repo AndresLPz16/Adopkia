@@ -1,0 +1,27 @@
+/* ==========================================================================
+   PANTALLA DE ERROR
+   Se muestra cuando un componente falla al dibujarse (ui/ErrorBoundary.tsx).
+   ========================================================================== */
+
+.app-error h1 {
+  font-size: 1.5rem;
+}
+
+.app-error p {
+  margin: 0.65rem 0 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.app-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.app-error__actions a.portal-button {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}

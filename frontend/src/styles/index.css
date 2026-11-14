@@ -17,3 +17,4 @@
 @import "./12-motion.css"; /* Aparición al desplazarse, inclinación 3D, transiciones y portada */
 @import "./13-confirm.css"; /* Diálogo de confirmación propio */
 @import "./14-field-errors.css"; /* Errores de validación junto al campo */
+@import "./15-app-error.css"; /* Pantalla de error general */
