@@ -1,0 +1,31 @@
+/* ==========================================================================
+   ERRORES JUNTO AL CAMPO
+   El servidor devuelve los errores de validación por campo; se muestran
+   debajo del control que hay que corregir (Field en portal/shared.tsx).
+   ========================================================================== */
+
+.portal-field--invalid input,
+.portal-field--invalid select,
+.portal-field--invalid textarea {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.portal-field--invalid input:focus-visible,
+.portal-field--invalid select:focus-visible,
+.portal-field--invalid textarea:focus-visible {
+  outline-color: #dc2626;
+}
+
+.portal-field__error {
+  color: #b91c1c;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* El formulario alinea los campos por abajo; con un mensaje debajo de uno,
+   el campo vecino se descolgaba. Con errores, la fila se alinea por arriba. */
+.portal-form:has(.portal-field--invalid) > .portal-field {
+  align-self: start;
+}
