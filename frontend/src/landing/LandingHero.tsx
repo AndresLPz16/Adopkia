@@ -1,3 +1,4 @@
+import { FadeImage } from "../ui/loading";
 import {
   Check,
   Heart,
@@ -59,7 +60,7 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
           <div className="landing-hero__blob" />
           <div className="landing-hero__photo">
             {featuredPet?.photos?.[0]?.url ? (
-              <img src={featuredPet.photos.find((item) => item.is_primary)?.url ?? featuredPet.photos[0].url} alt="" />
+              <FadeImage src={featuredPet.photos.find((item) => item.is_primary)?.url ?? featuredPet.photos[0].url} alt="" />
             ) : (
               <span><PawPrint size={64} strokeWidth={1.5} /></span>
             )}

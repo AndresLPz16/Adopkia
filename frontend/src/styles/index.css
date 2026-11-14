@@ -13,3 +13,4 @@
 @import "./08-notifications.css"; /* Campana y panel de notificaciones */
 @import "./09-icons.css"; /* Alineación y color de los iconos (lucide-react) */
 @import "./10-layout-refinements.css"; /* Pestañas, lista compacta de usuarios y paginación discreta */
+@import "./11-typography-loading.css"; /* Fuentes, esqueletos de carga, imágenes y avisos flotantes */

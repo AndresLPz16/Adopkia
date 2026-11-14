@@ -1,3 +1,4 @@
+import { FadeImage } from "../../ui/loading";
 import { PawPrint } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
@@ -116,7 +117,7 @@ export function PetCard({
         }}
       >
         {typeof primaryPhoto?.url === "string" ? (
-          <img
+          <FadeImage
             className="portal-pet-photo"
             src={primaryPhoto.url}
             alt=""

@@ -1,3 +1,4 @@
+import { FadeImage, SkeletonGrid } from "../ui/loading";
 import { ArrowLeft, ArrowRight, Heart, MapPin, PawPrint, Search } from "lucide-react";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
@@ -156,7 +157,7 @@ export function PetCarousel({
                       }}
                     >
                       {photo?.url ? (
-                        <img src={photo.url} alt="" loading="lazy" />
+                        <FadeImage src={photo.url} alt="" loading="lazy" />
                       ) : (
                         <span className="landing-pet__placeholder" aria-hidden="true"><PawPrint size={56} strokeWidth={1.5} /></span>
                       )}
@@ -226,9 +227,7 @@ export function PetCarousel({
           </div>
         )}
         {petsLoading && (
-          <div className="landing-pets__empty" role="status">
-            <span aria-hidden="true"><Heart size={28} /></span><strong>Buscando mascotas disponibles…</strong>
-          </div>
+          <SkeletonGrid label="Buscando mascotas disponibles…" />
         )}
       </div>
     </section>

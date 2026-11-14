@@ -1,3 +1,4 @@
+import { SkeletonGrid } from "./ui/loading";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -261,6 +262,13 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     setError("");
     setNotice("");
   }, [section]);
+
+  // Un aviso de éxito se cierra solo; los errores esperan a que se lean.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const setValue = (name: string, value: string) => {
     setForm((current) => ({ ...current, [name]: value }));
@@ -543,9 +551,12 @@ function Portal({ onLogout }: { onLogout: () => void }) {
           navTo={navTo}
         />
         <main className="app-content">
-          {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error">×</button></div>}
-          {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso">×</button></div>}
-          {loading && <p className="portal-loading" role="status">Cargando información…</p>}
+          {/* Avisos flotantes: no desplazan el contenido al aparecer. */}
+          <div className="portal-toasts">
+            {error && <div className="portal-alert portal-alert--error" role="alert">{error}<button onClick={() => setError("")} aria-label="Cerrar error">×</button></div>}
+            {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso">×</button></div>}
+          </div>
+          {loading && <SkeletonGrid label="Cargando información…" />}
           <SectionContent
             {...{
               section,

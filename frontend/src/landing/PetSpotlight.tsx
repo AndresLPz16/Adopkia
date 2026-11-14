@@ -1,3 +1,4 @@
+import { FadeImage } from "../ui/loading";
 import { Heart, PawPrint } from "lucide-react";
 import type { PublicPetPreview } from "../publicCatalog";
 import type { PetCatalog } from "./usePetCatalog";
@@ -46,7 +47,7 @@ export function PetSpotlight({
               featuredPet.photos.find((item) => item.is_primary) ??
               featuredPet.photos[0];
             return photo?.url ? (
-              <img src={photo.url} alt={`Foto de ${featuredPet.name}`} loading="lazy" />
+              <FadeImage src={photo.url} alt={`Foto de ${featuredPet.name}`} loading="lazy" />
             ) : (
               <span aria-hidden="true"><PawPrint size={64} strokeWidth={1.5} /></span>
             );

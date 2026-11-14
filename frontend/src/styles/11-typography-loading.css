@@ -1,0 +1,184 @@
+/* ==========================================================================
+   TIPOGRAFÍA Y ESTADOS DE CARGA
+   ========================================================================== */
+
+/* --- Tipografía ------------------------------------------------------------
+   Las fuentes van dentro del proyecto (paquetes @fontsource, importados en
+   main.tsx): todos los visitantes ven la misma letra y el sitio no depende de
+   un servicio externo. Inter para el texto y Plus Jakarta Sans para títulos. */
+:root {
+  --font-body: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading: "Plus Jakarta Sans Variable", "Inter Variable", ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+.app-header__brand,
+.landing-header__brand,
+.portal-stat strong {
+  font-family: var(--font-heading);
+}
+
+/* Plus Jakarta Sans es más ancha que la fuente del sistema: los títulos
+   grandes necesitan menos compresión entre letras. */
+.landing-hero h1 {
+  letter-spacing: -0.035em;
+}
+
+h2,
+.portal-title h1 {
+  letter-spacing: -0.02em;
+}
+
+/* --- Texto solo para lectores de pantalla ---------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Esqueletos de carga ---------------------------------------------------- */
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.skeleton-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.skeleton-card {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+
+.skeleton {
+  height: 0.8rem;
+  background: linear-gradient(
+    90deg,
+    var(--surface-tint) 25%,
+    color-mix(in srgb, var(--surface-tint) 55%, white) 50%,
+    var(--surface-tint) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 0.5rem;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton--media {
+  height: 150px;
+  border-radius: 0.75rem;
+}
+
+.skeleton--title {
+  width: 60%;
+  height: 1.1rem;
+}
+
+.skeleton--short {
+  width: 40%;
+}
+
+@media (max-width: 900px) {
+  .skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .skeleton-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Imágenes: aparecen con una transición al terminar de cargar ----------- */
+img[data-loaded] {
+  transition: opacity 0.35s ease;
+}
+
+img[data-loaded="false"] {
+  opacity: 0;
+}
+
+/* Mientras carga se ve un fondo suave con el tamaño ya reservado. */
+.portal-pet-photo-open {
+  position: relative;
+}
+
+.portal-pet-photo[data-loaded] {
+  background: var(--surface-tint);
+}
+
+/* --- Avisos flotantes ------------------------------------------------------- */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-toasts {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 40;
+  display: grid;
+  width: min(420px, calc(100vw - 2rem));
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.portal-toasts .portal-alert {
+  margin: 0;
+  pointer-events: auto;
+  box-shadow: var(--shadow-lg);
+  animation: toast-in 0.3s var(--motion-ease) both;
+}
+
+@media (max-width: 760px) {
+  .portal-toasts {
+    right: 1rem;
+    bottom: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .portal-toasts .portal-alert {
+    animation: none;
+  }
+
+  img[data-loaded] {
+    transition: none;
+  }
+}
