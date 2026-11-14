@@ -557,6 +557,8 @@ function Portal({ onLogout }: { onLogout: () => void }) {
             {notice && <div className="portal-alert portal-alert--success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso">×</button></div>}
           </div>
           {loading && <SkeletonGrid label="Cargando información…" />}
+          {/* La clave reinicia la animación de entrada al cambiar de sección. */}
+          <div className="portal-view" key={section}>
           <SectionContent
             {...{
               section,
@@ -620,6 +622,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
               loading,
             }}
           />
+          </div>
         </main>
       </div>
     </div>

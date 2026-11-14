@@ -1,3 +1,4 @@
+import { revealRef } from "../ui/motion";
 import { FadeImage } from "../ui/loading";
 import {
   Check,
@@ -75,7 +76,7 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
           <span className="landing-hero__spark landing-hero__spark--two">✳</span>
         </div>
       </section>
-      <section className="landing-benefits" aria-label="Beneficios de Adopkia">
+      <section className="landing-benefits" aria-label="Beneficios de Adopkia" ref={revealRef}>
         <div>
           <span aria-hidden="true"><ShieldCheck size={20} /></span>
           <p><strong>Refugios verificados</strong><small>Conoce organizaciones confiables</small></p>

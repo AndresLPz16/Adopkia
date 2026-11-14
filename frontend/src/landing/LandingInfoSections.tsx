@@ -1,3 +1,4 @@
+import { revealRef } from "../ui/motion";
 import { ArrowRight, Heart } from "lucide-react";
 // Secciones estáticas: cómo funciona el proceso y preguntas frecuentes.
 export function LandingInfoSections() {
@@ -5,6 +6,7 @@ export function LandingInfoSections() {
     <>
       <section
         className="landing-process"
+        ref={revealRef}
         id="como-funciona"
         aria-labelledby="landing-process-title"
       >
@@ -39,6 +41,7 @@ export function LandingInfoSections() {
       </section>
       <section
         className="landing-faq"
+        ref={revealRef}
         id="preguntas-frecuentes"
         aria-labelledby="landing-faq-title"
       >

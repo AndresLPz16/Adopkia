@@ -1,3 +1,4 @@
+import { revealRef } from "../ui/motion";
 import { FadeImage } from "../ui/loading";
 import { Heart, PawPrint } from "lucide-react";
 import type { PublicPetPreview } from "../publicCatalog";
@@ -22,6 +23,7 @@ export function PetSpotlight({
   return (
     <section
       className="landing-spotlight"
+      ref={revealRef}
       aria-labelledby="landing-spotlight-title"
     >
       <div className="landing-spotlight__intro">
