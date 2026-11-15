@@ -1,3 +1,4 @@
+import { Avatar } from "../ui/Avatar";
 import { ThemeToggle } from "../ui/theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlarmClock, Bell, BellOff, Check, ClipboardList, Mail, PawPrint } from "lucide-react";
@@ -17,7 +18,7 @@ export function PortalHeader({
   onLogout,
 }: {
   role: string;
-  user: { name: string };
+  user: { name: string; photoUrl?: string | null };
   notifications: PortalDataRow[];
   canDo: PermissionCheck;
   send: PortalSender;
@@ -57,7 +58,7 @@ export function PortalHeader({
 
   return (
     <header className="app-header">
-      <button className="app-header__brand" type="button" onClick={() => navTo("dashboard")}>
+      <button className="app-header__brand" type="button" aria-label="Adopkia, ir al inicio" onClick={() => navTo("dashboard")}>
         <img className="app-header__logo" src="/logo-adopkia-mark.png" alt="" />
         <span>Adopkia <small>{roleNames[role] ?? "Mi espacio"}</small></span>
       </button>
@@ -185,7 +186,10 @@ export function PortalHeader({
 
         <ThemeToggle />
         <div className="app-header__account">
-          <div><strong>{user.name}</strong><span>{roleNames[role] ?? role}</span></div>
+          <div className="app-header__identity">
+            <Avatar name={user.name} photoUrl={user.photoUrl} size="sm" />
+            <div><strong>{user.name}</strong><span>{roleNames[role] ?? role}</span></div>
+          </div>
           <button type="button" onClick={onLogout}>Cerrar sesión</button>
         </div>
       </div>

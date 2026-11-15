@@ -29,6 +29,8 @@ export type PortalPetSaver = (
   photoUrls: string[],
   photoFiles: File[],
 ) => Promise<boolean>;
+/** Sube una foto de perfil nueva, o la quita si recibe `null`. */
+export type PortalPhotoSaver = (file: File | null) => Promise<boolean>;
 export type PortalSubmit = (callback: () => Promise<void>) => (event: FormEvent) => void;
 export type PermissionCheck = (resource: Resource, action: Action) => boolean;
 
