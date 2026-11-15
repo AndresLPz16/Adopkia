@@ -3,6 +3,7 @@ from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
+from .avatars import AVATAR_FORMATS, AVATAR_MAX_BYTES
 from .models import PermissionResource, Role, RolePermission, User
 from .rbac import ACTIONS, RESOURCES, get_permission_catalog
 
@@ -64,6 +65,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_platform_superadmin",
             "registered_at",
             "password",
+            "photo_url",
         }
         attempted = immutable_fields.intersection(data)
         if attempted:
@@ -86,6 +88,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "active",
             "is_platform_superadmin",
             "registered_at",
+            "photo_url",
         )
         read_only_fields = (
             "id",
@@ -96,7 +99,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "active",
             "is_platform_superadmin",
             "registered_at",
+            "photo_url",
         )
+
+
+class ProfilePhotoSerializer(serializers.Serializer):
+    image = serializers.ImageField(write_only=True)
+
+    def validate_image(self, image):
+        if image.size > AVATAR_MAX_BYTES:
+            raise serializers.ValidationError(_("La imagen no puede superar 5 MB."))
+        if image.image.format not in AVATAR_FORMATS:
+            raise serializers.ValidationError(_("Usa una imagen JPG, PNG o WEBP."))
+        return image
 
 
 class UserAdminSerializer(serializers.ModelSerializer):

@@ -8,3 +8,5 @@ class UsersConfig(AppConfig):
         from myproject.model_i18n import apply_localized_model_labels
 
         apply_localized_model_labels()
+
+        from . import avatars  # noqa: F401  (registra la limpieza de fotos de perfil)

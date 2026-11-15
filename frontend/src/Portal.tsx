@@ -17,7 +17,12 @@ import {
   rows,
   text,
 } from "./portal/shared";
-import type { FieldErrors, PortalDataRow, PortalPetSaver } from "./portal/shared";
+import type {
+  FieldErrors,
+  PortalDataRow,
+  PortalPetSaver,
+  PortalPhotoSaver,
+} from "./portal/shared";
 import { loadAllPages } from "./portal/loadAllPages";
 import { loadSectionData } from "./portal/loadSectionData";
 import {
@@ -97,6 +102,8 @@ function Portal({ onLogout }: { onLogout: () => void }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // Foto de perfil cambiada en esta visita; `undefined` = la que llegó al entrar.
+  const [changedPhotoUrl, setChangedPhotoUrl] = useState<string | null | undefined>(undefined);
   const dynamicResourceSections = dynamicResources.map(
     (resource) => `resource:${resource.key}`,
   );
@@ -487,6 +494,41 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  const savePhoto: PortalPhotoSaver = async (file) => {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      let body: FormData | undefined;
+      if (file) {
+        body = new FormData();
+        body.append("image", file);
+      }
+      const response = await request("/api/v1/auth/me/photo/", {
+        method: file ? "POST" : "DELETE",
+        body,
+      });
+      const saved = (await responseData(response)) as PortalDataRow | null;
+      const savedUrl = saved?.photo_url;
+      setChangedPhotoUrl(typeof savedUrl === "string" && savedUrl ? savedUrl : null);
+      setNotice(file ? "Foto de perfil actualizada." : "Foto de perfil eliminada.");
+      await reload(["/api/v1/auth/me/"]);
+      return true;
+    } catch (caught) {
+      // El error de validación viene en el campo "image"; se muestra tal cual.
+      const message =
+        caught instanceof ApiError && caught.fieldErrors.image
+          ? caught.fieldErrors.image.join(" ")
+          : caught instanceof Error
+            ? caught.message
+            : "No se pudo cambiar la foto de perfil.";
+      setError(message);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submit = (callback: () => Promise<void>) => (event: FormEvent) => {
     event.preventDefault();
     void callback();
@@ -596,7 +638,10 @@ function Portal({ onLogout }: { onLogout: () => void }) {
     <div className="app-shell" data-role={role}>
       <PortalHeader
         role={role}
-        user={user}
+        user={{
+          name: user.name,
+          photoUrl: changedPhotoUrl !== undefined ? changedPhotoUrl : user.photoUrl,
+        }}
         notifications={notifications}
         canDo={canDo}
         send={send}
@@ -681,6 +726,7 @@ function Portal({ onLogout }: { onLogout: () => void }) {
               submit,
               send,
               savePet,
+              savePhoto,
               setError,
               busy,
               loading,

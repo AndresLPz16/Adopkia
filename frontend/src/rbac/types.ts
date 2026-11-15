@@ -52,6 +52,7 @@ export interface AuthUser {
   roles: readonly string[];
   active?: boolean;
   isPlatformSuperadmin?: boolean;
+  photoUrl?: string | null;
 }
 
 export interface BackendUserProfile {
@@ -61,6 +62,7 @@ export interface BackendUserProfile {
   role: string;
   active?: boolean;
   is_platform_superadmin?: boolean;
+  photo_url?: string | null;
 }
 
 export interface BackendRolePermissions {

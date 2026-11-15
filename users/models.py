@@ -150,6 +150,8 @@ class User(AbstractBaseUser):
         db_column="es_superadministrador",
     )
     registered_at = SQLDateTimeField(auto_now_add=True, db_column="fecha_registro")
+    # URL de la foto de perfil en el almacenamiento; se cambia con /auth/me/photo/.
+    photo_url = models.CharField(max_length=500, null=True, db_column="foto_url")
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name"]

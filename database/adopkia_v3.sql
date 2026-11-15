@@ -118,6 +118,7 @@ CREATE TABLE usuario (
   es_superadministrador BOOLEAN   NOT NULL DEFAULT FALSE,
   nombre_usuario  VARCHAR(30)      NOT NULL COMMENT 'Alias único; también sirve para iniciar sesión',
   correo_verificado BOOLEAN        NOT NULL DEFAULT FALSE,
+  foto_url        VARCHAR(500)     NULL COMMENT 'Foto de perfil subida por la cuenta',
   PRIMARY KEY (id_usuario),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
   CONSTRAINT uq_usuario_nombre_usuario UNIQUE (nombre_usuario),

@@ -45,6 +45,7 @@ function toAuthUser(profile: BackendUserProfile): AuthUser {
     roles: [profile.role],
     active: profile.active,
     isPlatformSuperadmin: profile.is_platform_superadmin,
+    photoUrl: profile.photo_url ?? null,
   };
 }
 

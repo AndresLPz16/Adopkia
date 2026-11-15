@@ -17,6 +17,7 @@ import type {
   PermissionCheck,
   PortalDataRow,
   PortalPetSaver,
+  PortalPhotoSaver,
   PortalSender,
   PortalSubmit,
 } from "./shared";
@@ -84,6 +85,7 @@ export type SectionContentProps = {
   submit: PortalSubmit;
   send: PortalSender;
   savePet: PortalPetSaver;
+  savePhoto: PortalPhotoSaver;
   setError: (value: string) => void;
   busy: boolean;
   loading: boolean;
@@ -147,6 +149,7 @@ export function SectionContent({
   submit,
   send,
   savePet,
+  savePhoto,
   setError,
   busy,
   loading,
@@ -332,6 +335,8 @@ export function SectionContent({
                           setValue={setValue}
                           submit={submit}
                           send={send}
+                          savePhoto={savePhoto}
+                          setError={setError}
                           busy={busy}
                         />
                       : section === "users"

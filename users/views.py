@@ -1,8 +1,10 @@
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiTypes, extend_schema
@@ -24,8 +26,10 @@ from .models import (
     RolePermission,
     User,
 )
+from .avatars import delete_avatar_file, save_avatar
 from .rbac import get_permission_catalog
 from .serializers import (
+    ProfilePhotoSerializer,
     RoleDefinitionSerializer,
     RolePermissionSerializer,
     PermissionResourceSerializer,
@@ -161,6 +165,49 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ProfilePhotoView(APIView):
+    """Sube, reemplaza o quita la foto de perfil de la cuenta que hace la petición."""
+
+    permission_classes = (permissions.IsAuthenticated, RolePermissionRequired)
+    parser_classes = (MultiPartParser, FormParser)
+    rbac_resource = "profile"
+    # Cambiar la foto es editar el propio perfil, sea cual sea el método HTTP.
+    rbac_required_action = "update"
+
+    def _replace_photo(self, user, new_url):
+        previous_url = user.photo_url
+        with transaction.atomic():
+            user.photo_url = new_url
+            user.save(update_fields=("photo_url",))
+            if previous_url and previous_url != new_url:
+                delete_avatar_file(previous_url)
+
+    @extend_schema(
+        request=ProfilePhotoSerializer,
+        responses=UserProfileSerializer,
+        operation_id="profile_photo_upload",
+    )
+    def post(self, request):
+        serializer = ProfilePhotoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        name, url = save_avatar(serializer.validated_data["image"])
+        try:
+            self._replace_photo(request.user, url)
+        except Exception:
+            default_storage.delete(name)
+            raise
+        return Response(UserProfileSerializer(request.user).data)
+
+    @extend_schema(
+        request=None,
+        responses=UserProfileSerializer,
+        operation_id="profile_photo_delete",
+    )
+    def delete(self, request):
+        self._replace_photo(request.user, None)
+        return Response(UserProfileSerializer(request.user).data)
 
 
 class RolePermissionsView(APIView):
