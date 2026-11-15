@@ -29,6 +29,8 @@ export type PortalPetSaver = (
   photoUrls: string[],
   photoFiles: File[],
 ) => Promise<boolean>;
+/** Petición autenticada a la API (la de `useAuth`). */
+export type PortalRequest = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 /** Sube una foto de perfil nueva, o la quita si recibe `null`. */
 export type PortalPhotoSaver = (file: File | null) => Promise<boolean>;
 export type PortalSubmit = (callback: () => Promise<void>) => (event: FormEvent) => void;
