@@ -1,0 +1,84 @@
+# Corre las pruebas en cada pull request y en cada cambio que llega a main,
+# para que un fallo se vea antes de fusionar y no después de desplegar.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Un push nuevo a la misma rama cancela la ejecución anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend (tipos, pruebas y compilación)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  backend:
+    name: Backend (lint y pruebas con MySQL 8)
+    runs-on: ubuntu-latest
+    services:
+      # Mismo motor que producción: los triggers de adopkia_v3 solo existen en
+      # MySQL y sus pruebas se omiten en SQLite.
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=ci_only_root_password --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      # Valores de un solo uso: la base vive lo que dura esta ejecución.
+      DJANGO_SECRET_KEY: ci-only-not-a-real-secret
+      DJANGO_DEBUG: "true"
+      DB_ENGINE: mysql
+      DB_NAME: adopkia
+      DB_USER: root
+      DB_PASSWORD: ci_only_root_password
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            requirements.lock.txt
+      - run: python -m pip install -r requirements-dev.txt -c requirements.lock.txt
+      - name: Lint
+        run: python -m ruff check .
+      # compose.yaml arranca MySQL con esta opción; aquí se activa en caliente
+      # para que las migraciones puedan crear los triggers.
+      - name: Permitir la creación de triggers
+        run: >-
+          mysql --host=127.0.0.1 --user=root --password=ci_only_root_password
+          --execute="SET GLOBAL log_bin_trust_function_creators = 1;"
+      - name: Pruebas
+        run: python -m pytest --create-db
