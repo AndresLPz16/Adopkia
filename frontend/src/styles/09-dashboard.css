@@ -1,0 +1,336 @@
+/* Portal: panel de inicio, cifras, accesos directos y estadísticas. */
+
+/* ---------- .portal-dashboard ---------- */
+
+.portal-dashboard {
+  scroll-margin-top: 1rem;
+  animation: view-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.portal-dashboard__hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 0.5rem 0 1.25rem;
+  padding: clamp(1.2rem, 3vw, 2rem);
+  background: linear-gradient(120deg, var(--role-tint, var(--surface)), var(--surface) 75%);
+  border: 1px solid color-mix(in srgb, var(--role-accent, var(--border)) 22%, var(--surface));
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+  transition: box-shadow var(--motion-standard) ease;
+}
+
+.portal-dashboard__hero .portal-title {
+  margin: 0;
+}
+
+.portal-dashboard[data-role] .portal-dashboard__hero {
+  background: linear-gradient(120deg, #f2ecf9, #fcfaff 76%);
+}
+
+.portal-dashboard__hero::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -15%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--role-accent, var(--brand-primary)) 20%, transparent) 0%,
+    transparent 70%
+    );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: none;
+  opacity: 0.65;
+}
+
+.portal-dashboard__hero-info {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3D Floating Emblem in Dashboard Hero */
+.portal-dashboard__hero-3d {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 105px;
+  height: 105px;
+  flex: 0 0 auto;
+  perspective: 800px;
+  z-index: 1;
+}
+
+.portal-dashboard__hero-emblem {
+  position: relative;
+  display: grid;
+  width: 90px;
+  height: 90px;
+  background: var(--surface);
+  border: 2px solid color-mix(in srgb, var(--role-accent, var(--brand-primary)) 28%, var(--surface));
+  border-radius: 50%;
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--role-accent, var(--brand-primary)) 28%, transparent);
+  place-items: center;
+  transform-style: preserve-3d;
+  /* Emblema del panel de inicio. */
+  animation: float-emblem-3d 8s ease-in-out infinite;
+}
+
+.portal-dashboard__hero-icon {
+  font-size: 2.7rem;
+  filter: none;
+  color: var(--role-text, var(--brand-primary));
+}
+
+.portal-dashboard__hero-sparkle {
+  position: absolute;
+  font-size: 1.15rem;
+  pointer-events: none;
+  animation: none;
+  color: var(--brand-amber);
+}
+
+.portal-dashboard__hero-sparkle--1 {
+  top: -8px;
+  right: -8px;
+}
+
+.portal-dashboard__hero-sparkle--2 {
+  bottom: -8px;
+  left: -8px;
+  animation-delay: 1.5s;
+}
+
+.portal-dashboard__hero-sparkle {
+  animation: sparkle-float 3.2s ease-in-out infinite alternate;
+}
+
+.portal-dashboard__hero-sparkle--2 {
+  animation-delay: 1.5s;
+}
+
+@media (hover: none) {
+  .portal-dashboard__hero-emblem {
+    animation: none;
+  }
+}
+
+/* Elementos con color fijo */
+:root[data-theme="dark"] .portal-dashboard[data-role] .portal-dashboard__hero {
+  background: linear-gradient(120deg, #2a2548, var(--surface) 76%);
+}
+
+
+/* ---------- .portal-stat ---------- */
+
+.app-shell[data-role] .portal-stat {
+  border-top: 3px solid var(--role-accent);
+}
+
+.portal-stat {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  min-height: 112px;
+  align-content: space-between;
+  gap: 0.8rem;
+  padding: 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 2px 12px rgb(53 44 66 / 3%);
+  transform-style: preserve-3d;
+  transition: transform 320ms var(--motion-ease), box-shadow 320ms ease, border-color 320ms ease;
+}
+
+.portal-stat span {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.portal-stat strong {
+  display: inline-block;
+  background: var(--role-gradient, var(--brand-gradient));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+  line-height: 1;
+  transition: transform 300ms var(--motion-ease);
+  font-family: var(--font-heading);
+}
+
+.portal-stat + .portal-stat {
+  min-width: 0;
+}
+
+.portal-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--role-gradient, var(--brand-gradient));
+  transition: height 0.25s ease;
+}
+
+.portal-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, var(--surface));
+}
+
+.portal-stat:hover::before {
+  height: 6px;
+}
+
+.portal-stat:hover strong {
+  transform: scale(1.03);
+}
+
+
+/* ---------- .portal-stat-grid ---------- */
+
+.portal-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 0.9rem;
+  margin: 1.5rem 0 2rem;
+  perspective: 1200px;
+}
+
+
+/* ---------- .portal-statistics ---------- */
+
+.portal-statistics__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.portal-statistics__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 1rem;
+}
+
+
+/* ---------- .portal-stat-chart ---------- */
+
+.portal-stat-chart {
+  min-width: 0;
+  padding: 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+}
+
+.portal-stat-chart h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.portal-stat-chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.portal-stat-chart__gridline {
+  stroke: var(--border);
+  stroke-dasharray: 4 5;
+}
+
+.portal-stat-chart__axis-label,
+.portal-stat-chart__label {
+  fill: var(--text-secondary);
+  font-size: 12px;
+}
+
+.portal-stat-chart__value {
+  fill: var(--text-primary);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.portal-stat-chart__bar {
+  fill: var(--brand-secondary);
+  animation: stat-bar-grow 0.65s var(--motion-ease) both;
+  transition: fill 250ms ease, filter 250ms ease;
+}
+
+.portal-stat-chart__bar:hover {
+  filter: brightness(1.15) drop-shadow(0 4px 8px rgba(124, 58, 237, 0.4));
+}
+
+
+/* ---------- .portal-shortcuts ---------- */
+
+.portal-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+  perspective: 1200px;
+}
+
+
+/* ---------- .portal-shortcut ---------- */
+
+.portal-shortcut {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  min-height: 128px;
+  align-content: start;
+  justify-items: start;
+  gap: 0.45rem;
+  padding: 1rem;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transform-style: preserve-3d;
+  transition: box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.portal-shortcut:hover {
+  transform: translateY(-3px);
+  border-color: var(--role-accent, var(--focus));
+  box-shadow: var(--shadow-3d);
+}
+
+.portal-shortcut > span {
+  display: inline-block;
+  font-size: 1.4rem;
+  transition: transform 350ms var(--motion-ease), color 350ms ease;
+  color: var(--role-text, var(--brand-primary));
+}
+
+.portal-shortcut:hover > span {
+  transform: translateY(-4px) scale(1.22) rotate(6deg);
+  color: var(--role-text, var(--role-accent, var(--brand-secondary-text)));
+}
+
+.portal-shortcut small {
+  color: var(--text-secondary);
+}
+
+.portal-shortcut > span,
+.portal-dashboard__hero-icon,
+.portal-dashboard__hero-sparkle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

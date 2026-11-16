@@ -1,0 +1,140 @@
+/* Portal: conversaciones y mensajes. */
+
+/* ---------- .portal-messages-layout ---------- */
+
+.portal-messages-layout {
+  display: grid;
+  min-height: 420px;
+  grid-template-columns: minmax(190px, 0.34fr) minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .portal-messages-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* ---------- .portal-conversation-list ---------- */
+
+.portal-conversation-list {
+  padding: 0.6rem;
+  border-right: 1px solid var(--border);
+}
+
+@media (max-width: 760px) {
+  .portal-conversation-list {
+    display: flex;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+
+/* ---------- .portal-conversation ---------- */
+
+.portal-conversation {
+  display: grid;
+  width: 100%;
+  gap: 0.25rem;
+  padding: 0.85rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  border-radius: 0.6rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.portal-conversation.is-active,
+.portal-conversation:hover {
+  background: var(--surface-tint);
+}
+
+.portal-conversation span {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .portal-conversation {
+    min-width: 145px;
+  }
+}
+
+
+/* ---------- .portal-chat ---------- */
+
+.portal-chat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.portal-chat__messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.portal-chat__form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.portal-chat__form .portal-field input {
+  min-height: 2.65rem;
+}
+
+@media (max-width: 760px) {
+  .portal-chat__form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-chat__form .portal-button {
+    min-height: 44px;
+  }
+
+  .portal-chat__messages {
+    min-height: 260px;
+  }
+}
+
+
+/* ---------- .portal-message ---------- */
+
+.portal-message {
+  max-width: min(85%, 520px);
+  padding: 0.75rem 0.9rem;
+  background: var(--surface-muted);
+  border-radius: 0.7rem 0.7rem 0.7rem 0.15rem;
+}
+
+.portal-message--mine {
+  align-self: end;
+  background: var(--surface-tint);
+  border-radius: 0.7rem 0.7rem 0.15rem 0.7rem;
+}
+
+.portal-message p {
+  margin: 0.3rem 0;
+  overflow-wrap: anywhere;
+}
+
+.portal-message small {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}

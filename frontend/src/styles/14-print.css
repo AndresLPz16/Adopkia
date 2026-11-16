@@ -1,0 +1,50 @@
+/* Impresión del informe de estadísticas. */
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body,
+  .app-shell,
+  .app-layout,
+  .app-content {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    overflow: visible;
+  }
+
+  .app-header,
+  .app-sidebar,
+  .portal-statistics__actions,
+  .portal-alert,
+  .portal-loading {
+    display: none !important;
+  }
+
+  .portal-statistics {
+    width: 100%;
+    color: #000;
+  }
+
+  .portal-statistics .portal-title {
+    margin-top: 0;
+  }
+
+  .portal-statistics .portal-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portal-stat-chart {
+    break-inside: avoid;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .portal-stat-chart__bar {
+    fill: #7545b8;
+  }
+}

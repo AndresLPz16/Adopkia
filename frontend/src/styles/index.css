@@ -1,23 +1,19 @@
 /*
-  Estilos de Adopkia divididos por área. El orden de estos @import es parte
-  del diseño: los archivos posteriores sobrescriben reglas de los anteriores,
-  así que no deben reordenarse.
+  Estilos de Adopkia, un archivo por área. Las reglas de cada componente
+  están juntas en su archivo; el modo oscuro de un componente va a
+  continuación de sus reglas generales.
 */
-@import "./01-base.css"; /* Variables de diseño, estilos globales e inicio de sesión */
-@import "./02-app-shell.css"; /* Estructura del portal: cabecera, menú lateral y contenido */
-@import "./03-landing.css"; /* Página pública: cabecera, portada, catálogo, destacado, proceso y preguntas */
-@import "./04-dialogs.css"; /* Diálogos de solicitud y de mascota, pantalla de acceso y pie de la página pública */
-@import "./05-portal.css"; /* Componentes del portal: tarjetas, formularios, botones, paginación y gráficas */
-@import "./06-portal-pets-messages.css"; /* Portal: fotos y detalle de mascotas, carrusel, conversaciones y mensajes */
-@import "./07-interactions.css"; /* Microinteracciones, transiciones y efectos 3D */
-@import "./08-notifications.css"; /* Campana y panel de notificaciones */
-@import "./09-icons.css"; /* Alineación y color de los iconos (lucide-react) */
-@import "./10-layout-refinements.css"; /* Pestañas, lista compacta de usuarios y paginación discreta */
-@import "./11-typography-loading.css"; /* Fuentes, esqueletos de carga, imágenes y avisos flotantes */
-@import "./12-motion.css"; /* Aparición al desplazarse, inclinación 3D, transiciones y portada */
-@import "./13-confirm.css"; /* Diálogo de confirmación propio */
-@import "./14-field-errors.css"; /* Errores de validación junto al campo */
-@import "./15-app-error.css"; /* Pantalla de error general */
-@import "./16-landing-tablet.css"; /* Landing entre 761 y 1024 px */
-@import "./17-dark.css"; /* Modo oscuro y su botón */
-@import "./18-avatar.css"; /* Foto de perfil */
+@import "./01-base.css"; /* Variables de diseño, reglas globales y utilidades */
+@import "./02-controls.css"; /* Piezas comunes del portal: botones, enlaces, campos, formularios, avisos, etiquetas, tarjetas, pestañas y esqueletos de carga */
+@import "./03-shell.css"; /* Estructura del portal: cabecera, notificaciones, menú lateral, contenido, botón de tema y foto de perfil */
+@import "./04-landing-hero.css"; /* Página pública: cabecera, portada, buscador y beneficios */
+@import "./05-landing-catalog.css"; /* Página pública: catálogo de mascotas, filtros y carrusel */
+@import "./06-landing-sections.css"; /* Página pública: mascota destacada, proceso, preguntas frecuentes y cierre */
+@import "./07-auth.css"; /* Inicio de sesión, registro y verificación */
+@import "./08-dialogs.css"; /* Diálogos: detalles de mascota, solicitud y confirmación */
+@import "./09-dashboard.css"; /* Portal: panel de inicio, cifras, accesos directos y estadísticas */
+@import "./10-pets.css"; /* Portal: mascotas, fotos, filtros y paginación */
+@import "./11-messages.css"; /* Portal: conversaciones y mensajes */
+@import "./12-accounts.css"; /* Portal: usuarios, perfil y panel de permisos */
+@import "./13-animations.css"; /* Animaciones: fotogramas clave y aparición al desplazarse */
+@import "./14-print.css"; /* Impresión del informe de estadísticas */

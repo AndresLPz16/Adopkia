@@ -1,3 +1,5 @@
+/* Variables de diseño, reglas globales y utilidades. */
+
 :root {
   --brand-primary: #7c3aed;
   --brand-secondary: #8b5cf6;
@@ -29,22 +31,20 @@
   --shadow-lg: 0 20px 35px -5px rgba(15, 23, 42, 0.1), 0 8px 16px -6px rgba(15, 23, 42, 0.05);
   --shadow-3d: 0 20px 40px -15px rgba(124, 58, 237, 0.25), 0 8px 16px -6px rgba(15, 23, 42, 0.08);
   --shadow-glow: 0 0 25px rgba(124, 58, 237, 0.35);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
   color: var(--text-primary);
   background: var(--surface-muted);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-}
-
-.portal-title h1 {
-  line-height: 1.12;
-}
-
-.portal-section,
-.portal-dashboard {
-  scroll-margin-top: 1rem;
+  /* Tipografía
+     Las fuentes van dentro del proyecto (paquetes @fontsource, importados en
+     main.tsx): todos los visitantes ven la misma letra y el sitio no depende de
+     un servicio externo. Inter para el texto y Plus Jakarta Sans para títulos. */
+  --font-body: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading: "Plus Jakarta Sans Variable", "Inter Variable", ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
 }
 
 * {
@@ -67,98 +67,104 @@ input {
   outline-offset: 3px;
 }
 
-.login {
-  display: grid;
-  min-height: 100vh;
-  padding: 1rem;
-  place-items: center;
-  background:
-    radial-gradient(ellipse at 15% 10%, rgb(135 91 196 / 16%), transparent 36%),
-    linear-gradient(145deg, var(--surface-muted), var(--surface-tint));
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
-.login__card {
-  width: min(100%, 440px);
-  padding: clamp(1.5rem, 5vw, 2.6rem);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 1.1rem;
-  box-shadow: 0 1.5rem 4rem rgb(53 44 66 / 12%);
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-body);
 }
 
-.login__brand {
-  display: inline-block;
-  margin-bottom: 2.4rem;
-  color: var(--brand-primary);
-  font-size: 1.1rem;
-  font-weight: 900;
-  letter-spacing: 0.13em;
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
 }
 
-.login__eyebrow {
-  margin: 0 0 0.4rem;
-  color: var(--brand-secondary-text);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+h2 {
+  letter-spacing: -0.02em;
 }
 
-.login h1 {
-  margin: 0;
-  font-size: 2rem;
+/* Imágenes: aparecen con una transición al terminar de cargar */
+img[data-loaded] {
+  transition: opacity 0.35s ease;
 }
 
-.login__copy {
-  margin: 0.65rem 0 1.8rem;
-  color: var(--text-secondary);
-  line-height: 1.55;
+img[data-loaded="false"] {
+  opacity: 0;
 }
 
-.login form,
-.login form label {
-  display: grid;
-  gap: 0.55rem;
+@media (prefers-reduced-motion: reduce) {
+  img[data-loaded] {
+    transition: none;
+  }
 }
 
-.login form {
-  gap: 1.1rem;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand-primary: #7c3aed;
+  --brand-secondary: #a78bfa;
+  --brand-secondary-text: #c4b5fd;
+  --brand-deep: #c4b5fd;
+  --brand-coral-text: #fda4af;
+  --text-primary: #ecebf5;
+  --text-secondary: #a9a6c2;
+  --surface: #1c1a2e;
+  --surface-muted: #121120;
+  --surface-tint: #262440;
+  --border: #353252;
+  --border-strong: #4b4770;
+  --focus: #c4b5fd;
+  --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 35%), 0 2px 4px -2px rgb(0 0 0 / 30%);
+  --shadow-md: 0 10px 25px -3px rgb(0 0 0 / 40%), 0 4px 10px -4px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 20px 35px -5px rgb(0 0 0 / 50%), 0 8px 16px -6px rgb(0 0 0 / 35%);
+  --shadow-3d: 0 20px 40px -15px rgb(0 0 0 / 60%), 0 8px 16px -6px rgb(0 0 0 / 40%);
 }
 
-.login form label {
+:root[data-theme="dark"] body {
   color: var(--text-primary);
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.login input {
-  min-height: 2.85rem;
-  padding: 0 0.8rem;
-  color: inherit;
   background: var(--surface-muted);
-  border: 1px solid var(--border-strong);
-  border-radius: 0.55rem;
 }
 
-.login form button,
-.login > button {
-  min-height: 2.9rem;
-  color: #fff;
-  background: var(--brand-primary);
+:root[data-theme="dark"] ::placeholder {
+  color: #7f7c9c;
+}
+
+:root[data-theme="dark"] input[type="search"] {
+  background: var(--surface-muted);
+}
+
+
+/* ---------- .lucide ---------- */
+
+svg.lucide {
+  flex: 0 0 auto;
+  vertical-align: -0.15em;
+}
+
+
+/* ---------- .sr-only ---------- */
+
+/* Texto solo para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   border: 0;
-  border-radius: 0.55rem;
-  font-weight: 750;
-  cursor: pointer;
 }
-
-.login form button:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
-.login__error {
-  margin: 0;
-  color: #9b342e;
-  font-size: 0.88rem;
-}
-
