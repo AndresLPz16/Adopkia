@@ -1,5 +1,6 @@
 # Corre las pruebas en cada pull request y en cada cambio que llega a main,
-# para que un fallo se vea antes de fusionar y no después de desplegar.
+# para que un fallo se vea antes de fusionar. Lo que llega a main y pasa las
+# pruebas se despliega en Azure.
 name: CI
 
 on:
@@ -7,10 +8,11 @@ on:
   push:
     branches: [main]
 
-# Un push nuevo a la misma rama cancela la ejecución anterior.
+# En un pull request, un push nuevo cancela la ejecución anterior. En main no
+# se cancela nada: un despliegue no debe quedar a medias.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -82,3 +84,60 @@ jobs:
           --execute="SET GLOBAL log_bin_trust_function_creators = 1;"
       - name: Pruebas
         run: python -m pytest --create-db
+
+  # Publica en Azure lo que llega a main, solo si las pruebas pasaron.
+  # GitHub se identifica con una identidad administrada mediante OIDC (sin
+  # contraseñas guardadas); infra/setup-github-deploy.sh la crea y define las
+  # variables AZURE_* del repositorio. Sin esas variables el trabajo se omite.
+  deploy:
+    name: Despliegue en Azure
+    needs: [frontend, backend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    # Un despliegue en curso termina antes de que empiece el siguiente.
+    concurrency:
+      group: deploy-azure
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      REGISTRY: cradopkiaprodspc
+      RESOURCE_GROUP: rg-adopkia-prod-spc
+      CONTAINER_APP: ca-adopkia-prod-spc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Construir y subir la imagen
+        run: |
+          IMAGE="$REGISTRY.azurecr.io/adopkia:${GITHUB_SHA::7}"
+          az acr login --name "$REGISTRY"
+          docker build --file Dockerfile.azure --tag "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      # Solo cambia la imagen: secretos y variables de la aplicación no se tocan.
+      - name: Actualizar la aplicación
+        run: |
+          az containerapp update \
+            --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" \
+            --image "$IMAGE" --output none
+          FQDN=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_APP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          echo "APP_URL=https://$FQDN" >> "$GITHUB_ENV"
+      # La aplicación escala a cero y aplica migraciones al arrancar: se le da
+      # tiempo antes de dar el despliegue por bueno.
+      - name: Comprobar que responde
+        run: |
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail --max-time 60 --output /dev/null "$APP_URL/api/v1/"; then
+              echo "La API responde en $APP_URL"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "La aplicación no respondió tras el despliegue" >&2
+          exit 1
