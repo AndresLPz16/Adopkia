@@ -1,0 +1,288 @@
+/* Portal: mascotas, fotos, filtros y paginación. */
+
+/* ---------- .portal-pet-pagination ---------- */
+
+.app-shell[data-role] .portal-pet-pagination__number:not(.is-active) {
+  color: var(--role-text, var(--brand-deep));
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 2px 6px rgb(15 23 42 / 6%);
+}
+
+.app-shell[data-role] .portal-pet-pagination__number.is-active {
+  color: #fff;
+  background: var(--role-button, var(--role-accent));
+  border-color: var(--role-button, var(--role-accent));
+}
+
+.portal-pet-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1.5rem;
+}
+
+.portal-pet-pagination .portal-button {
+  min-width: 2.25rem;
+  min-height: 36px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+
+.portal-pet-pagination__number.is-active {
+  color: #fff;
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+@media (max-width: 600px) {
+  .portal-pet-pagination {
+    gap: 0.35rem;
+  }
+
+  .portal-pet-pagination > .portal-button:first-child,
+  .portal-pet-pagination > .portal-button:last-child {
+    min-width: auto;
+  }
+}
+
+/* Paginación de mascotas: debajo de la lista y más pequeña */
+.portal-pet-pagination {
+  margin: 1.25rem 0 0.5rem;
+  gap: 0.35rem;
+}
+
+@media (max-width: 760px) {
+  .portal-pet-pagination .portal-button {
+    min-height: 44px;
+  }
+}
+
+
+/* ---------- .portal-pet-management-filters ---------- */
+
+.portal-pet-management-filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) repeat(3, minmax(150px, 1fr));
+  align-items: end;
+  gap: 0.8rem;
+  margin: 0.5rem 0 0.75rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.portal-pet-management-filters .portal-search {
+  max-width: none;
+  margin: 0;
+}
+
+.portal-pet-management-filters__field {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.portal-pet-management-filters__field select {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0 0.7rem;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 760px) {
+  .portal-pet-management-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal-pet-management-filters .portal-search {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* ---------- .portal-pet-management ---------- */
+
+.portal-pet-management__summary {
+  margin: 0.5rem 0 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+
+/* ---------- .portal-photo-previews ---------- */
+
+.portal-photo-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+
+/* ---------- .portal-photo-preview ---------- */
+
+.portal-photo-preview {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.portal-photo-preview img,
+.portal-photo-preview__file {
+  display: grid;
+  width: 100%;
+  height: 100px;
+  overflow: hidden;
+  color: var(--brand-secondary);
+  background: var(--surface-tint);
+  border-radius: calc(var(--radius-control) - 0.15rem);
+  font-size: 2rem;
+  object-fit: cover;
+  place-items: center;
+}
+
+.portal-photo-preview figcaption {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-photo-preview .portal-link {
+  justify-self: start;
+  padding: 0;
+  font-size: 0.75rem;
+}
+
+
+/* ---------- .portal-pet-photo ---------- */
+
+.portal-pet-photo {
+  display: block;
+  width: 100%;
+  height: 190px;
+  border-radius: 0.65rem;
+  object-fit: cover;
+}
+
+.portal-pet-photo[data-loaded] {
+  background: var(--surface-tint);
+}
+
+
+/* ---------- .portal-pet-photo-open ---------- */
+
+.portal-pet-photo-open {
+  display: grid;
+  width: 100%;
+  gap: 0.4rem;
+  padding: 0;
+  color: var(--brand-primary);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  /* Mientras carga se ve un fondo suave con el tamaño ya reservado. */
+  position: relative;
+}
+
+.portal-pet-photo-open > span:last-child {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+:root[data-theme="dark"] .portal-pet-photo-open,
+:root[data-theme="dark"] .portal-pet-pagination .portal-button--secondary {
+  color: #c4b5fd;
+}
+
+
+/* ---------- .portal-pet-photo-placeholder ---------- */
+
+.portal-pet-photo-placeholder {
+  display: grid;
+  width: 100%;
+  height: 190px;
+  background: var(--surface-tint);
+  border-radius: 0.65rem;
+  font-size: 3rem;
+  place-items: center;
+  color: color-mix(in srgb, var(--brand-primary) 45%, var(--surface));
+}
+
+
+/* ---------- .portal-pet-carousel ---------- */
+
+.portal-pet-carousel {
+  min-width: 0;
+  margin: 1rem 0 1.5rem;
+}
+
+.portal-pet-carousel__viewport {
+  max-height: min(72vh, 760px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-color: var(--brand-secondary) var(--surface-tint);
+  scrollbar-width: thin;
+}
+
+.portal-pet-carousel__viewport:focus-visible {
+  outline: 2px solid var(--brand-secondary);
+  outline-offset: 3px;
+}
+
+.portal-pet-carousel__track {
+  perspective: 1200px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.portal-pet-carousel__track > .portal-card {
+  min-width: 0;
+  border-radius: var(--radius-panel);
+  transform-style: preserve-3d;
+  transition: transform 350ms var(--motion-ease), box-shadow 350ms ease, border-color 350ms ease;
+}
+
+@media (max-width: 900px) {
+  .portal-pet-carousel__track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .portal-pet-carousel__track {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Portal Pet Carousel Track 3D Cards */
+.portal-pet-carousel__track > .portal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--role-accent, var(--brand-secondary)) 40%, var(--surface));
+}
