@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusCode, text } from "../shared";
+import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusCode, text, todayLocal } from "../shared";
 import type { PermissionCheck, PortalDataRow, PortalSender, PortalSubmit } from "../shared";
 
 export function AdoptionsSection({
@@ -59,7 +59,7 @@ export function AdoptionsSection({
               <form className="portal-card-form" onSubmit={submit(async () => {
                 await send("/api/v1/follow-ups/", "POST", {
                   adoption: Number(item.id),
-                  date: form.date || new Date().toISOString().slice(0, 10),
+                  date: form.date || todayLocal(),
                   wellbeing: form.wellbeing || "bueno",
                   observations: form.observations || "",
                 }, "Seguimiento registrado.");

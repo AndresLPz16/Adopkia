@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { confirmAction } from "../../ui/confirm";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusCode, text } from "../shared";
+import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusCode, text, todayLocal } from "../shared";
 import type { PermissionCheck, PortalDataRow, PortalSender, PortalSubmit } from "../shared";
 
 export function RecordsSection({
@@ -79,7 +79,7 @@ export function RecordsSection({
         <form className="portal-form" onSubmit={submit(async () => {
           await send("/api/v1/medical-records/", "POST", {
             pet: Number(form.pet),
-            date: form.date,
+            date: form.date || todayLocal(),
             record_type: form.record_type,
             description: form.description || "",
             ...(form.vaccine ? { vaccine: Number(form.vaccine) } : {}),
@@ -88,7 +88,7 @@ export function RecordsSection({
           <h2>Registrar atención</h2>
           <Field label="Mascota" name="pet" value={form.pet ?? ""} onChange={setValue} required options={pets.map((pet) => ({ value: text(pet.id), label: `${text(pet.name)} · ${text(pet.species)}` }))} />
           <Field label="Tipo de atención" name="record_type" value={form.record_type ?? ""} onChange={setValue} required options={[{ value: "consulta", label: "Consulta" }, { value: "vacunacion", label: "Vacunación" }, { value: "desparasitacion", label: "Desparasitación" }, { value: "cirugia", label: "Cirugía" }, { value: "control", label: "Control" }, { value: "otro", label: "Otro" }]} />
-          <Field label="Fecha" name="date" type="date" value={form.date ?? new Date().toISOString().slice(0, 10)} onChange={setValue} required />
+          <Field label="Fecha" name="date" type="date" value={form.date || todayLocal()} onChange={setValue} required />
           {form.record_type === "vacunacion" && <Field label="Vacuna (opcional)" name="vaccine" value={form.vaccine ?? ""} onChange={setValue} options={vaccines.map((item) => ({ value: text(item.id), label: text(item.name) }))} />}
           <Field label="Descripción y recomendaciones" name="description" value={form.description ?? ""} onChange={setValue} multiline />
           <button className="portal-button" disabled={busy || (role === ROLES.VETERINARIAN && !myProfile)}>Guardar atención</button>

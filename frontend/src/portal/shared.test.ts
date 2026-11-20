@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
+  todayLocal,
   apiErrorMessage,
   DataCard,
   isAvailablePet,
@@ -62,5 +63,13 @@ describe("apiErrorMessage", () => {
     expect(apiErrorMessage({ detail: "No autorizado." }, 400)).toBe(
       "No autorizado.",
     );
+  });
+});
+
+describe("todayLocal", () => {
+  it("uses the local calendar day, not the UTC one", () => {
+    // 8:32 p. m. local: en Colombia ya es el día siguiente en UTC.
+    expect(todayLocal(new Date(2026, 10, 19, 20, 32))).toBe("2026-11-19");
+    expect(todayLocal(new Date(2026, 0, 5, 0, 1))).toBe("2026-01-05");
   });
 });

@@ -200,3 +200,45 @@ describe("medical record permissions", () => {
     );
   });
 });
+
+describe("new medical record", () => {
+  it("defaults the date to today and sends it when the field was not touched", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 19, 20, 32));
+    try {
+      const send = vi.fn(async () => true);
+      render(
+        <RecordsSection
+          role="refugio"
+          isPlatformSuperadmin={false}
+          canDo={() => true}
+          userId={1}
+          pets={[{ id: 12, name: "Luna", species: "Perro" }]}
+          records={[]}
+          vaccines={[]}
+          veterinarians={[]}
+          form={{ pet: "12", record_type: "consulta", description: "Revisión" }}
+          setValue={vi.fn()}
+          submit={(callback) => (event) => {
+            event.preventDefault();
+            void callback();
+          }}
+          send={send}
+          loading={false}
+          busy={false}
+        />,
+      );
+
+      expect(screen.getByLabelText("Fecha")).toHaveValue("2026-11-19");
+      fireEvent.click(screen.getByRole("button", { name: "Guardar atención" }));
+      expect(send).toHaveBeenCalledWith(
+        "/api/v1/medical-records/",
+        "POST",
+        expect.objectContaining({ date: "2026-11-19" }),
+        "Atención registrada en el historial.",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

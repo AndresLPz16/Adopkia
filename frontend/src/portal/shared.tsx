@@ -48,6 +48,17 @@ export function statusCode(row: PortalDataRow, field = "status"): string {
   return text(row[`${field}_code`] || row[field]).trim().toLocaleLowerCase();
 }
 
+/**
+ * Fecha de hoy en la zona horaria del navegador, como "AAAA-MM-DD".
+ * `toISOString()` usa UTC: en Colombia (UTC−5) desde las 7 p. m. ya devuelve
+ * el día siguiente.
+ */
+export function todayLocal(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 export function isAvailablePet(pet: PortalDataRow): boolean {
   const status = statusCode(pet);
   return status === "disponible" || status === "available";
