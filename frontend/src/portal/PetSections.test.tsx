@@ -190,6 +190,38 @@ describe("pet photo uploads", () => {
         "Pregunta actualizada.",
       );
     });
+
+    it("suggests the next free order for a new question", () => {
+      render(
+        <RequestsSection
+          role="administrador"
+          isPlatformSuperadmin={false}
+          canDo={() => true}
+          questions={[
+            { id: 1, prompt: "A", answer_type: "texto", order: 1, active: true },
+            { id: 2, prompt: "B", answer_type: "texto", order: 4, active: true },
+            { id: 3, prompt: "C", answer_type: "texto", order: 9, active: false },
+          ]}
+          pets={[]}
+          requests={[]}
+          form={{}}
+          answers={{}}
+          setAnswers={vi.fn()}
+          setValue={vi.fn()}
+          submit={(callback) => (event) => {
+            event.preventDefault();
+            void callback();
+          }}
+          send={vi.fn().mockResolvedValue(true)}
+          setError={vi.fn()}
+          loading={false}
+          busy={false}
+        />,
+      );
+      fireEvent.click(screen.getByRole("tab", { name: /Preguntas del formulario/ }));
+
+      expect(screen.getByLabelText("Orden")).toHaveValue(5);
+    });
   });
 });
 

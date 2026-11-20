@@ -251,6 +251,7 @@ export function PetsSection({
           setSelectedPhotoIndex={setSelectedPhotoIndex}
           role={role}
           canDo={canDo}
+          send={send}
           onRequestAdoption={onRequestAdoption}
         />
       )}

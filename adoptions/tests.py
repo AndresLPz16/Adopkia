@@ -110,6 +110,52 @@ class AdoptionFlowTests(APITestCase):
             {item["id"] for item in public_questions.data["results"]},
         )
 
+    def test_two_active_questions_cannot_share_an_order(self):
+        self.client.force_authenticate(self.shelter_user)
+        url = reverse("form-question-list")
+
+        duplicate = self.client.post(
+            url, {"prompt": "¿Quieres un gato?", "order": 1}, format="json"
+        )
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertIn("order", duplicate.data)
+
+        created = self.client.post(
+            url, {"prompt": "¿Quieres un gato?", "order": 2}, format="json"
+        )
+        self.assertEqual(created.status_code, 201)
+        moved = self.client.patch(
+            reverse("form-question-detail", args=(created.data["id"],)),
+            {"order": 1},
+            format="json",
+        )
+        self.assertEqual(moved.status_code, 400)
+
+        # Al guardar una pregunta con su mismo orden no choca consigo misma.
+        unchanged = self.client.patch(
+            reverse("form-question-detail", args=(self.question.pk,)),
+            {"order": 1, "active": True},
+            format="json",
+        )
+        self.assertEqual(unchanged.status_code, 200)
+
+    def test_archived_question_frees_its_order(self):
+        self.client.force_authenticate(self.shelter_user)
+        self.client.delete(reverse("form-question-detail", args=(self.question.pk,)))
+
+        created = self.client.post(
+            reverse("form-question-list"),
+            {"prompt": "¿Tienes patio?", "order": 1},
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        reactivated = self.client.patch(
+            reverse("form-question-detail", args=(self.question.pk,)),
+            {"active": True},
+            format="json",
+        )
+        self.assertEqual(reactivated.status_code, 400)
+
     def test_role_granted_form_question_permissions_can_edit_questions(self):
         RolePermission.objects.filter(
             role=self.admin.role,

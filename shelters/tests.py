@@ -151,3 +151,41 @@ class ShelterApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Shelter.objects.filter(pk=self.shelter.pk).exists())
+
+    def test_manager_adds_a_member_by_email(self):
+        colleague = User.objects.create_user(
+            email="colega@example.com",
+            password="SafePass!2026",
+            name="Colega",
+            role=Role.Name.SHELTER,
+        )
+        self.client.force_authenticate(self.shelter_user)
+        url = reverse("shelter-members", args=(self.shelter.pk,))
+
+        response = self.client.post(
+            url, {"email": "Colega@Example.com", "position": "colaborador"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["user"], colleague.pk)
+        self.assertTrue(
+            ShelterMember.objects.filter(shelter=self.shelter, user=colleague).exists()
+        )
+
+        repeated = self.client.post(url, {"email": "colega@example.com"}, format="json")
+        self.assertEqual(repeated.status_code, 400)
+        self.assertIn("email", repeated.data)
+
+    def test_unknown_email_and_other_roles_get_the_same_error(self):
+        self.client.force_authenticate(self.shelter_user)
+        url = reverse("shelter-members", args=(self.shelter.pk,))
+
+        unknown = self.client.post(url, {"email": "nadie@example.com"}, format="json")
+        adopter = self.client.post(url, {"email": "adopter@example.com"}, format="json")
+        empty = self.client.post(url, {"position": "colaborador"}, format="json")
+
+        self.assertEqual(unknown.status_code, 400)
+        self.assertEqual(adopter.status_code, 400)
+        self.assertEqual(unknown.data["email"], adopter.data["email"])
+        self.assertEqual(empty.status_code, 400)
+        self.assertIn("email", empty.data)

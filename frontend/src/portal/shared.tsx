@@ -40,8 +40,27 @@ export function text(value: unknown): string {
   return value == null ? "" : String(value);
 }
 
+/**
+ * Código estable de un estado. La API devuelve en `status` la etiqueta
+ * traducida ("Devuelta") y en `status_code` el valor del catálogo ("devuelta").
+ */
+export function statusCode(row: PortalDataRow, field = "status"): string {
+  return text(row[`${field}_code`] || row[field]).trim().toLocaleLowerCase();
+}
+
+/**
+ * Fecha de hoy en la zona horaria del navegador, como "AAAA-MM-DD".
+ * `toISOString()` usa UTC: en Colombia (UTC−5) desde las 7 p. m. ya devuelve
+ * el día siguiente.
+ */
+export function todayLocal(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 export function isAvailablePet(pet: PortalDataRow): boolean {
-  const status = text(pet.status_code || pet.status).trim().toLocaleLowerCase();
+  const status = statusCode(pet);
   return status === "disponible" || status === "available";
 }
 

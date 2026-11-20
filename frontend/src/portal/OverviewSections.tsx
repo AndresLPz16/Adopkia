@@ -1,6 +1,6 @@
 import { Sparkle, Sparkles } from "lucide-react";
 import { RoleIcon, SectionIcon } from "../ui/icons";
-import { isAvailablePet, SectionTitle, text } from "./shared";
+import { isAvailablePet, SectionTitle, statusCode, text } from "./shared";
 import type { PortalDataRow } from "./shared";
 import { ROLES } from "../rbac/types";
 
@@ -85,8 +85,8 @@ export function DashboardSection({
     [ROLES.SHELTER]: [
       { label: "Mascotas a tu cuidado", value: managedPets.length },
       { label: "Disponibles para adopción", value: availablePets.length },
-      { label: "Solicitudes pendientes", value: requests.filter((item) => item.status === "pendiente").length },
-      { label: "Adopciones activas", value: adoptions.filter((item) => item.status === "activa").length },
+      { label: "Solicitudes pendientes", value: requests.filter((item) => statusCode(item) === "pendiente").length },
+      { label: "Adopciones activas", value: adoptions.filter((item) => statusCode(item) === "activa").length },
     ],
     [ROLES.VETERINARIAN]: [
       { label: "Expedientes médicos", value: records.length },
@@ -96,8 +96,8 @@ export function DashboardSection({
     ],
     [ROLES.ADOPTER]: [
       { label: "Mascotas disponibles", value: availablePets.length },
-      { label: "Solicitudes pendientes", value: requests.filter((item) => item.status === "pendiente").length },
-      { label: "Adopciones activas", value: adoptions.filter((item) => item.status === "activa").length },
+      { label: "Solicitudes pendientes", value: requests.filter((item) => statusCode(item) === "pendiente").length },
+      { label: "Adopciones activas", value: adoptions.filter((item) => statusCode(item) === "activa").length },
       { label: "Notificaciones", value: notifications.filter((item) => item.is_read !== true).length },
     ],
   };

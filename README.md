@@ -257,7 +257,7 @@ Las rutas siguientes se encuentran bajo `/api/v1/`, salvo `/api/schema/` y `/api
 | `/shelters/`, `/shelters/{id}/` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | `ShelterViewSet` | Lectura anónima limitada a refugios verificados y a `name`, `city`, `description`; detalles completos solo para administrador o miembro del refugio. Crear como refugio/admin; modificar/eliminar como administrador o integrante autorizado |
 | Nota sobre refugios públicos | — | `PublicShelterSerializer` | `database/adopkia_v3.sql` no define una columna de descripción para refugios; por ello `description` se incluye como `null`. No se añadió columna ni se expusieron datos privados como sustituto |
 | `/shelters/{id}/verify/` | `POST` | `ShelterViewSet.verify` | Administrador |
-| `/shelters/{id}/members/` | `GET`, `POST` | `ShelterViewSet.members` | Integrante autorizado para leer; responsable del refugio para agregar |
+| `/shelters/{id}/members/` | `GET`, `POST` | `ShelterViewSet.members` | Integrante autorizado para leer; responsable del refugio para agregar, por `email` de la cuenta de refugio (o `user`) |
 | `/shelter-members/`, `/shelter-members/{id}/` | `GET`; detalle `GET`, `PATCH`, `DELETE` | `ShelterMemberViewSet` | Autenticado y limitado al refugio propio; solo responsable modifica/elimina; admin puede leer globalmente |
 | `/species/`, `/species/{id}/` | `GET` | `SpeciesViewSet` | Público; solo lectura |
 | `/breeds/`, `/breeds/{id}/` | `GET` | `BreedViewSet` | Público; solo lectura |
