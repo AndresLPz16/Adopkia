@@ -21,6 +21,7 @@ class PublicShelterSerializer(serializers.ModelSerializer):
 
 class ShelterSerializer(LocalizedModelSerializer):
     choice_fields = ("verification_status",)
+    verification_status_code = serializers.CharField(source="verification_status", read_only=True)
 
     class Meta:
         model = Shelter
@@ -32,6 +33,7 @@ class ShelterSerializer(LocalizedModelSerializer):
             "contact_phone",
             "contact_email",
             "verification_status",
+            "verification_status_code",
             "verification_date",
             "verified_by",
             "registered_at",

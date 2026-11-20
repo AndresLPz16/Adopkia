@@ -3,7 +3,7 @@ import { FadeImage } from "../../ui/loading";
 import { PawPrint } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
-import { DataCard, rows, text } from "../shared";
+import { DataCard, rows, statusCode, text } from "../shared";
 import type { PermissionCheck, PortalDataRow, PortalSender } from "../shared";
 
 export function PetCard({
@@ -81,7 +81,7 @@ export function PetCard({
                 Eliminar
               </button>
             )}
-            {pet.status === "devuelta" &&
+            {statusCode(pet) === "devuelta" &&
               canDo(RESOURCES.PETS, ACTIONS.UPDATE) && (
                 <button
                   className="portal-link"
@@ -90,11 +90,11 @@ export function PetCard({
                       `/api/v1/pets/${text(pet.id)}/relist/`,
                       "POST",
                       {},
-                      "Mascota republicada.",
+                      "Mascota publicada de nuevo para adopción.",
                     )
                   }
                 >
-                  Volver a publicar
+                  Volver a poner en adopción
                 </button>
               )}
           </>

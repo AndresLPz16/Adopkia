@@ -61,6 +61,7 @@ class VaccineSerializer(LocalizedModelSerializer):
 
 class ReminderSerializer(LocalizedModelSerializer):
     choice_fields = ("reminder_type", "status")
+    status_code = serializers.CharField(source="status", read_only=True)
     catalog_fields = ("vaccine_name",)
     adopter = serializers.IntegerField(source="adoption.request.applicant_id", read_only=True)
     pet = serializers.IntegerField(source="adoption.request.pet_id", read_only=True)
@@ -80,6 +81,7 @@ class ReminderSerializer(LocalizedModelSerializer):
             "scheduled_date",
             "notes",
             "status",
+            "status_code",
         )
         read_only_fields = ("id", "adopter", "pet", "vaccine_name")
 

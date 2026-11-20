@@ -1,8 +1,8 @@
 import { ArrowDown, ArrowUp, PawPrint, X } from "lucide-react";
 import type { MutableRefObject } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
-import { rows, text } from "../shared";
-import type { PermissionCheck, PortalDataRow } from "../shared";
+import { rows, statusCode, text } from "../shared";
+import type { PermissionCheck, PortalDataRow, PortalSender } from "../shared";
 
 export function PetDetailsDialog({
   selectedPet,
@@ -12,6 +12,7 @@ export function PetDetailsDialog({
   setSelectedPhotoIndex,
   role,
   canDo,
+  send,
   onRequestAdoption,
 }: {
   selectedPet: PortalDataRow;
@@ -21,6 +22,7 @@ export function PetDetailsDialog({
   setSelectedPhotoIndex: (value: number) => void;
   role: string;
   canDo: PermissionCheck;
+  send: PortalSender;
   onRequestAdoption: (petId: string) => void;
 }) {
   return (
@@ -192,6 +194,26 @@ export function PetDetailsDialog({
                 }}
               >
                 Solicitar adopción
+              </button>
+            )}
+          {role !== ROLES.ADOPTER &&
+            statusCode(selectedPet) === "devuelta" &&
+            canDo(RESOURCES.PETS, ACTIONS.UPDATE) && (
+              <button
+                className="portal-button"
+                type="button"
+                onClick={() => {
+                  const petId = text(selectedPet.id);
+                  closePetDetails();
+                  void send(
+                    `/api/v1/pets/${petId}/relist/`,
+                    "POST",
+                    {},
+                    "Mascota publicada de nuevo para adopción.",
+                  );
+                }}
+              >
+                Volver a poner en adopción
               </button>
             )}
         </div>

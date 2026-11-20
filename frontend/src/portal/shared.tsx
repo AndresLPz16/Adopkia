@@ -40,8 +40,16 @@ export function text(value: unknown): string {
   return value == null ? "" : String(value);
 }
 
+/**
+ * Código estable de un estado. La API devuelve en `status` la etiqueta
+ * traducida ("Devuelta") y en `status_code` el valor del catálogo ("devuelta").
+ */
+export function statusCode(row: PortalDataRow, field = "status"): string {
+  return text(row[`${field}_code`] || row[field]).trim().toLocaleLowerCase();
+}
+
 export function isAvailablePet(pet: PortalDataRow): boolean {
-  const status = text(pet.status_code || pet.status).trim().toLocaleLowerCase();
+  const status = statusCode(pet);
   return status === "disponible" || status === "available";
 }
 

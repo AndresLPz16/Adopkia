@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, labelStatus, text } from "../shared";
+import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusCode, text } from "../shared";
 import type { PermissionCheck, PortalDataRow, PortalSender, PortalSubmit } from "../shared";
 
 export function AdoptionsSection({
@@ -55,7 +55,7 @@ export function AdoptionsSection({
                 <strong>Motivo de devolución:</strong> {text(item.return_reason)}
               </p>
             )}
-            {role === ROLES.SHELTER && item.status === "activa" && canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
+            {role === ROLES.SHELTER && statusCode(item) === "activa" && canDo(RESOURCES.FOLLOW_UPS, ACTIONS.CREATE) && (
               <form className="portal-card-form" onSubmit={submit(async () => {
                 await send("/api/v1/follow-ups/", "POST", {
                   adoption: Number(item.id),
@@ -69,7 +69,7 @@ export function AdoptionsSection({
                 <button className="portal-link">Añadir seguimiento</button>
               </form>
             )}
-            {item.status === "activa" &&
+            {statusCode(item) === "activa" &&
               role !== ROLES.VETERINARIAN &&
               !isPlatformSuperadmin &&
               canDo(RESOURCES.REMINDERS, ACTIONS.CREATE) && (
@@ -135,7 +135,7 @@ export function AdoptionsSection({
               actions={
                 canDo(RESOURCES.REMINDERS, ACTIONS.UPDATE) ? (
                   <div className="portal-inline-actions">
-                    {text(item.status) !== "cumplido" && (
+                    {statusCode(item) !== "cumplido" && (
                       <button
                         className="portal-link"
                         disabled={busy}
