@@ -29,9 +29,17 @@ export function QuestionManager({
     prompt: "",
     answer_type: "texto",
     required: "true",
-    order: "1",
+    order: "",
     active: "true",
   });
+  // Siguiente posición libre: una más que el mayor orden activo.
+  const nextOrder = String(
+    activeQuestions.reduce(
+      (highest, question) => Math.max(highest, Number(question.order) || 0),
+      0,
+    ) + 1,
+  );
+  const order = questionForm.order || nextOrder;
 
   return (
     <section className="portal-section" aria-label="Administrar preguntas de adopción">
@@ -51,7 +59,7 @@ export function QuestionManager({
                 ...questionForm,
                 required: questionForm.required === "true",
                 active: questionForm.active === "true",
-                order: Number(questionForm.order),
+                order: Number(order),
               },
               editingQuestionId
                 ? "Pregunta actualizada."
@@ -63,7 +71,7 @@ export function QuestionManager({
                 prompt: "",
                 answer_type: "texto",
                 required: "true",
-                order: String(activeQuestions.length + 1),
+                order: "",
                 active: "true",
               });
             }
@@ -109,7 +117,7 @@ export function QuestionManager({
             label="Orden"
             name="order"
             type="number"
-            value={questionForm.order}
+            value={order}
             onChange={(name, value) =>
               setQuestionForm((current) => ({ ...current, [name]: value }))
             }
@@ -143,7 +151,7 @@ export function QuestionManager({
                     prompt: "",
                     answer_type: "texto",
                     required: "true",
-                    order: String(activeQuestions.length + 1),
+                    order: "",
                     active: "true",
                   });
                 }}

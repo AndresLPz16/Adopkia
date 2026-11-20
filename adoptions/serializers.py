@@ -17,6 +17,25 @@ class FormQuestionSerializer(LocalizedModelSerializer):
         fields = ("id", "prompt", "answer_type", "answer_type_code", "required", "order", "active")
         read_only_fields = ("id",)
 
+    def validate(self, attrs):
+        # Dos preguntas activas no pueden compartir posición en el formulario.
+        # Solo se revisa cuando cambia el orden o la pregunta se reactiva, para
+        # que un PATCH de otro campo no falle por duplicados anteriores.
+        if "order" not in attrs and not attrs.get("active"):
+            return attrs
+        order = attrs.get("order", getattr(self.instance, "order", 1))
+        active = attrs.get("active", getattr(self.instance, "active", True))
+        if not active:
+            return attrs
+        taken = FormQuestion.objects.filter(order=order, active=True)
+        if self.instance is not None:
+            taken = taken.exclude(pk=self.instance.pk)
+        if taken.exists():
+            raise serializers.ValidationError(
+                {"order": _("Ya hay una pregunta activa con el orden %(order)s.") % {"order": order}}
+            )
+        return attrs
+
 
 class FormAnswerSerializer(LocalizedModelSerializer):
     question_prompt = serializers.CharField(source="question.prompt", read_only=True)
