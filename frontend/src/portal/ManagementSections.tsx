@@ -91,9 +91,10 @@ export function SheltersSection({
                   }}>Editar refugio</button>
                 </div>}
                 {canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.CREATE) && <form className="portal-card-form" onSubmit={submit(async () => {
-                  await send(`/api/v1/shelters/${text(shelter.id)}/members/`, "POST", { user: Number(form.member_user), position: form.position || "colaborador" }, "Integrante agregado.");
+                  await send(`/api/v1/shelters/${text(shelter.id)}/members/`, "POST", { email: (form.email ?? "").trim(), position: form.position || "colaborador" }, "Integrante agregado.");
                 })}>
-                  <Field label="ID de la cuenta de refugio a agregar" name="member_user" type="number" value={form.member_user ?? ""} onChange={setValue} required />
+                  <Field label="Correo del integrante" name="email" type="email" value={form.email ?? ""} onChange={setValue} required />
+                  <p className="portal-form-hint">Usa el correo con el que la persona creó su cuenta de refugio.</p>
                   <Field label="Cargo" name="position" value={form.position ?? "colaborador"} onChange={setValue} options={[{ value: "responsable", label: "Responsable" }, { value: "colaborador", label: "Colaborador" }]} />
                   <button className="portal-link" disabled={busy}>Agregar integrante</button>
                 </form>}

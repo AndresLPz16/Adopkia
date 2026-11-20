@@ -247,4 +247,42 @@ describe("shelter management actions", () => {
       "Refugio eliminado.",
     );
   });
+
+  it("adds a member by the email of their account, not by an id", () => {
+    const send = vi.fn(async () => true);
+    render(
+      <SheltersSection
+        role="refugio"
+        userId={7}
+        canDo={(resource, action) =>
+          resource === "shelterMembers" && action === "create"
+        }
+        shelters={[{ id: 3, name: "Huellas", city: "Riohacha", address: "Calle 1" }]}
+        members={[{ shelter: 3, user: 7 }]}
+        form={{ email: " colega@example.com " }}
+        setForm={vi.fn()}
+        setValue={vi.fn()}
+        submit={(callback) => (event) => {
+          event.preventDefault();
+          void callback();
+        }}
+        send={send}
+        editingShelter=""
+        setEditingShelter={vi.fn()}
+        loading={false}
+        busy={false}
+      />,
+    );
+
+    expect(screen.queryByText(/ID de la cuenta/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Correo del integrante")).toHaveAttribute("type", "email");
+    fireEvent.click(screen.getByRole("button", { name: "Agregar integrante" }));
+
+    expect(send).toHaveBeenCalledWith(
+      "/api/v1/shelters/3/members/",
+      "POST",
+      { email: "colega@example.com", position: "colaborador" },
+      "Integrante agregado.",
+    );
+  });
 });
