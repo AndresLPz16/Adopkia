@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { confirmAction } from "../../ui/confirm";
 import { ACTIONS, RESOURCES, ROLES } from "../../rbac/types";
-import { DataCard, EmptyState, Field, SectionTitle, labelStatus, text } from "../shared";
+import { DataCard, EmptyState, Field, SectionTitle, labelStatus, statusCode, text } from "../shared";
 import type { PermissionCheck, PortalDataRow, PortalSender, PortalSubmit } from "../shared";
 
 export function RecordsSection({
@@ -114,7 +114,7 @@ export function RecordsSection({
                         setRecordDraft({
                           pet: text(item.pet),
                           date: text(item.date),
-                          record_type: text(item.record_type),
+                          record_type: statusCode(item, "record_type"),
                           vaccine: text(item.vaccine),
                           description: text(item.description),
                         });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ACTIONS, RESOURCES } from "../../rbac/types";
-import { DataCard, Field, text } from "../shared";
+import { DataCard, Field, statusCode, text } from "../shared";
 import type {
   PermissionCheck,
   PortalDataRow,
@@ -176,7 +176,7 @@ export function QuestionManager({
                       setEditingQuestionId(text(question.id));
                       setQuestionForm({
                         prompt: text(question.prompt),
-                        answer_type: text(question.answer_type),
+                        answer_type: statusCode(question, "answer_type"),
                         required: String(question.required === true),
                         order: text(question.order),
                         active: String(question.active !== false),

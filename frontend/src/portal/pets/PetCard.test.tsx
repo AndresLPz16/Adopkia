@@ -45,6 +45,29 @@ describe("PetCard", () => {
     );
   });
 
+  it("prefills the edit form with the size code, not its label", () => {
+    const setForm = vi.fn();
+    render(
+      <PetCard
+        pet={{ id: 9, name: "neron", size: "Mediano", size_code: "mediano" }}
+        role={ROLES.SHELTER}
+        canDo={() => true}
+        send={vi.fn(async () => true)}
+        setEditingPet={vi.fn()}
+        setForm={setForm}
+        clearPhotos={vi.fn()}
+        onRequestAdoption={vi.fn()}
+        photoOpenerRef={{ current: null }}
+        setSelectedPhotoIndex={vi.fn()}
+        setSelectedPet={vi.fn()}
+      />,
+    );
+    window.scrollTo = vi.fn();
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ size: "mediano" }));
+  });
+
   it("does not offer it for an adopted pet", () => {
     renderCard({ id: 8, name: "alfredo", status: "Adoptada", status_code: "adoptada" });
 

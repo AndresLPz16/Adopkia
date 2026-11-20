@@ -10,10 +10,11 @@ from .services import create_adoption_request, update_adoption_request
 class FormQuestionSerializer(LocalizedModelSerializer):
     catalog_fields = ("prompt",)
     choice_fields = ("answer_type",)
+    answer_type_code = serializers.CharField(source="answer_type", read_only=True)
 
     class Meta:
         model = FormQuestion
-        fields = ("id", "prompt", "answer_type", "required", "order", "active")
+        fields = ("id", "prompt", "answer_type", "answer_type_code", "required", "order", "active")
         read_only_fields = ("id",)
 
 

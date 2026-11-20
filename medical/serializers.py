@@ -18,6 +18,7 @@ class VeterinarianSerializer(LocalizedModelSerializer):
 
 class MedicalRecordSerializer(LocalizedModelSerializer):
     choice_fields = ("record_type",)
+    record_type_code = serializers.CharField(source="record_type", read_only=True)
 
     pet_name = serializers.CharField(source="pet.name", read_only=True)
     veterinarian_name = serializers.CharField(
@@ -35,6 +36,7 @@ class MedicalRecordSerializer(LocalizedModelSerializer):
             "vaccine",
             "date",
             "record_type",
+            "record_type_code",
             "description",
         )
         read_only_fields = ("id", "veterinarian_name")

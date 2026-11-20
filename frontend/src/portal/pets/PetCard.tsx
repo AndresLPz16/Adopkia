@@ -51,7 +51,7 @@ export function PetCard({
                   name: text(pet.name),
                   shelter: text(pet.shelter),
                   breed: text(pet.breed),
-                  size: text(pet.size),
+                  size: statusCode(pet, "size"),
                   approximate_birth_date: text(pet.approximate_birth_date),
                   health: text(pet.health),
                   temperament: text(pet.temperament),
