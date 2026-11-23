@@ -294,8 +294,8 @@
 }
 
 :root[data-theme="dark"] .landing-pet__badge {
-  color: #ede9fe;
-  background: rgb(28 26 46 / 88%);
+  color: #e3f1ee;
+  background: rgb(19 40 42 / 88%);
 }
 
 :root[data-theme="dark"] .landing-pet__heart button:hover {
@@ -452,7 +452,7 @@
   color: #fff;
   background: var(--brand-primary);
   transform: translateY(-3px) scale(1.1);
-  box-shadow: 0 8px 20px -2px rgb(124 58 237 / 35%);
+  box-shadow: 0 8px 20px -2px rgb(14 107 111 / 35%);
 }
 
 .landing-carousel__controls button:disabled {
@@ -485,7 +485,7 @@
 :root[data-theme="dark"] .landing-filter__label,
 :root[data-theme="dark"] .landing-filters__clear,
 :root[data-theme="dark"] .landing-pet__action {
-  color: #c4b5fd;
+  color: #7fe0d8;
 }
 
 :root[data-theme="dark"] .landing-carousel__controls button:hover:not(:disabled) {
@@ -573,7 +573,7 @@
 
 .landing-filter:focus-within {
   border-color: var(--brand-secondary);
-  box-shadow: 0 0 0 3px rgb(183 155 218 / 22%);
+  box-shadow: 0 0 0 3px rgb(127 190 182 / 22%);
 }
 
 .landing-filter__label {

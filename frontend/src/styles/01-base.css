@@ -1,36 +1,40 @@
 /* Variables de diseño, reglas globales y utilidades. */
 
 :root {
-  --brand-primary: #7c3aed;
-  --brand-secondary: #8b5cf6;
-  --brand-secondary-text: #6d28d9;
-  --brand-deep: #5b21b6;
-  --brand-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #f43f5e 100%);
-  --brand-coral: #f43f5e;
-  --brand-coral-text: #be123c;
-  --brand-coral-soft: #fda4af;
+  /* Identidad: La Guajira. Mar Caribe para las acciones, sol del desierto como
+     acento y el rosado de los flamencos de Riohacha para favoritos y alertas. */
+  --brand-primary: #0e6b6f;
+  --brand-secondary: #1a8c8f;
+  --brand-secondary-text: #0b5a5d;
+  --brand-deep: #0a4a4c;
+  --brand-gradient: linear-gradient(135deg, #0e6b6f 0%, #13807f 100%);
+  --brand-sun: #f4a62a;
+  --brand-sun-soft: #fbd99a;
+  --brand-coral: #e8577e;
+  --brand-coral-text: #b42f57;
+  --brand-coral-soft: #f7b6c6;
   --brand-emerald: #10b981;
   --brand-emerald-soft: #a7f3d0;
-  --brand-amber: #f59e0b;
+  --brand-amber: #f4a62a;
   --brand-sky: #0ea5e9;
-  --text-primary: #1e1b4b;
-  --text-secondary: #64748b;
+  --text-primary: #12302f;
+  --text-secondary: #556b68;
   --surface: #fff;
-  --surface-muted: #fbf8f6;
-  --surface-tint: #f4efec;
-  --border: #e8e1de;
-  --border-strong: #d3c9c4;
-  --focus: #6d28d9;
+  --surface-muted: #f5f8f6;
+  --surface-tint: #e9f1ee;
+  --border: #dce6e2;
+  --border-strong: #c2d2cc;
+  --focus: #0e6b6f;
   --radius-control: 0.55rem;
   --radius-card: 0.9rem;
   --radius-panel: 1.15rem;
   --motion-standard: 260ms;
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --shadow-sm: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 10px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 10px -4px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 20px 35px -5px rgba(15, 23, 42, 0.1), 0 8px 16px -6px rgba(15, 23, 42, 0.05);
-  --shadow-3d: 0 20px 40px -15px rgba(124, 58, 237, 0.25), 0 8px 16px -6px rgba(15, 23, 42, 0.08);
-  --shadow-glow: 0 0 25px rgba(124, 58, 237, 0.35);
+  --shadow-sm: 0 4px 6px -1px rgba(18, 48, 47, 0.07), 0 2px 4px -2px rgba(18, 48, 47, 0.05);
+  --shadow-md: 0 10px 25px -3px rgba(18, 48, 47, 0.08), 0 4px 10px -4px rgba(18, 48, 47, 0.04);
+  --shadow-lg: 0 20px 35px -5px rgba(18, 48, 47, 0.1), 0 8px 16px -6px rgba(18, 48, 47, 0.05);
+  --shadow-3d: 0 20px 40px -15px rgba(14, 107, 111, 0.25), 0 8px 16px -6px rgba(18, 48, 47, 0.08);
+  --shadow-glow: 0 0 25px rgba(14, 107, 111, 0.3);
   color: var(--text-primary);
   background: var(--surface-muted);
   font-synthesis: none;
@@ -39,10 +43,11 @@
   /* Tipografía
      Las fuentes van dentro del proyecto (paquetes @fontsource, importados en
      main.tsx): todos los visitantes ven la misma letra y el sitio no depende de
-     un servicio externo. Inter para el texto y Plus Jakarta Sans para títulos. */
+     un servicio externo. Inter para el texto y Bricolage Grotesque para
+     títulos: tiene más carácter y se ajusta al tamaño (eje óptico). */
   --font-body: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-heading: "Plus Jakarta Sans Variable", "Inter Variable", ui-sans-serif,
+  --font-heading: "Bricolage Grotesque Variable", "Inter Variable", ui-sans-serif,
     system-ui, -apple-system, "Segoe UI", sans-serif;
   font-family: var(--font-body);
 }
@@ -113,19 +118,21 @@ img[data-loaded="false"] {
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --brand-primary: #7c3aed;
-  --brand-secondary: #a78bfa;
-  --brand-secondary-text: #c4b5fd;
-  --brand-deep: #c4b5fd;
-  --brand-coral-text: #fda4af;
-  --text-primary: #ecebf5;
-  --text-secondary: #a9a6c2;
-  --surface: #1c1a2e;
-  --surface-muted: #121120;
-  --surface-tint: #262440;
-  --border: #353252;
-  --border-strong: #4b4770;
-  --focus: #c4b5fd;
+  /* El botón principal se mantiene oscuro para que el texto blanco contraste. */
+  --brand-primary: #15807f;
+  --brand-secondary: #5ed3cb;
+  --brand-secondary-text: #7fe0d8;
+  --brand-deep: #a3ede6;
+  --brand-sun-soft: #6b4a14;
+  --brand-coral-text: #f7a3ba;
+  --text-primary: #e6f2ef;
+  --text-secondary: #9db7b2;
+  --surface: #13282a;
+  --surface-muted: #0c1c1d;
+  --surface-tint: #1b3436;
+  --border: #274245;
+  --border-strong: #375a5d;
+  --focus: #7fe0d8;
   --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 35%), 0 2px 4px -2px rgb(0 0 0 / 30%);
   --shadow-md: 0 10px 25px -3px rgb(0 0 0 / 40%), 0 4px 10px -4px rgb(0 0 0 / 30%);
   --shadow-lg: 0 20px 35px -5px rgb(0 0 0 / 50%), 0 8px 16px -6px rgb(0 0 0 / 35%);
@@ -138,7 +145,7 @@ img[data-loaded="false"] {
 }
 
 :root[data-theme="dark"] ::placeholder {
-  color: #7f7c9c;
+  color: #7d9893;
 }
 
 :root[data-theme="dark"] input[type="search"] {

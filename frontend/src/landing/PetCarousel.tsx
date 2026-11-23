@@ -45,7 +45,6 @@ export function PetCarousel({
     <section className="landing-pets" id="mascotas" ref={revealRef}>
       <div className="landing-pets__heading">
         <div>
-          <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Encuentra a tu compañero</p>
           <h2>Conoce a quienes buscan hogar</h2>
           <p>Cada perfil es una oportunidad para empezar una historia juntos.</p>
         </div>

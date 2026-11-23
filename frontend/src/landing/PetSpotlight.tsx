@@ -1,6 +1,7 @@
 import { revealRef } from "../ui/motion";
 import { FadeImage } from "../ui/loading";
-import { Heart, PawPrint } from "lucide-react";
+import { PawPrint } from "lucide-react";
+import CountUp from "../ui/reactbits/CountUp";
 import type { PublicPetPreview } from "../publicCatalog";
 import type { PetCatalog } from "./usePetCatalog";
 
@@ -27,7 +28,6 @@ export function PetSpotlight({
       aria-labelledby="landing-spotlight-title"
     >
       <div className="landing-spotlight__intro">
-        <p className="landing-eyebrow"><Heart size={13} fill="currentColor" aria-hidden="true" /> Una historia que empieza contigo</p>
         <h2 id="landing-spotlight-title">Cada perfil tiene algo especial.</h2>
         <p>
           Conoce de cerca a una de las mascotas disponibles en refugios
@@ -35,7 +35,9 @@ export function PetSpotlight({
         </p>
         {!petsLoading && !petsError && (
           <p className="landing-spotlight__count" aria-live="polite">
-            <strong>{pets.length}</strong>
+            <strong>
+              <CountUp to={pets.length} duration={1.2} />
+            </strong>
             {pets.length === 1
               ? " perfil disponible ahora"
               : " perfiles disponibles ahora"}
@@ -56,7 +58,6 @@ export function PetSpotlight({
           })()}
         </div>
         <div className="landing-spotlight__content">
-          <p className="portal-eyebrow">Perfil disponible</p>
           <h3>{featuredPet.name}</h3>
           <p className="landing-spotlight__metadata">
             {[featuredPet.species, featuredPet.city]

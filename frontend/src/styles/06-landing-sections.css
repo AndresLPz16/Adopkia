@@ -50,7 +50,7 @@
   height: 2.4rem;
   margin-bottom: 1.1rem;
   color: var(--brand-deep);
-  background: #eee7f6;
+  background: #e9f1ee;
   border-radius: 50%;
   font-size: 0.76rem;
   font-weight: 850;
@@ -173,9 +173,7 @@
   align-items: center;
   gap: clamp(2rem, 6vw, 5rem);
   padding: clamp(3rem, 7vw, 5.5rem) clamp(1rem, 8vw, 7rem);
-  background:
-    radial-gradient(ellipse at 12% 85%, rgb(253 228 225 / 55%), transparent 42%),
-    var(--surface);
+  background: var(--surface);
 }
 
 .landing-spotlight__intro h2 {
@@ -330,12 +328,6 @@
     gap: 2rem;
     padding-inline: 2rem;
   }
-}
-
-:root[data-theme="dark"] .landing-spotlight {
-  background:
-    radial-gradient(ellipse at 12% 85%, rgb(124 58 237 / 16%), transparent 42%),
-    var(--surface);
 }
 
 

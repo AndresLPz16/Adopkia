@@ -11,7 +11,7 @@
   justify-items: center;
   padding: 1.25rem;
   overflow-y: auto;
-  background: rgb(53 44 66 / 58%);
+  background: rgb(18 48 47 / 58%);
 }
 
 .landing-pet-dialog {
@@ -24,7 +24,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1rem;
-  box-shadow: 0 1.5rem 4rem rgb(53 44 66 / 24%);
+  box-shadow: 0 1.5rem 4rem rgb(18 48 47 / 24%);
 }
 
 .landing-pet-dialog__close {
@@ -110,7 +110,7 @@
   bottom: 0.85rem;
   padding: 0.35rem 0.65rem;
   color: #fff;
-  background: rgb(53 44 66 / 72%);
+  background: rgb(18 48 47 / 72%);
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 750;
@@ -125,7 +125,7 @@
   padding: clamp(1.5rem, 4vw, 2.5rem);
   animation: dialog-3d-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   backdrop-filter: blur(16px);
-  box-shadow: 0 25px 60px -15px rgba(53, 44, 66, 0.22);
+  box-shadow: 0 25px 60px -15px rgba(18, 48, 47, 0.22);
 }
 
 .landing-pet-dialog__content .portal-eyebrow,
@@ -194,8 +194,8 @@
 }
 
 :root[data-theme="dark"] .landing-pet-dialog__gallery-arrow {
-  color: #ede9fe;
-  background: rgb(28 26 46 / 88%);
+  color: #e3f1ee;
+  background: rgb(19 40 42 / 88%);
 }
 
 

@@ -186,7 +186,11 @@ describe("public landing page", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(await screen.findByText("7", { selector: ".landing-spotlight__count strong" })).toBeInTheDocument();
+    // La cifra se anima (CountUp) dentro de varios <span>: se espera al valor final.
+    await waitFor(
+      () => expect(document.querySelector(".landing-spotlight__count strong")).toHaveTextContent(/^7$/),
+      { timeout: 4000 },
+    );
     expect(screen.getByText("perfiles disponibles ahora")).toBeInTheDocument();
     expect(screen.getByText("Raza: Mestizo · Refugio: Refugio Huellas", { selector: ".landing-spotlight__source" })).toBeInTheDocument();
     expect(screen.getByText("2 años · Mediano", { selector: ".landing-spotlight__facts" })).toBeInTheDocument();

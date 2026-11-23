@@ -23,6 +23,32 @@ Object.defineProperty(window, "localStorage", {
   value: localStorage,
 });
 
+// jsdom no implementa IntersectionObserver; los navegadores sí. Los
+// componentes animados (motion) lo usan para empezar al ser visibles: en las
+// pruebas todo cuenta como visible desde el principio.
+class VisibleIntersectionObserver implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly thresholds = [0];
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+  observe(target: Element) {
+    this.callback(
+      [{ target, isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry],
+      this,
+    );
+  }
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+
+if (typeof window.IntersectionObserver === "undefined") {
+  window.IntersectionObserver = VisibleIntersectionObserver;
+  globalThis.IntersectionObserver = VisibleIntersectionObserver;
+}
+
 afterEach(() => {
   cleanup();
   window.localStorage.clear();

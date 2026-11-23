@@ -35,7 +35,6 @@ export function Landing() {
       )}
       <section className="landing-bottom" ref={revealRef}>
         <div>
-          <p className="portal-eyebrow">Nuestra comunidad</p>
           <h2>Un espacio para cada persona que cuida.</h2>
           <p>
             Adoptantes, refugios y veterinarios trabajan juntos para que cada
@@ -43,7 +42,7 @@ export function Landing() {
           </p>
         </div>
       </section>
-      <footer className="landing-footer">Adopkia · Una comunidad por el bienestar animal</footer>
+      <footer className="landing-footer">Adopkia: adopción responsable con refugios verificados.</footer>
     </main>
   );
 }
