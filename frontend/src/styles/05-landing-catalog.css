@@ -63,28 +63,46 @@
   display: grid;
 }
 
+/* Pegatina: ladeada, con borde de tinta, como una etiqueta pegada a mano. */
 .landing-pet__badge {
   position: absolute;
-  top: 0.8rem;
-  left: 0.8rem;
-  padding: 0.42rem 0.65rem;
-  color: var(--brand-deep);
-  background: rgb(255 255 255 / 95%);
-  border-radius: 999px;
-  font-size: 0.7rem;
+  top: 0.85rem;
+  left: 0.75rem;
+  padding: 0.35rem 0.7rem;
+  color: var(--text-primary);
+  background: var(--brand-sun);
+  border: 2px solid #12302f;
+  border-radius: 0.5rem;
+  box-shadow: 2px 3px 0 #12302f;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
   font-weight: 800;
+  letter-spacing: -0.01em;
   pointer-events: none;
-  transform: translateZ(24px);
-  transition: transform 300ms ease;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  transform: rotate(-5deg) translateZ(24px);
+  transition: transform 300ms var(--motion-ease);
 }
 
 .landing-pet:hover .landing-pet__badge {
-  transform: translateZ(32px) scale(1.06);
+  transform: rotate(-2deg) translateZ(32px) scale(1.06);
 }
 
-.landing-pet__badge span {
-  color: var(--brand-coral-text);
+.landing-pet__badge--new {
+  color: #fff;
+  background: var(--brand-coral);
+  transform: rotate(4deg) translateZ(24px);
+}
+
+.landing-pet:hover .landing-pet__badge--new {
+  transform: rotate(1deg) translateZ(32px) scale(1.06);
+}
+
+:root[data-theme="dark"] .landing-pet__badge {
+  color: #12302f;
+}
+
+:root[data-theme="dark"] .landing-pet__badge--new {
+  color: #fff;
 }
 
 .landing-pet__placeholder {
@@ -147,8 +165,8 @@
 }
 
 .landing-pet__heart--liked {
-  background: var(--brand-coral);
   color: var(--brand-coral);
+  background: color-mix(in srgb, var(--brand-coral) 16%, var(--surface));
 }
 
 .landing-pet__details {
@@ -231,20 +249,6 @@
   background: var(--brand-primary);
 }
 
-.landing-pet__heart button {
-  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border-radius: 50%;
-}
-
-.landing-pet__heart button:hover {
-  transform: scale(1.22) rotate(-8deg);
-  background: #fff1f2;
-}
-
-.landing-pet__heart button:active {
-  animation: heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 /* Texto con un icono al lado. */
 .landing-pet__badge,
 .landing-pet__details,
@@ -279,11 +283,6 @@
   border-color: color-mix(in srgb, var(--brand-secondary) 35%, var(--surface));
 }
 
-/* Corazón de "me gusta" */
-.landing-pet__heart--liked > svg {
-  animation: heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 @media (hover: none) {
   /* En pantallas táctiles no hay cursor: sin inclinación ni flotado constante,
      que además gasta batería. */
@@ -294,13 +293,10 @@
 }
 
 :root[data-theme="dark"] .landing-pet__badge {
-  color: #ede9fe;
-  background: rgb(28 26 46 / 88%);
+  color: #e3f1ee;
+  background: rgb(19 40 42 / 88%);
 }
 
-:root[data-theme="dark"] .landing-pet__heart button:hover {
-  background: #3a1d2c;
-}
 
 
 /* ---------- .landing-pets ---------- */
@@ -452,7 +448,7 @@
   color: #fff;
   background: var(--brand-primary);
   transform: translateY(-3px) scale(1.1);
-  box-shadow: 0 8px 20px -2px rgb(124 58 237 / 35%);
+  box-shadow: 0 8px 20px -2px rgb(14 107 111 / 35%);
 }
 
 .landing-carousel__controls button:disabled {
@@ -485,7 +481,7 @@
 :root[data-theme="dark"] .landing-filter__label,
 :root[data-theme="dark"] .landing-filters__clear,
 :root[data-theme="dark"] .landing-pet__action {
-  color: #c4b5fd;
+  color: #7fe0d8;
 }
 
 :root[data-theme="dark"] .landing-carousel__controls button:hover:not(:disabled) {
@@ -573,7 +569,7 @@
 
 .landing-filter:focus-within {
   border-color: var(--brand-secondary);
-  box-shadow: 0 0 0 3px rgb(183 155 218 / 22%);
+  box-shadow: 0 0 0 3px rgb(127 190 182 / 22%);
 }
 
 .landing-filter__label {

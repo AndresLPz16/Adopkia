@@ -10,18 +10,18 @@
    pública. Antes cada rol cambiaba botones, menú y cifras de color (rojo,
    verde, azul) y el portal parecía un producto distinto según quién entrara. */
 .app-shell[data-role] {
-  --role-accent: #7c3aed;
-  --role-text: #6d28d9;
-  --role-button: #6d28d9;
-  --role-tint: #f5f3ff;
-  --role-glow: rgba(124, 58, 237, 0.35);
-  --role-gradient: linear-gradient(135deg, #7c3aed, #8b5cf6, #c084fc);
+  --role-accent: #0e6b6f;
+  --role-text: #0b5a5d;
+  --role-button: #0b5a5d;
+  --role-tint: #eef6f4;
+  --role-glow: rgba(14, 107, 111, 0.35);
+  --role-gradient: linear-gradient(135deg, #0e6b6f, #1a8c8f, #f4a62a);
 }
 
 /* El color propio del rol queda como un detalle: la etiqueta del rol en el
    encabezado. */
 .app-shell[data-role="adoptante"] {
-  --role-badge: #be123c;
+  --role-badge: #b42f57;
   --role-badge-tint: #fff1f2;
 }
 
@@ -36,16 +36,16 @@
 }
 
 .app-shell[data-role="administrador"] {
-  --role-badge: #6d28d9;
-  --role-badge-tint: #f5f3ff;
+  --role-badge: #0b5a5d;
+  --role-badge-tint: #eef6f4;
 }
 
 :root[data-theme="dark"] .app-shell[data-role] {
-  --role-accent: #a78bfa;
-  --role-text: #c4b5fd;
-  --role-button: #7c3aed;
-  --role-tint: #2a2548;
-  --role-gradient: linear-gradient(135deg, #a78bfa, #c4b5fd, #e9d5ff);
+  --role-accent: #5ed3cb;
+  --role-text: #7fe0d8;
+  --role-button: #15807f;
+  --role-tint: #1b3436;
+  --role-gradient: linear-gradient(135deg, #5ed3cb, #7fe0d8, #fbd99a);
 }
 
 
@@ -218,7 +218,7 @@
   transform: translateY(-2px) scale(1.05);
   background: var(--surface);
   border-color: var(--role-accent, var(--brand-primary));
-  box-shadow: 0 6px 18px -3px var(--role-glow, rgba(124, 58, 237, 0.25));
+  box-shadow: 0 6px 18px -3px var(--role-glow, rgba(14, 107, 111, 0.25));
 }
 
 .app-header__bell:active {
@@ -239,7 +239,7 @@
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--brand-coral, #f43f5e);
+  background: var(--brand-coral, #e8577e);
   color: #ffffff;
   font-size: 0.68rem;
   font-weight: 850;
@@ -247,7 +247,7 @@
   align-items: center;
   justify-content: center;
   border: 2px solid var(--surface);
-  box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
+  box-shadow: 0 2px 6px rgba(232, 87, 126, 0.4);
   animation: badge-pulse 2s infinite;
 }
 
@@ -288,7 +288,7 @@
   font-size: 0.7rem;
   font-weight: 750;
   border-radius: 999px;
-  background: var(--brand-coral-soft, #fda4af);
+  background: var(--brand-coral-soft, #f7a3ba);
   color: #9f1239;
 }
 
@@ -481,7 +481,7 @@
   min-width: 0;
   padding: 1rem clamp(1rem, 3vw, 2.5rem) 3rem;
   background:
-    radial-gradient(ellipse at 90% 0%, rgb(225 211 240 / 55%), transparent 34%),
+    radial-gradient(ellipse at 90% 0%, rgb(207 229 224 / 55%), transparent 34%),
     var(--surface-muted);
   animation: view-enter 0.4s var(--motion-ease) both;
 }
@@ -904,7 +904,7 @@
   color: #fff;
   background: var(--brand-gradient);
   border-radius: 50%;
-  font-family: "Plus Jakarta Sans Variable", Inter, sans-serif;
+  font-family: var(--font-heading);
   font-weight: 800;
   line-height: 1;
   user-select: none;

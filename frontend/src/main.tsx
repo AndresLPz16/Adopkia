@@ -5,7 +5,7 @@ import App from "./App";
 import { applyStoredTheme } from "./ui/theme";
 // Fuentes incluidas en el proyecto: no dependen de un servicio externo.
 import "@fontsource-variable/inter";
-import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/bricolage-grotesque";
 import "./styles/index.css";
 
 applyStoredTheme();

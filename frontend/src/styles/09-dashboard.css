@@ -29,7 +29,7 @@
 }
 
 .portal-dashboard[data-role] .portal-dashboard__hero {
-  background: linear-gradient(120deg, #f2ecf9, #fcfaff 76%);
+  background: linear-gradient(120deg, #e6f1ee, #fbfdfc 76%);
 }
 
 .portal-dashboard__hero::after {
@@ -124,7 +124,7 @@
 
 /* Elementos con color fijo */
 :root[data-theme="dark"] .portal-dashboard[data-role] .portal-dashboard__hero {
-  background: linear-gradient(120deg, #2a2548, var(--surface) 76%);
+  background: linear-gradient(120deg, #1b3436, var(--surface) 76%);
 }
 
 
@@ -145,7 +145,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  box-shadow: 0 2px 12px rgb(53 44 66 / 3%);
+  box-shadow: 0 2px 12px rgb(18 48 47 / 3%);
   transform-style: preserve-3d;
   transition: transform 320ms var(--motion-ease), box-shadow 320ms ease, border-color 320ms ease;
 }
@@ -268,7 +268,7 @@
 }
 
 .portal-stat-chart__bar:hover {
-  filter: brightness(1.15) drop-shadow(0 4px 8px rgba(124, 58, 237, 0.4));
+  filter: brightness(1.15) drop-shadow(0 4px 8px rgba(14, 107, 111, 0.4));
 }
 
 
