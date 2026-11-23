@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, Heart, PawPrint, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, PawPrint, X } from "lucide-react";
+import { LikeHeart } from "../ui/LikeHeart";
 import type { PublicPetPreview } from "../publicCatalog";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
@@ -126,7 +127,7 @@ export function PetDialog({
             aria-pressed={likedPetIds.has(selectedPet.id)}
             onClick={() => togglePetLike(selectedPet.id)}
           >
-            <Heart size={16} fill={likedPetIds.has(selectedPet.id) ? "currentColor" : "none"} aria-hidden="true" />
+            <LikeHeart liked={likedPetIds.has(selectedPet.id)} size={18} />
             {likedPetIds.has(selectedPet.id) ? "Te gusta esta mascota" : "Me gusta"}
           </button>
           <button

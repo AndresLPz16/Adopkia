@@ -1,8 +1,19 @@
 import { revealRef, tiltHandlers } from "../ui/motion";
 import { FadeImage, SkeletonGrid } from "../ui/loading";
+import { LikeHeart } from "../ui/LikeHeart";
 import { ArrowLeft, ArrowRight, Heart, MapPin, PawPrint, Search } from "lucide-react";
 import type { AuthFlow } from "./useAuthFlow";
 import type { PetCatalog } from "./usePetCatalog";
+
+// Días durante los que un perfil se marca como "Recién llegado".
+const RECENT_DAYS = 14;
+
+function isRecentlyPublished(publishedAt: string | null | undefined): boolean {
+  if (!publishedAt) return false;
+  const published = new Date(publishedAt).getTime();
+  if (Number.isNaN(published)) return false;
+  return Date.now() - published < RECENT_DAYS * 24 * 60 * 60 * 1000;
+}
 
 export function PetCarousel({
   catalog,
@@ -162,7 +173,11 @@ export function PetCarousel({
                         <span className="landing-pet__placeholder" aria-hidden="true"><PawPrint size={56} strokeWidth={1.5} /></span>
                       )}
                     </button>
-                    <span className="landing-pet__badge"><Heart size={11} fill="currentColor" aria-hidden="true" /> Busca familia</span>
+                    {isRecentlyPublished(pet.published_at) ? (
+                      <span className="landing-pet__badge landing-pet__badge--new">Recién llegado</span>
+                    ) : (
+                      <span className="landing-pet__badge">Busca familia</span>
+                    )}
                   </div>
                   <div className="landing-pet__content">
                     <div className="landing-pet__title">
@@ -174,7 +189,7 @@ export function PetCarousel({
                         aria-pressed={likedPetIds.has(pet.id)}
                         onClick={() => togglePetLike(pet.id)}
                       >
-                        <Heart size={18} fill={likedPetIds.has(pet.id) ? "currentColor" : "none"} aria-hidden="true" />
+                        <LikeHeart liked={likedPetIds.has(pet.id)} size={20} />
                       </button>
                     </div>
                     <p className="landing-pet__details">

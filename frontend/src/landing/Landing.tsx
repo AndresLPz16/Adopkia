@@ -1,8 +1,10 @@
 import { revealRef } from "../ui/motion";
+import { AdoptionStories } from "./AdoptionStories";
 import { AuthScreen } from "./AuthScreen";
 import { LandingHeader } from "./LandingHeader";
 import { LandingHero } from "./LandingHero";
 import { LandingInfoSections } from "./LandingInfoSections";
+import { LandingMarquee } from "./LandingMarquee";
 import { PetCarousel } from "./PetCarousel";
 import { PetDialog } from "./PetDialog";
 import { PetSpotlight } from "./PetSpotlight";
@@ -24,7 +26,9 @@ export function Landing() {
       <LandingHeader showAuthentication={showAuthentication} />
       <LandingHero catalog={catalog} />
       <PetCarousel catalog={catalog} showAuthentication={showAuthentication} />
+      <LandingMarquee />
       {featuredPet && <PetSpotlight catalog={catalog} featuredPet={featuredPet} />}
+      <AdoptionStories />
       <LandingInfoSections />
       {selectedPet && (
         <PetDialog

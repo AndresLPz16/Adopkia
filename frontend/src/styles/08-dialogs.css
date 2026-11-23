@@ -165,9 +165,9 @@
 }
 
 .landing-pet-dialog__like--liked {
-  background: var(--brand-coral);
+  color: var(--brand-coral-text);
+  background: color-mix(in srgb, var(--brand-coral) 14%, var(--surface));
   border-color: var(--brand-coral);
-  color: var(--brand-coral);
 }
 
 .landing-pet-dialog__content > .portal-button {
@@ -181,10 +181,6 @@
     height: min(42vh, 320px);
     min-height: 200px;
   }
-}
-
-.landing-pet-dialog__like--liked > svg {
-  animation: heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* El logotipo y las ilustraciones conservan su fondo propio. */
