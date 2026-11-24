@@ -21,7 +21,11 @@ function ProtectedRequest() {
 }
 
 function PermissionStatus() {
-  const { permissions } = useAuth();
+  const { permissions, status } = useAuth();
+  // El proveedor solo escucha el foco de la ventana con la sesión autenticada.
+  // Mostrar "cannot-manage-roles" antes hacía que la prueba disparara el foco
+  // demasiado pronto en máquinas lentas (CI) y el evento se perdía.
+  if (status !== "authenticated") return <output>loading</output>;
   return (
     <output>
       {permissions?.adoptante?.rolePermissions?.includes("manage")
