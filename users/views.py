@@ -306,6 +306,7 @@ SIDEBAR_DEFAULT_LABELS = {
     "profile": "Mi perfil",
     "pets": "Mascotas",
     "vaccines": "Catálogo de vacunas",
+    "species": "Especies y razas",
     "requests": "Solicitudes",
     "adoptions": "Adopciones y cuidados",
     "messages": "Mensajes",

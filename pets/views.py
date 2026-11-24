@@ -24,18 +24,56 @@ from .serializers import (
 )
 
 
-class SpeciesViewSet(viewsets.ReadOnlyModelViewSet):
+# Nombre de la raza que se crea con cada especie nueva, para que los refugios
+# puedan publicar enseguida aunque nadie haya cargado razas todavía.
+DEFAULT_BREED_NAME = "Sin raza definida"
+
+
+class SpeciesViewSet(viewsets.ModelViewSet):
+    """Catálogo de especies: lectura pública, edición con el permiso "species"."""
+
+    rbac_resource = "species"
+    rbac_allow_anonymous_read = True
     queryset = Species.objects.all()
     serializer_class = SpeciesSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (RolePermissionRequired,)
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        species = serializer.save()
+        Breed.objects.create(species=species, name=DEFAULT_BREED_NAME)
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        if Pet.objects.filter(breed__species=instance).exists():
+            raise ValidationError(
+                {"species": _("No se puede eliminar una especie que tiene mascotas registradas.")}
+            )
+        if instance.vaccines.exists():
+            raise ValidationError(
+                {"species": _("No se puede eliminar una especie que tiene vacunas en el catálogo.")}
+            )
+        instance.breeds.all().delete()
+        instance.delete()
 
 
-class BreedViewSet(viewsets.ReadOnlyModelViewSet):
+class BreedViewSet(viewsets.ModelViewSet):
+    """Catálogo de razas: lectura pública, edición con el permiso "species"."""
+
+    rbac_resource = "species"
+    rbac_allow_anonymous_read = True
     queryset = Breed.objects.select_related("species").all()
     serializer_class = BreedSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (RolePermissionRequired,)
     filterset_fields = ("species",)
     search_fields = ("name", "species__name")
+
+    def perform_destroy(self, instance):
+        if instance.pets.exists():
+            raise ValidationError(
+                {"breed": _("No se puede eliminar una raza que tiene mascotas registradas.")}
+            )
+        instance.delete()
 
 
 class PetViewSet(viewsets.ModelViewSet):

@@ -18,6 +18,17 @@ class SpeciesSerializer(LocalizedModelSerializer):
         model = Species
         fields = ("id", "name")
 
+    def validate_name(self, name):
+        name = " ".join(name.split())
+        if not name:
+            raise serializers.ValidationError(_("Escribe el nombre de la especie."))
+        taken = Species.objects.filter(name__iexact=name)
+        if self.instance is not None:
+            taken = taken.exclude(pk=self.instance.pk)
+        if taken.exists():
+            raise serializers.ValidationError(_("Ya existe una especie con ese nombre."))
+        return name
+
 
 class BreedSerializer(LocalizedModelSerializer):
     species_name = serializers.CharField(source="species.name", read_only=True)
@@ -26,6 +37,30 @@ class BreedSerializer(LocalizedModelSerializer):
     class Meta:
         model = Breed
         fields = ("id", "species", "species_name", "name")
+        # La unicidad se revisa en validate(), sin distinguir mayúsculas.
+        validators = []
+
+    def validate(self, attrs):
+        name = " ".join(attrs.get("name", getattr(self.instance, "name", "")).split())
+        if not name:
+            raise serializers.ValidationError({"name": _("Escribe el nombre de la raza.")})
+        species = attrs.get("species", getattr(self.instance, "species", None))
+        if (
+            self.instance is not None
+            and "species" in attrs
+            and attrs["species"] != self.instance.species
+            and self.instance.pets.exists()
+        ):
+            raise serializers.ValidationError(
+                {"species": _("No se puede cambiar la especie de una raza con mascotas registradas.")}
+            )
+        taken = Breed.objects.filter(species=species, name__iexact=name)
+        if self.instance is not None:
+            taken = taken.exclude(pk=self.instance.pk)
+        if taken.exists():
+            raise serializers.ValidationError({"name": _("Esa especie ya tiene una raza con ese nombre.")})
+        attrs["name"] = name
+        return attrs
 
 
 class PetPhotoSerializer(serializers.ModelSerializer):
