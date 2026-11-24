@@ -2,6 +2,10 @@
 
 Plataforma de adopción responsable y seguimiento post-adopción: API REST en Django y portal web en React (`frontend/`, con su propio [README](./frontend/README.md)). Las migraciones de Django son el camino oficial para crear y actualizar el esquema; [database/adopkia_v3.sql](./database/adopkia_v3.sql) es la referencia del modelo físico para el DER, MySQL Workbench y `compare_schema`. Las tablas y columnas usan los nombres españoles del SQL; los modelos, atributos Python y rutas API se mantienen en inglés.
 
+## Versión actual
+
+La primera versión formal etiquetada del proyecto es **v1.0.0**. Este lanzamiento inicial reúne correcciones compatibles, sin cambios incompatibles en la API. Consulta el [changelog](./CHANGELOG.md) para ver los cambios y [CONTRIBUTING.md](./CONTRIBUTING.md) para el flujo de ramas, commits y pull requests.
+
 ## Estructura del proyecto
 
 - `manage.py`, `requirements.txt`, `requirements-dev.txt`, `requirements.lock.txt`, `.env.example` y `pytest.ini` están en la raíz.
