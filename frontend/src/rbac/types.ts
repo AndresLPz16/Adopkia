@@ -21,6 +21,7 @@ export const RESOURCES = {
   VETERINARIANS: "veterinarians",
   MEDICAL_RECORDS: "medicalRecords",
   VACCINES: "vaccines",
+  SPECIES: "species",
   REMINDERS: "reminders",
   MESSAGING: "messaging",
   NOTIFICATIONS: "notifications",

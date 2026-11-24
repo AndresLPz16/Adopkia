@@ -15,6 +15,7 @@ RESOURCES = (
     ("veterinarians", "Perfiles veterinarios"),
     ("medicalRecords", "Historiales médicos"),
     ("vaccines", "Catálogo de vacunas"),
+    ("species", "Especies y razas"),
     ("reminders", "Recordatorios"),
     ("messaging", "Conversaciones y mensajes"),
     ("notifications", "Notificaciones"),

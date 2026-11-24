@@ -13,6 +13,7 @@ import { SheltersSection, UsersSection } from "./ManagementSections";
 import { roleNames } from "./navigation";
 import { DashboardSection, StatisticsSection } from "./OverviewSections";
 import { PetsSection, RequestsSection } from "./PetSections";
+import { SpeciesCatalogSection } from "./pets/SpeciesCatalogSection";
 import type {
   PermissionCheck,
   PortalDataRow,
@@ -302,6 +303,15 @@ export function SectionContent({
                           loading={loading}
                           busy={busy}
                         />
+                : section === "species"
+                  ? <SpeciesCatalogSection
+                      species={species}
+                      breeds={breeds}
+                      canDo={canDo}
+                      send={send}
+                      loading={loading}
+                      busy={busy}
+                    />
                 : section === "shelters"
                   ? <SheltersSection
                       role={role}

@@ -220,6 +220,7 @@ class RolePermissionApiTests(APITestCase):
                 "veterinarians",
                 "medicalRecords",
                 "vaccines",
+                "species",
                 "reminders",
                 "messaging",
                 "notifications",
