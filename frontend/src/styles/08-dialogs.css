@@ -200,7 +200,10 @@
 .portal-request-dialog {
   display: block;
   width: min(100%, 720px);
+  max-height: min(90vh, 760px);
   grid-template-columns: minmax(0, 1fr);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 @media (max-width: 760px) {
@@ -212,8 +215,9 @@
 
 .portal-request-dialog .landing-pet-dialog__content {
   align-items: stretch;
-  max-height: min(85vh, 700px);
-  overflow-y: auto;
+  justify-content: flex-start;
+  max-height: none;
+  overflow: visible;
   padding-top: 3.25rem;
 }
 

@@ -187,6 +187,8 @@
 /* ---------- .portal-card ---------- */
 
 .portal-card {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 1.25rem;
   background: var(--surface);
@@ -220,6 +222,7 @@
 }
 
 .portal-card__body {
+  flex: 1 1 auto;
   margin-top: 1rem;
   color: var(--text-secondary);
   font-size: 0.9rem;
@@ -239,6 +242,11 @@
   align-items: center;
   gap: 0.65rem;
   margin-top: 1rem;
+}
+
+.portal-card__actions {
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 

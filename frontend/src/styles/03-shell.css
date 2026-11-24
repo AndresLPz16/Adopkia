@@ -267,6 +267,16 @@
   backdrop-filter: blur(16px);
 }
 
+@media (max-width: 420px) {
+  .app-header__notifications-popover {
+    position: fixed;
+    top: 76px;
+    right: 0.75rem;
+    width: min(380px, calc(100vw - 1.5rem));
+    max-width: none;
+  }
+}
+
 .app-header__notifications-header {
   display: flex;
   align-items: center;

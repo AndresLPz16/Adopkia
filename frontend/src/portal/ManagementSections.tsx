@@ -39,6 +39,17 @@ export function SheltersSection({
   busy: boolean;
 }) {
   const isAdmin = role === ROLES.ADMIN;
+  const canDeleteShelter = (shelter: PortalDataRow) =>
+    (isAdmin ||
+      members.some(
+        (member) =>
+          text(member.shelter) === text(shelter.id) &&
+          text(member.user) === text(userId),
+      )) &&
+    canDo(RESOURCES.SHELTERS, ACTIONS.DELETE);
+  const canVerifyShelter = (shelter: PortalDataRow) =>
+    statusCode(shelter, "verification_status") === "pendiente" &&
+    canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY);
   return (
     <>
       <SectionTitle eyebrow={isAdmin ? "Supervisión" : "Tu organización"} title={isAdmin ? "Refugios" : "Refugios y equipo"} description={isAdmin ? "Revisa registros y gestiona la verificación de refugios." : "Administra la información de tu refugio y consulta a sus integrantes."} />
@@ -67,29 +78,62 @@ export function SheltersSection({
       )}
       <div className="portal-grid">
         {shelters.map((shelter) => (
-          <DataCard key={text(shelter.id)} title={text(shelter.name)} subtitle={`${text(shelter.city)} · ${text(shelter.address)}`} status={text(shelter.verification_status)}>
+          <DataCard
+            key={text(shelter.id)}
+            title={text(shelter.name)}
+            subtitle={`${text(shelter.city)} · ${text(shelter.address)}`}
+            status={text(shelter.verification_status)}
+            actions={
+              (canVerifyShelter(shelter) ||
+                (!isAdmin && canDo(RESOURCES.SHELTERS, ACTIONS.UPDATE)) ||
+                canDeleteShelter(shelter)) && (
+                <div className="portal-inline-actions">
+                  {canVerifyShelter(shelter) && (
+                    <>
+                      <button className="portal-button" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: true }, "Refugio verificado.")}>Verificar</button>
+                      <button className="portal-button portal-button--secondary" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: false }, "Solicitud de refugio rechazada.")}>Rechazar</button>
+                    </>
+                  )}
+                  {!isAdmin && canDo(RESOURCES.SHELTERS, ACTIONS.UPDATE) && (
+                    <button className="portal-link" onClick={() => {
+                      setEditingShelter(text(shelter.id));
+                      setForm({
+                        name: text(shelter.name),
+                        address: text(shelter.address),
+                        city: text(shelter.city),
+                        contact_phone: text(shelter.contact_phone),
+                        contact_email: text(shelter.contact_email),
+                      });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}>Editar refugio</button>
+                  )}
+                  {canDeleteShelter(shelter) && (
+                    <button
+                      className="portal-link portal-link--danger"
+                      onClick={async () => {
+                        if (await confirmAction({
+                          title: `¿Eliminar el refugio "${text(shelter.name)}"?`,
+                          message: "Esta acción no se puede deshacer.",
+                        })) {
+                          void send(
+                            `/api/v1/shelters/${text(shelter.id)}/`,
+                            "DELETE",
+                            undefined,
+                            "Refugio eliminado.",
+                          );
+                        }
+                      }}
+                    >
+                      Eliminar refugio
+                    </button>
+                  )}
+                </div>
+              )
+            }
+          >
             <p>{text(shelter.contact_email)} {shelter.contact_phone ? `· ${text(shelter.contact_phone)}` : ""}</p>
-            {statusCode(shelter, "verification_status") === "pendiente" && canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY) && (
-              <div className="portal-inline-actions">
-                <button className="portal-button" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: true }, "Refugio verificado.")}>Verificar</button>
-                <button className="portal-button portal-button--secondary" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: false }, "Solicitud de refugio rechazada.")}>Rechazar</button>
-              </div>
-            )}
             {!isAdmin && (
               <>
-                {canDo(RESOURCES.SHELTERS, ACTIONS.UPDATE) && <div className="portal-inline-actions">
-                  <button className="portal-link" onClick={() => {
-                    setEditingShelter(text(shelter.id));
-                    setForm({
-                      name: text(shelter.name),
-                      address: text(shelter.address),
-                      city: text(shelter.city),
-                      contact_phone: text(shelter.contact_phone),
-                      contact_email: text(shelter.contact_email),
-                    });
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}>Editar refugio</button>
-                </div>}
                 {canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.CREATE) && <form className="portal-card-form" onSubmit={submit(async () => {
                   await send(`/api/v1/shelters/${text(shelter.id)}/members/`, "POST", { email: (form.email ?? "").trim(), position: form.position || "colaborador" }, "Integrante agregado.");
                 })}>
@@ -99,30 +143,6 @@ export function SheltersSection({
                   <button className="portal-link" disabled={busy}>Agregar integrante</button>
                 </form>}
               </>
-            )}
-            {(isAdmin || members.some(
-              (member) =>
-                text(member.shelter) === text(shelter.id) &&
-                text(member.user) === text(userId),
-            )) && canDo(RESOURCES.SHELTERS, ACTIONS.DELETE) && (
-              <button
-                className="portal-link portal-link--danger"
-                onClick={async () => {
-                  if (await confirmAction({
-                    title: `¿Eliminar el refugio "${text(shelter.name)}"?`,
-                    message: "Esta acción no se puede deshacer.",
-                  })) {
-                    void send(
-                      `/api/v1/shelters/${text(shelter.id)}/`,
-                      "DELETE",
-                      undefined,
-                      "Refugio eliminado.",
-                    );
-                  }
-                }}
-              >
-                Eliminar refugio
-              </button>
             )}
           </DataCard>
         ))}
