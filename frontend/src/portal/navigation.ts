@@ -220,6 +220,7 @@ export function pathsForRole(role: string): Record<string, string[]> {
       "/api/v1/adoptions/",
       "/api/v1/follow-ups/",
       "/api/v1/reminders/",
+      "/api/v1/vaccines/",
     ],
     messages: ["/api/v1/conversations/", "/api/v1/messages/"],
     records: [
