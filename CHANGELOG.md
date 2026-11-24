@@ -27,3 +27,12 @@ compatibles, sin cambios incompatibles de API.
 
 - Pruebas, tipado y build del frontend mediante CI.
 - Pruebas backend y migración contra MySQL 8 mediante CI.
+
+### Trazabilidad
+
+- **#36 — Selector de vacunas:** rama `fix/issue-36-vaccine-selector` →
+  commit `155a615` → [PR #38](https://github.com/AndresLPz16/Adopkia/pull/38)
+  → integración `1f868cb` → `v1.0.0`.
+- **#33 — Orden de preguntas activas:** rama `fix/issue-33-question-order` →
+  commit `dbb0d79` → [PR #39](https://github.com/AndresLPz16/Adopkia/pull/39)
+  → integración `b0bc747` → `v1.0.0`.
