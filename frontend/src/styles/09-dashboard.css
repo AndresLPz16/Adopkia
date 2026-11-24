@@ -4,7 +4,7 @@
 
 .portal-dashboard {
   scroll-margin-top: 1rem;
-  animation: view-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: view-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .portal-dashboard__hero {

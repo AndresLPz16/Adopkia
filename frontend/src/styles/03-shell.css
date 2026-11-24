@@ -493,7 +493,7 @@
   background:
     radial-gradient(ellipse at 90% 0%, rgb(207 229 224 / 55%), transparent 34%),
     var(--surface-muted);
-  animation: view-enter 0.4s var(--motion-ease) both;
+  animation: view-enter 0.4s var(--motion-ease) backwards;
 }
 
 .app-content .rbac-panel {

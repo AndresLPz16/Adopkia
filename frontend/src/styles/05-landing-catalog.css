@@ -303,7 +303,7 @@
 
 .landing-pets {
   padding: 4.2rem clamp(1rem, 6vw, 5rem) 4.7rem;
-  animation: view-enter 0.45s var(--motion-ease) both;
+  animation: view-enter 0.45s var(--motion-ease) backwards;
   scroll-margin-top: 6rem;
 }
 

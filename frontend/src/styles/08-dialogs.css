@@ -121,6 +121,9 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
+  /* "safe": si el contenido no cabe, empieza arriba en vez de desbordarse por
+     encima, donde el scroll no llega. */
+  justify-content: safe center;
   gap: 1rem;
   padding: clamp(1.5rem, 4vw, 2.5rem);
   animation: dialog-3d-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -254,6 +257,16 @@
 .portal-request-dialog__metadata dt,
 .portal-request-dialog__metadata dd {
   text-align: left;
+}
+
+/* Etiqueta arriba y valor debajo, como en las fechas: lado a lado, en una
+   pantalla estrecha el valor se partía letra por letra ("Canc/elada"). */
+.portal-request-dialog .portal-request-dialog__metadata > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.3rem;
 }
 
 .landing-pet-dialog__details dd {

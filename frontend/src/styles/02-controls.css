@@ -825,7 +825,7 @@
 /* Las cifras del panel entran escalonadas. */
 .portal-view .portal-stat,
 .portal-view .portal-shortcut {
-  animation: view-enter 0.45s var(--motion-ease) both;
+  animation: view-enter 0.45s var(--motion-ease) backwards;
 }
 
 .portal-view .portal-stat:nth-child(2),
