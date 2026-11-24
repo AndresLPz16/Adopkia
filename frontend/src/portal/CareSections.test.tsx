@@ -57,6 +57,33 @@ describe("vaccine catalog", () => {
 });
 
 describe("reminder management", () => {
+  it("offers loaded vaccines when scheduling a vaccine reminder", () => {
+    render(
+      <AdoptionsSection
+        role="refugio"
+        isPlatformSuperadmin={false}
+        canDo={(resource, action) =>
+          resource === "reminders" && action === "create"
+        }
+        adoptions={[{ id: 4, pet_name: "Luna", applicant: "Camila", status: "activa" }]}
+        followUps={[]}
+        reminders={[]}
+        vaccines={[{ id: 2, name: "Antirrábica" }]}
+        form={{ reminder_type: "vacuna" }}
+        setValue={vi.fn()}
+        submit={(callback) => (event) => {
+          event.preventDefault();
+          void callback();
+        }}
+        send={vi.fn(async () => true)}
+        loading={false}
+        busy={false}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "Antirrábica" })).toHaveValue("2");
+  });
+
   it("lets a shelter record notes and mark a reminder as completed", async () => {
     const send = vi.fn(async () => true);
     render(

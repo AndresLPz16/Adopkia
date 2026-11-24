@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../rbac/auth";
 import Portal from "../Portal";
-import { endpointsAffectedBy } from "./navigation";
+import { endpointsAffectedBy, pathsForRole } from "./navigation";
 
 const jsonResponse = (data: unknown) =>
   new Response(JSON.stringify(data), {
@@ -131,6 +131,10 @@ describe("portal reloads after an action", () => {
 });
 
 describe("endpointsAffectedBy", () => {
+  it("loads the vaccine catalog in the adoptions section", () => {
+    expect(pathsForRole("adoptante").adoptions).toContain("/api/v1/vaccines/");
+  });
+
   it("maps a write to the lists it can change", () => {
     expect(endpointsAffectedBy("/api/v1/notifications/7/")).toEqual(["/api/v1/notifications/"]);
     expect(endpointsAffectedBy("/api/v1/pets/3/relist/")).toEqual(["/api/v1/pets/"]);
