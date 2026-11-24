@@ -234,7 +234,10 @@ describe("shelter management actions", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Eliminar refugio" }));
+    const deleteButton = screen.getByRole("button", { name: "Eliminar refugio" });
+    expect(deleteButton.closest(".portal-card__actions")).toBeInTheDocument();
+    expect(deleteButton.closest(".portal-card__body")).not.toBeInTheDocument();
+    fireEvent.click(deleteButton);
     expect(send).not.toHaveBeenCalled();
     const confirmation = await screen.findByRole("alertdialog");
     fireEvent.click(within(confirmation).getByRole("button", { name: "Eliminar" }));
