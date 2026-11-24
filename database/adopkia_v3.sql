@@ -281,7 +281,9 @@ CREATE TABLE pregunta_formulario (
   obligatoria    BOOLEAN      NOT NULL DEFAULT TRUE,
   orden          SMALLINT UNSIGNED NOT NULL DEFAULT 1,
   activa         BOOLEAN      NOT NULL DEFAULT TRUE,
-  PRIMARY KEY (id_pregunta)
+  orden_activo   SMALLINT GENERATED ALWAYS AS (CASE WHEN activa = TRUE THEN orden ELSE NULL END) STORED,
+  PRIMARY KEY (id_pregunta),
+  CONSTRAINT uq_pregunta_activa_orden UNIQUE (orden_activo)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
