@@ -22,10 +22,26 @@ class FormQuestion(models.Model):
     required = models.BooleanField(default=True, db_column="obligatoria")
     order = models.SmallIntegerField(default=1, db_column="orden")
     active = models.BooleanField(default=True, db_column="activa")
+    active_order = models.GeneratedField(
+        expression=Case(
+            When(active=True, then="order"),
+            default=Value(None),
+            output_field=models.SmallIntegerField(null=True),
+        ),
+        output_field=models.SmallIntegerField(null=True),
+        db_persist=True,
+        db_column="orden_activo",
+    )
 
     class Meta:
         db_table = "pregunta_formulario"
         ordering = ("order", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("active_order",),
+                name="uq_pregunta_activa_orden",
+            )
+        ]
 
     def __str__(self):
         return self.prompt

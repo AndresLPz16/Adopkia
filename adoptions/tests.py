@@ -139,6 +139,20 @@ class AdoptionFlowTests(APITestCase):
         )
         self.assertEqual(unchanged.status_code, 200)
 
+    def test_database_enforces_unique_order_for_active_questions(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                FormQuestion.objects.create(
+                    prompt="Pregunta activa duplicada",
+                    order=self.question.order,
+                )
+
+        FormQuestion.objects.create(
+            prompt="Pregunta archivada",
+            order=self.question.order,
+            active=False,
+        )
+
     def test_archived_question_frees_its_order(self):
         self.client.force_authenticate(self.shelter_user)
         self.client.delete(reverse("form-question-detail", args=(self.question.pk,)))
