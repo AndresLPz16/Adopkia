@@ -1,7 +1,45 @@
+import { useEffect, useRef } from "react";
 import { revealRef } from "../ui/motion";
 import { ArrowRight } from "lucide-react";
+
+// Escribe en --progress (0 a 1) cuánto se ha recorrido la lista de pasos.
+// Con movimiento reducido la barra aparece llena desde el principio.
+function useScrollProgress<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const reduce =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      element.style.setProperty("--progress", "1");
+      return;
+    }
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const box = element.getBoundingClientRect();
+      const travelled = (window.innerHeight * 0.85 - box.top) / (box.height + window.innerHeight * 0.35);
+      element.style.setProperty("--progress", String(Math.min(1, Math.max(0, travelled))));
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+  return ref;
+}
 // Secciones estáticas: cómo funciona el proceso y preguntas frecuentes.
 export function LandingInfoSections() {
+  const stepsRef = useScrollProgress<HTMLOListElement>();
   return (
     <>
       <section
@@ -17,7 +55,7 @@ export function LandingInfoSections() {
             personas que cuidan de cada mascota.
           </p>
         </div>
-        <ol className="landing-process__steps">
+        <ol className="landing-process__steps" ref={stepsRef}>
           <li>
             <span aria-hidden="true">01</span>
             <h3>Encuentra una conexión</h3>

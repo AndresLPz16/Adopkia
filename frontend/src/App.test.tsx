@@ -179,7 +179,11 @@ describe("public landing page", () => {
 
     expect(screen.getByText(/Enviar una solicitud inicia el proceso/)).toBeInTheDocument();
     expect(screen.getByText("¿Cuánto tarda el refugio en responder?")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Preguntas frecuentes" })).toHaveAttribute("href", "#preguntas-frecuentes");
+    expect(
+      within(screen.getByRole("navigation", { name: "Navegación principal" })).getByRole("link", {
+        name: "Preguntas frecuentes",
+      }),
+    ).toHaveAttribute("href", "#preguntas-frecuentes");
   });
 
   it("features a real available pet and uses its published catalog count", async () => {
