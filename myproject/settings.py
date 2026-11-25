@@ -231,18 +231,28 @@ if AZURE_STORAGE_ACCOUNT_NAME:
     }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Correo saliente. Con EMAIL_HOST definido se envía por SMTP de verdad, también
+# en desarrollo; sin él, en debug el correo (y el código de verificación) se
+# imprime en la consola del servidor.
+EMAIL_HOST = os.getenv("EMAIL_HOST", "").strip()
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
     "django.core.mail.backends.console.EmailBackend"
-    if DEBUG
+    if DEBUG and not EMAIL_HOST
     else "django.core.mail.backends.smtp.EmailBackend",
 )
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "").strip()
+# Google muestra la contraseña de aplicación en grupos ("abcd efgh ijkl mnop");
+# se aceptan con o sin espacios.
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "").replace(" ", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes"}
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@adopkia.local")
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "15"))
+# Gmail solo deja enviar como la propia cuenta: por defecto el remitente es
+# el usuario SMTP, con el nombre de Adopkia.
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "").strip() or (
+    f"Adopkia <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "no-reply@adopkia.local"
+)
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
