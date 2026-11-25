@@ -3,6 +3,7 @@ import os
 import re
 import secrets
 from dataclasses import dataclass
+from http.cookies import SimpleCookie
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -145,7 +146,12 @@ def login_account(testcase, alias):
     )
     payload = assert_response(testcase, f"login/{alias}", response, 200)
     account["access"] = payload["access"]
-    account["refresh"] = payload["refresh"]
+    # El token de renovación llega en la cookie HttpOnly, no en el cuerpo.
+    cookies = SimpleCookie()
+    for header in response.headers.get_all("Set-Cookie") or []:
+        cookies.load(header)
+    testcase.assertNotIn("refresh", payload, f"login/{alias}")
+    account["refresh"] = cookies["adopkia_refresh"].value
     return account
 
 

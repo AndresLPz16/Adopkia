@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -17,6 +16,7 @@ import type {
 import type { PermissionMap, RolePermissions } from "./permissions";
 import type { Action } from "./types";
 import { ACTIONS } from "./types";
+import { renewAccessToken } from "../session";
 
 interface AuthContextValue {
   status: AuthStatus;
@@ -34,8 +34,6 @@ interface AuthProviderProps {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const ACCESS_TOKEN_KEY = "adopkia_access";
-const REFRESH_TOKEN_KEY = "adopkia_refresh";
 
 function toAuthUser(profile: BackendUserProfile): AuthUser {
   return {
@@ -92,7 +90,6 @@ export function AuthProvider({
   const [error, setError] = useState<Error | null>(null);
   const [permissions, setPermissions] = useState<PermissionMap | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const refreshPromise = useRef<Promise<string | null> | null>(null);
 
   const request = useCallback(
     async (input: RequestInfo | URL, init: RequestInit = {}) => {
@@ -111,35 +108,7 @@ export function AuthProvider({
         return response;
       }
 
-      if (!refreshPromise.current) {
-        refreshPromise.current = (async () => {
-          const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_KEY);
-          if (!refreshToken) return null;
-
-          const refreshResponse = await fetch("/api/v1/auth/refresh/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refresh: refreshToken }),
-          });
-          if (!refreshResponse.ok) {
-            window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-            window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-            return null;
-          }
-          const refreshed = (await refreshResponse.json()) as { access?: unknown };
-          if (typeof refreshed.access !== "string") {
-            window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-            window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-            throw new Error("La respuesta de renovación no contiene un token válido.");
-          }
-          window.localStorage.setItem(ACCESS_TOKEN_KEY, refreshed.access);
-          return refreshed.access;
-        })().finally(() => {
-          refreshPromise.current = null;
-        });
-      }
-
-      const refreshedToken = await refreshPromise.current;
+      const refreshedToken = await renewAccessToken();
       return refreshedToken ? makeRequest(refreshedToken) : response;
     },
     [getAccessToken],
