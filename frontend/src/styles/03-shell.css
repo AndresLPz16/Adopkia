@@ -552,6 +552,10 @@
   display: grid;
   min-height: 0;
   align-content: start;
+  /* Cada grupo conserva su alto completo y la barra hace scroll. Sin esto,
+     con poca altura de pantalla los grupos (overflow: hidden) se encogían y
+     el último enlace quedaba recortado, como "Mi perfil" en "Mi cuenta". */
+  grid-auto-rows: max-content;
   gap: 0.5rem;
   overflow-y: auto;
   overscroll-behavior: contain;
