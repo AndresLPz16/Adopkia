@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, readJson } from "./api";
+import { readJson } from "./api";
+import { startSession } from "../session";
 import type { AuthResponse, LoginMathChallenge } from "./api";
 
 export type LandingView = "catalog" | "login" | "register" | "verify-email";
@@ -172,10 +173,7 @@ export function useAuthFlow() {
       if (!login || typeof login.access !== "string") {
         throw new Error("El servidor no devolvió un token de acceso válido.");
       }
-      window.localStorage.setItem(ACCESS_TOKEN_KEY, login.access);
-      if (typeof login.refresh === "string") {
-        window.localStorage.setItem(REFRESH_TOKEN_KEY, login.refresh);
-      }
+      startSession(login.access);
       window.location.assign("/app/dashboard");
     } catch (caught) {
       setError(

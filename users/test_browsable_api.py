@@ -82,7 +82,8 @@ class BrowsableApiAuthenticationTests(TestCase):
         )
         self.assertEqual(login.status_code, 200)
         self.assertIn(b"access", login.content)
-        self.assertIn(b"refresh", login.content)
+        # El token de renovación va en una cookie HttpOnly, no en la respuesta.
+        self.assertIn("adopkia_refresh", login.cookies)
 
     def test_api_auth_logs_in_with_email_and_exposes_role_aware_session(self):
         administrator = self.users[Role.Name.ADMIN]

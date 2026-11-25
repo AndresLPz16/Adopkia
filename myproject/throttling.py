@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils.translation import gettext as _
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
 
 
 class AuthRateThrottle(SimpleRateThrottle):
@@ -55,6 +55,24 @@ class EmailVerificationRateThrottle(AuthRateThrottle):
 
 class ResendEmailVerificationRateThrottle(AuthRateThrottle):
     scope = "auth_resend_verification"
+
+
+class ApiAnonRateThrottle(AnonRateThrottle):
+    """Límite general por IP para quien usa la API sin sesión."""
+
+    scope = "api_anon"
+
+    def get_rate(self):
+        return settings.API_THROTTLE_RATES.get(self.scope)
+
+
+class ApiUserRateThrottle(UserRateThrottle):
+    """Límite general por cuenta; sin sesión se cuenta por IP."""
+
+    scope = "api_user"
+
+    def get_rate(self):
+        return settings.API_THROTTLE_RATES.get(self.scope)
 
 
 class SessionLoginRateLimitMiddleware:

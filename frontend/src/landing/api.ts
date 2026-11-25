@@ -1,9 +1,6 @@
 import { apiErrorMessage } from "../portal/shared";
 
-export const ACCESS_TOKEN_KEY = "adopkia_access";
-export const REFRESH_TOKEN_KEY = "adopkia_refresh";
-
-export type AuthResponse = { access: string; refresh?: string; detail?: string };
+export type AuthResponse = { access: string; detail?: string };
 export type LoginMathChallenge = { challenge_id: string; question: string };
 
 

@@ -2,6 +2,7 @@ import os
 import ssl
 import sys
 import warnings
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "corsheaders",
     "drf_spectacular",
@@ -50,6 +52,8 @@ INSTALLED_APPS = [
 DATABASE_ROUTERS = ["myproject.database_router.FrameworkTablesRouter"]
 
 MIDDLEWARE = [
+    # Primero, para que también cubra el portal que entrega WhiteNoise.
+    "myproject.middleware.SecurityHeadersMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -266,6 +270,12 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
+    # Límite general por IP (anónimos) y por cuenta (con sesión) contra la
+    # saturación de la API. Las vistas de autenticación tienen los suyos.
+    "DEFAULT_THROTTLE_CLASSES": [
+        "myproject.throttling.ApiAnonRateThrottle",
+        "myproject.throttling.ApiUserRateThrottle",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -297,10 +307,26 @@ AUTH_THROTTLE_RATES = (
     if AUTH_THROTTLE_ENABLED
     else {}
 )
+# Límite general de la API (myproject.throttling). Usa el mismo interruptor que
+# los límites de autenticación para que las pruebas no lo choquen.
+API_THROTTLE_RATES = (
+    {
+        "api_anon": os.getenv("DJANGO_API_ANON_RATE", "120/min"),
+        "api_user": os.getenv("DJANGO_API_USER_RATE", "600/min"),
+    }
+    if AUTH_THROTTLE_ENABLED
+    else {}
+)
 SPECTACULAR_SETTINGS = {
     "TITLE": "Adopkia API",
     "DESCRIPTION": "API para adopción responsable y seguimiento post-adopción.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
-SIMPLE_JWT = {"AUTH_HEADER_TYPES": ("Bearer",)}
+# El acceso dura poco: si alguien lo copiara, le serviría unos minutos. La
+# renovación vive en una cookie HttpOnly y se revoca al cerrar sesión.
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
