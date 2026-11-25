@@ -36,6 +36,56 @@ class ShelterApiTests(APITestCase):
             position=ShelterMember.Position.MANAGER,
         )
 
+    def test_shelter_list_tells_each_account_what_it_can_manage(self):
+        collaborator = User.objects.create_user(
+            email="colaborador@example.com",
+            password="SafePass!2026",
+            name="Colaborador",
+            role=Role.Name.SHELTER,
+        )
+        ShelterMember.objects.create(
+            shelter=self.shelter,
+            user=collaborator,
+            position=ShelterMember.Position.COLLABORATOR,
+        )
+        other = Shelter.objects.create(
+            name="Ajeno",
+            address="Calle 2",
+            city="Maicao",
+            verification_status=Shelter.VerificationStatus.VERIFIED,
+            verification_date=timezone.now(),
+            verified_by=self.admin,
+        )
+
+        def capabilities(user):
+            self.client.force_authenticate(user)
+            response = self.client.get(reverse("shelter-list"))
+            self.assertEqual(response.status_code, 200)
+            # Un refugio ajeno llega con la vista pública, sin estos campos.
+            return {
+                row["name"]: (
+                    row.get("is_member", False),
+                    row.get("can_edit", False),
+                    row.get("can_manage_members", False),
+                )
+                for row in response.data["results"]
+            }
+
+        self.assertEqual(
+            capabilities(self.shelter_user),
+            {"Huellas": (True, True, True), other.name: (False, False, False)},
+        )
+        self.assertEqual(
+            capabilities(collaborator),
+            {"Huellas": (True, True, False), other.name: (False, False, False)},
+        )
+        admin_view = capabilities(self.admin)
+        self.assertEqual(admin_view["Huellas"], (False, True, False))
+
+        self.client.force_authenticate(self.shelter_user)
+        detail = self.client.get(reverse("shelter-detail", args=(self.shelter.pk,)))
+        self.assertTrue(detail.data["can_manage_members"])
+
     def test_only_admin_can_verify_shelter(self):
         self.client.force_authenticate(self.shelter_user)
         response = self.client.post(

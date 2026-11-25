@@ -216,6 +216,9 @@ describe("shelter management actions", () => {
             city: "Riohacha",
             address: "Calle 1",
             verification_status: "verificado",
+            is_member: true,
+            can_edit: true,
+            can_manage_members: true,
           },
         ]}
         members={[{ shelter: 3, user: 7 }]}
@@ -260,7 +263,17 @@ describe("shelter management actions", () => {
         canDo={(resource, action) =>
           resource === "shelterMembers" && action === "create"
         }
-        shelters={[{ id: 3, name: "Huellas", city: "Riohacha", address: "Calle 1" }]}
+        shelters={[
+          {
+            id: 3,
+            name: "Huellas",
+            city: "Riohacha",
+            address: "Calle 1",
+            is_member: true,
+            can_edit: true,
+            can_manage_members: true,
+          },
+        ]}
         members={[{ shelter: 3, user: 7 }]}
         form={{ email: " colega@example.com " }}
         setForm={vi.fn()}
@@ -287,5 +300,68 @@ describe("shelter management actions", () => {
       { email: "colega@example.com", position: "colaborador" },
       "Integrante agregado.",
     );
+  });
+
+  it("shows a shelter account only its own shelters and their controls", () => {
+    const allowed = new Set([
+      "shelters:update",
+      "shelterMembers:create",
+      "shelters:delete",
+    ]);
+    render(
+      <SheltersSection
+        role="refugio"
+        userId={7}
+        canDo={(resource, action) => allowed.has(`${resource}:${action}`)}
+        shelters={[
+          // Responsable: puede editar y sumar integrantes.
+          { id: 3, name: "Propio", city: "Riohacha", address: "Calle 1", is_member: true, can_edit: true, can_manage_members: true },
+          // Colaborador: puede editar, pero solo el responsable suma integrantes.
+          { id: 4, name: "Colaboro", city: "Maicao", address: "Calle 2", is_member: true, can_edit: true, can_manage_members: false },
+          // Refugio verificado de otra organización.
+          { id: 5, name: "Ajeno", city: "Uribia", address: "Calle 3", is_member: false, can_edit: false, can_manage_members: false },
+        ]}
+        members={[]}
+        form={{}}
+        setForm={vi.fn()}
+        setValue={vi.fn()}
+        submit={(callback) => (event) => {
+          event.preventDefault();
+          void callback();
+        }}
+        send={vi.fn(async () => true)}
+        editingShelter=""
+        setEditingShelter={vi.fn()}
+        loading={false}
+        busy={false}
+      />,
+    );
+
+    expect(screen.queryByText("Ajeno")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Editar refugio" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Agregar integrante" })).toHaveLength(1);
+  });
+
+  it("explains how to join when the account has no shelter yet", () => {
+    render(
+      <SheltersSection
+        role="refugio"
+        userId={7}
+        canDo={() => true}
+        shelters={[{ id: 5, name: "Ajeno", city: "Uribia", address: "Calle 3", is_member: false }]}
+        members={[]}
+        form={{}}
+        setForm={vi.fn()}
+        setValue={vi.fn()}
+        submit={() => (event) => event.preventDefault()}
+        send={vi.fn(async () => true)}
+        editingShelter=""
+        setEditingShelter={vi.fn()}
+        loading={false}
+        busy={false}
+      />,
+    );
+
+    expect(screen.getByText(/Aún no perteneces a ningún refugio/)).toBeInTheDocument();
   });
 });
