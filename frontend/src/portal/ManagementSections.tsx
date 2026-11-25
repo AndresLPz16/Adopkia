@@ -39,14 +39,18 @@ export function SheltersSection({
   busy: boolean;
 }) {
   const isAdmin = role === ROLES.ADMIN;
+  // La API indica en cada refugio si la cuenta es integrante, si puede
+  // editarlo y si puede sumar integrantes (solo el responsable).
+  const isMember = (shelter: PortalDataRow) => shelter.is_member === true;
+  const canEditShelter = (shelter: PortalDataRow) =>
+    shelter.can_edit === true && canDo(RESOURCES.SHELTERS, ACTIONS.UPDATE);
+  const canAddMembers = (shelter: PortalDataRow) =>
+    shelter.can_manage_members === true && canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.CREATE);
   const canDeleteShelter = (shelter: PortalDataRow) =>
-    (isAdmin ||
-      members.some(
-        (member) =>
-          text(member.shelter) === text(shelter.id) &&
-          text(member.user) === text(userId),
-      )) &&
-    canDo(RESOURCES.SHELTERS, ACTIONS.DELETE);
+    (isAdmin || isMember(shelter)) && canDo(RESOURCES.SHELTERS, ACTIONS.DELETE);
+  // Esta es la pantalla de "tu organización": un refugio ve solo los suyos. El
+  // directorio de refugios verificados ya está en la página pública.
+  const visibleShelters = isAdmin ? shelters : shelters.filter(isMember);
   const canVerifyShelter = (shelter: PortalDataRow) =>
     statusCode(shelter, "verification_status") === "pendiente" &&
     canDo(RESOURCES.SHELTERS, ACTIONS.VERIFY);
@@ -77,7 +81,7 @@ export function SheltersSection({
         </form>
       )}
       <div className="portal-grid">
-        {shelters.map((shelter) => (
+        {visibleShelters.map((shelter) => (
           <DataCard
             key={text(shelter.id)}
             title={text(shelter.name)}
@@ -85,7 +89,7 @@ export function SheltersSection({
             status={text(shelter.verification_status)}
             actions={
               (canVerifyShelter(shelter) ||
-                (!isAdmin && canDo(RESOURCES.SHELTERS, ACTIONS.UPDATE)) ||
+                (!isAdmin && canEditShelter(shelter)) ||
                 canDeleteShelter(shelter)) && (
                 <div className="portal-inline-actions">
                   {canVerifyShelter(shelter) && (
@@ -94,7 +98,7 @@ export function SheltersSection({
                       <button className="portal-button portal-button--secondary" onClick={() => void send(`/api/v1/shelters/${text(shelter.id)}/verify/`, "POST", { approved: false }, "Solicitud de refugio rechazada.")}>Rechazar</button>
                     </>
                   )}
-                  {!isAdmin && canDo(RESOURCES.SHELTERS, ACTIONS.UPDATE) && (
+                  {!isAdmin && canEditShelter(shelter) && (
                     <button className="portal-link" onClick={() => {
                       setEditingShelter(text(shelter.id));
                       setForm({
@@ -134,7 +138,7 @@ export function SheltersSection({
             <p>{text(shelter.contact_email)} {shelter.contact_phone ? `· ${text(shelter.contact_phone)}` : ""}</p>
             {!isAdmin && (
               <>
-                {canDo(RESOURCES.SHELTER_MEMBERS, ACTIONS.CREATE) && <form className="portal-card-form" onSubmit={submit(async () => {
+                {canAddMembers(shelter) && <form className="portal-card-form" onSubmit={submit(async () => {
                   await send(`/api/v1/shelters/${text(shelter.id)}/members/`, "POST", { email: (form.email ?? "").trim(), position: form.position || "colaborador" }, "Integrante agregado.");
                 })}>
                   <Field label="Correo del integrante" name="email" type="email" value={form.email ?? ""} onChange={setValue} required />
@@ -175,7 +179,13 @@ export function SheltersSection({
           </div>
         </>
       )}
-      {!loading && shelters.length === 0 && <EmptyState>No hay refugios que mostrar. Registra el primero para comenzar.</EmptyState>}
+      {!loading && visibleShelters.length === 0 && (
+        <EmptyState>
+          {isAdmin
+            ? "No hay refugios que mostrar."
+            : "Aún no perteneces a ningún refugio. Registra el tuyo con el formulario de arriba o pide al responsable de tu refugio que te agregue con tu correo."}
+        </EmptyState>
+      )}
     </>
   );
 }

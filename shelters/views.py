@@ -42,7 +42,12 @@ class ShelterViewSet(viewsets.ModelViewSet):
             shelter_id=OuterRef("pk"),
             user_id=user.pk,
         )
-        queryset = queryset.annotate(_user_is_member=Exists(memberships))
+        queryset = queryset.annotate(
+            _user_is_member=Exists(memberships),
+            _user_is_manager=Exists(
+                memberships.filter(position=ShelterMember.Position.MANAGER)
+            ),
+        )
         if user.role.name == Role.Name.ADMIN:
             return queryset
         return queryset.filter(
@@ -61,16 +66,7 @@ class ShelterViewSet(viewsets.ModelViewSet):
         shelters = page if page is not None else queryset
         data = []
         for shelter in shelters:
-            serializer_class = (
-                ShelterSerializer
-                if self._can_manage_shelter(request.user, shelter)
-                else PublicShelterSerializer
-            )
-            data.append(
-                serializer_class(
-                    shelter, context=self.get_serializer_context()
-                ).data
-            )
+            data.append(self._serialize(request.user, shelter))
         if page is not None:
             return self.get_paginated_response(data)
         return Response(data)
@@ -85,17 +81,35 @@ class ShelterViewSet(viewsets.ModelViewSet):
             )
         )
 
+    @staticmethod
+    def _with_capabilities(user, shelter, data):
+        """Indica al portal qué puede hacer la cuenta con este refugio.
+
+        Las reglas son las mismas que aplican ``perform_update`` y
+        ``members``; así el portal no ofrece acciones que luego fallarían. Solo
+        se agrega a la vista completa: la pública conserva sus tres campos.
+        """
+        is_member = bool(getattr(shelter, "_user_is_member", False))
+        data = dict(data)
+        data["is_member"] = is_member
+        data["can_edit"] = (
+            is_member
+            or user.role.name == Role.Name.ADMIN
+            or user.is_platform_superadmin
+        )
+        data["can_manage_members"] = bool(getattr(shelter, "_user_is_manager", False))
+        return data
+
+    def _serialize(self, user, shelter):
+        context = self.get_serializer_context()
+        if not self._can_manage_shelter(user, shelter):
+            return PublicShelterSerializer(shelter, context=context).data
+        return self._with_capabilities(
+            user, shelter, ShelterSerializer(shelter, context=context).data
+        )
+
     def retrieve(self, request, *args, **kwargs):
-        shelter = self.get_object()
-        serializer_class = (
-            ShelterSerializer
-            if self._can_manage_shelter(request.user, shelter)
-            else PublicShelterSerializer
-        )
-        serializer = serializer_class(
-            shelter, context=self.get_serializer_context()
-        )
-        return Response(serializer.data)
+        return Response(self._serialize(request.user, self.get_object()))
 
     def perform_create(self, serializer):
         user = self.request.user
