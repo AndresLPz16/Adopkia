@@ -1,10 +1,12 @@
-import { revealRef } from "../ui/motion";
 import { AdoptionStories } from "./AdoptionStories";
 import { AuthScreen } from "./AuthScreen";
+import { LandingClosing } from "./LandingClosing";
+import { LandingFeatures } from "./LandingFeatures";
 import { LandingHeader } from "./LandingHeader";
 import { LandingHero } from "./LandingHero";
 import { LandingInfoSections } from "./LandingInfoSections";
 import { LandingMarquee } from "./LandingMarquee";
+import { LandingStats } from "./LandingStats";
 import { PetCarousel } from "./PetCarousel";
 import { PetDialog } from "./PetDialog";
 import { PetSpotlight } from "./PetSpotlight";
@@ -25,10 +27,12 @@ export function Landing() {
     <main className="landing">
       <LandingHeader showAuthentication={showAuthentication} />
       <LandingHero catalog={catalog} />
+      <LandingStats catalog={catalog} />
       <PetCarousel catalog={catalog} showAuthentication={showAuthentication} />
       <LandingMarquee />
       {featuredPet && <PetSpotlight catalog={catalog} featuredPet={featuredPet} />}
       <AdoptionStories />
+      <LandingFeatures />
       <LandingInfoSections />
       {selectedPet && (
         <PetDialog
@@ -37,16 +41,7 @@ export function Landing() {
           showAuthentication={showAuthentication}
         />
       )}
-      <section className="landing-bottom" ref={revealRef}>
-        <div>
-          <h2>Un espacio para cada persona que cuida.</h2>
-          <p>
-            Adoptantes, refugios y veterinarios trabajan juntos para que cada
-            mascota reciba el cuidado y la familia que merece.
-          </p>
-        </div>
-      </section>
-      <footer className="landing-footer">Adopkia: adopción responsable con refugios verificados.</footer>
+      <LandingClosing showAuthentication={showAuthentication} />
     </main>
   );
 }

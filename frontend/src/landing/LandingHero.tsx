@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  HeartHandshake,
-  HeartPulse,
-  MapPin,
-  PawPrint,
-  Search,
-  ShieldCheck,
-} from "lucide-react";
-import { revealRef } from "../ui/motion";
+import { MapPin, PawPrint, Search } from "lucide-react";
 import BlurText from "../ui/reactbits/BlurText";
 import Stack from "../ui/reactbits/Stack";
 import type { PublicPetPreview } from "../publicCatalog";
@@ -25,6 +17,9 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
     petSearch,
     setPetSearch,
     pets,
+    speciesOptions,
+    speciesFilter,
+    setSpeciesFilter,
     setSelectedPet,
     setSelectedPhotoIndex,
     photoOpenerRef,
@@ -71,6 +66,25 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
               Buscar
             </button>
           </div>
+          {speciesOptions.length > 1 && (
+            <div className="landing-hero__species" role="group" aria-label="Elige qué mascota buscas">
+              <span>¿A quién buscas?</span>
+              {speciesOptions.map((species) => (
+                <button
+                  key={species}
+                  type="button"
+                  className="landing-hero__chip"
+                  aria-pressed={speciesFilter === species}
+                  onClick={() => {
+                    setSpeciesFilter(speciesFilter === species ? "" : species);
+                    goToCatalog();
+                  }}
+                >
+                  {species}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="landing-hero__art">
           <div className="landing-hero__sun" aria-hidden="true" />
@@ -118,20 +132,6 @@ export function LandingHero({ catalog }: { catalog: PetCatalog }) {
               <PawPrint size={72} strokeWidth={1.4} />
             </div>
           )}
-        </div>
-      </section>
-      <section className="landing-benefits" aria-label="Beneficios de Adopkia" ref={revealRef}>
-        <div>
-          <span aria-hidden="true"><ShieldCheck size={20} /></span>
-          <p><strong>Refugios verificados</strong><small>Cada refugio pasa una revisión antes de publicar.</small></p>
-        </div>
-        <div>
-          <span aria-hidden="true"><HeartHandshake size={20} /></span>
-          <p><strong>Solicitud acompañada</strong><small>El refugio revisa tu solicitud y te responde aquí.</small></p>
-        </div>
-        <div>
-          <span aria-hidden="true"><HeartPulse size={20} /></span>
-          <p><strong>Seguimiento después</strong><small>Recordatorios de vacunas y controles para tu mascota.</small></p>
         </div>
       </section>
     </>

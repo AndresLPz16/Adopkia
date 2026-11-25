@@ -453,47 +453,6 @@
 }
 
 
-/* ---------- .landing-bottom ---------- */
-
-.landing-bottom {
-  display: grid;
-  /* Una sola columna: la segunda (de al menos 300px) quedó sin contenido y en
-     pantallas angostas reducía el texto a una palabra por línea. */
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(2rem, 7vw, 6rem);
-  padding: 4rem clamp(1rem, 8vw, 7rem);
-  background: var(--surface-tint);
-}
-
-.landing-bottom > div {
-  max-width: 520px;
-  padding-top: 1rem;
-}
-
-.landing-bottom h2 {
-  margin: 0.5rem 0;
-  font-size: clamp(1.8rem, 3.5vw, 2.7rem);
-  letter-spacing: -0.04em;
-}
-
-.landing-bottom > div > p:last-child {
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-
-/* ---------- .landing-footer ---------- */
-
-.landing-footer {
-  padding: 1.5rem;
-  color: var(--text-secondary);
-  background: var(--surface);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-
 /* ---------- .landing-marquee ---------- */
 
 /* Cinta de frases ladeada entre secciones. Con movimiento reducido se queda
@@ -629,4 +588,357 @@
   border: 1px dashed var(--border-strong);
   border-radius: 999px;
   font-size: 0.78rem;
+}
+
+
+/* ---------- .landing-stats ---------- */
+
+.landing-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1.5rem 2rem;
+  padding: 2.5rem clamp(1rem, 8vw, 7rem);
+  background: var(--surface);
+  border-block: 1px solid var(--border);
+}
+
+.landing-stats__item strong {
+  display: block;
+  color: var(--brand-primary);
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 4.5vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.landing-stats__item span {
+  display: block;
+  max-width: 18ch;
+  margin-top: 0.45rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+:root[data-theme="dark"] .landing-stats__item strong {
+  color: var(--brand-secondary-text);
+}
+
+
+/* ---------- .landing-features (bento) ---------- */
+
+.landing-features {
+  padding: clamp(3rem, 7vw, 5.5rem) clamp(1rem, 8vw, 7rem);
+  background: var(--surface);
+}
+
+.landing-features__intro {
+  max-width: 40rem;
+  margin-bottom: 2.5rem;
+}
+
+.landing-features__intro h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+}
+
+.landing-features__intro p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.landing-bento {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(12rem, auto);
+  gap: 1rem;
+}
+
+.landing-bento__card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+}
+
+.landing-bento__card > svg {
+  margin-bottom: auto;
+  color: var(--brand-primary);
+}
+
+.landing-bento__card h3 {
+  margin: 1.5rem 0 0;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+}
+
+.landing-bento__card p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* La tarjeta del seguimiento: es lo que diferencia a Adopkia. */
+.landing-bento__card--big {
+  grid-column: span 2;
+  grid-row: span 2;
+  background: var(--brand-sun);
+  border-color: #12302f;
+}
+
+.landing-bento__card--big > svg,
+.landing-bento__card--big h3,
+.landing-bento__card--big p {
+  color: #12302f;
+}
+
+.landing-bento__card--big h3 {
+  max-width: 14ch;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.landing-bento__card--big p {
+  max-width: 36ch;
+  font-size: 1.05rem;
+}
+
+.landing-bento__card--wide {
+  grid-column: span 2;
+}
+
+:root[data-theme="dark"] .landing-bento__card > svg {
+  color: var(--brand-secondary-text);
+}
+
+:root[data-theme="dark"] .landing-bento__card--big > svg {
+  color: #12302f;
+}
+
+@media (max-width: 900px) {
+  .landing-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-bento__card--big {
+    grid-row: span 1;
+    min-height: 18rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .landing-bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-bento__card--big,
+  .landing-bento__card--wide {
+    grid-column: auto;
+  }
+}
+
+
+/* ---------- Barra de progreso de los pasos ---------- */
+
+/* La pista y el relleno van sobre la lista; --progress lo escribe
+   useScrollProgress (LandingInfoSections.tsx). */
+.landing-process__steps {
+  position: relative;
+  padding-top: 1.75rem;
+}
+
+.landing-process__steps::before,
+.landing-process__steps::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  border-radius: 999px;
+  content: "";
+}
+
+.landing-process__steps::before {
+  background: var(--border);
+}
+
+.landing-process__steps::after {
+  background: var(--brand-sun);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left;
+}
+
+
+/* ---------- .landing-cta ---------- */
+
+.landing-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: clamp(2rem, 5vw, 4rem) clamp(1rem, 6vw, 5rem);
+  padding: clamp(3rem, 8vw, 6rem) clamp(1.5rem, 6vw, 5rem);
+  color: #12302f;
+  background: var(--brand-sun);
+  border-radius: 2rem;
+  text-align: center;
+}
+
+/* Manchas de flamenco y mar que se mueven despacio por el fondo. Con
+   movimiento reducido se quedan quietas (regla global de 01-base.css). */
+.landing-cta__glow,
+.landing-cta__glow::after {
+  position: absolute;
+  z-index: -1;
+  width: 60%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.55;
+  content: "";
+}
+
+.landing-cta__glow {
+  top: -30%;
+  left: -15%;
+  background: var(--brand-coral);
+  animation: landing-cta-drift 16s ease-in-out infinite alternate;
+}
+
+.landing-cta__glow::after {
+  top: 90%;
+  left: 120%;
+  background: #5ed3cb;
+  animation: landing-cta-drift 20s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes landing-cta-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    transform: translate(12%, 18%) scale(1.15);
+  }
+}
+
+.landing-cta h2 {
+  max-width: 16ch;
+  margin: 0 auto;
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.landing-cta p {
+  max-width: 40ch;
+  margin: 1rem auto 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.landing-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.landing-cta__primary,
+.landing-cta__secondary {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  padding: 0 1.6rem;
+  border: 2px solid #12302f;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.landing-cta__primary {
+  color: #fff;
+  background: #12302f;
+}
+
+.landing-cta__secondary {
+  color: #12302f;
+  background: transparent;
+}
+
+.landing-cta__primary:hover {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+.landing-cta__secondary:hover {
+  background: rgb(18 48 47 / 8%);
+}
+
+
+/* ---------- .landing-footer ---------- */
+
+.landing-footer {
+  padding: 3rem clamp(1rem, 8vw, 7rem) 2.5rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.landing-footer__top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.landing-footer__brand p {
+  margin: 0.75rem 0 0;
+  color: var(--text-secondary);
+}
+
+.landing-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+}
+
+.landing-footer__links a,
+.landing-footer__links button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.landing-footer__links a:hover,
+.landing-footer__links button:hover {
+  color: var(--text-primary);
+}
+
+.landing-footer__legal {
+  margin: 2rem 0 0;
+  padding-top: 1.25rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
 }
